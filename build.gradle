@@ -1,0 +1,57 @@
+buildscript {
+    ext {
+        versions = [
+                springBoot          : "2.0.3.RELEASE",
+                dependencyManagement: "0.6.0.RELEASE",
+                guava               : "21.0",
+                reactivex           : "2.0.0",
+                wsClient            : "master-SNAPSHOT",
+                newRelicAPI         : "3.4.1",
+                commonsCodec        : "1.9",
+                junit               : "4.12",
+                mockito             : "1.10.19",
+                assertJ             : "3.9.0",
+                aspectjOAP          : "1.8.12",
+                validator           : "5.4.1.Final",
+                swagger             : "2.7.0",
+                tokenBucket         : "1.6",
+                commonsMath         : "3.6.1",
+                flywaydb            : "4.0.3",
+                rxWamp              : "0.5.0",
+                statemachine        : "1.2.8.RELEASE",
+                optaPlanner         : "7.6.0.Final",
+                cqengine            : "2.12.4",
+                hibernate           : "5.2.16.Final"
+        ]
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${versions.springBoot}"
+        classpath "io.spring.gradle:dependency-management-plugin:${versions.dependencyManagement}"
+    }
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.8'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+
+idea {
+    project {
+        //if you want to set specific jdk and language level
+        jdkName = JavaVersion.VERSION_1_8
+        languageLevel = JavaVersion.VERSION_1_8
+    }
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}

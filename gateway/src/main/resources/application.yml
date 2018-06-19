@@ -1,0 +1,171 @@
+spring:
+    application:
+        name: gtc-trading-gateway
+    jackson:
+        property-naming-strategy: SNAKE_CASE
+        locale: en_US
+        serialization:
+            fail-on-empty-beans: false
+            write_dates_as_timestamps: false
+server:
+    servlet:
+        path: /api
+    port: 8084
+app:
+    gdax:
+        restBase:
+        wsBase:
+        passphrase: ${GDAX_PASSPHRASE}
+        publicKey: ${GDAX_PUBLIC}
+        secretKey: ${GDAX_SECRET}
+        pairs:
+            BTC-USD=BTC-USD,
+            LTC-BTC=LTC-BTC,
+            XMR-BTC=XMR-BTC
+        ratePerM: 60
+    binance:
+        restBase: "https://api.binance.com"
+        passphrase: ${BINANCE_PASSPHRASE}
+        publicKey: ${BINANCE_PUBLIC}
+        secretKey: ${BINANCE_SECRET}
+        pairs:
+            LTC-BTC=LTCBTC,
+            XMR-BTC=XMRBTC,
+            ETH-BTC=ETHBTC,
+            XRP-BTC=XRPBTC,
+            NEO-BTC=NEOBTC,
+            OMG-BTC=OMGBTC,
+            LSK-BTC=LSKBTC,
+            EOS-BTC=EOSBTC,
+            NANO-BTC=NANOBTC,
+            GAS-BTC=GASBTC,
+            QTUM-BTC=QTUMBTC,
+            ZEC-BTC=ZECBTC,
+            DASH-BTC=DASHBTC,
+            BTC-USDT=BTCUSDT,
+            LTC-USDT=LTCUSDT,
+            ETH-USD=ETHUSDT
+        ratePerM: 50
+        createRatePerM: 10
+    bitfinex:
+        restBase: "https://api.bitfinex.com"
+        wsBase: "wss://api.bitfinex.com/ws/2"
+        passphrase: ${BITFINEX_PASSPHRASE}
+        publicKey: ${BITFINEX_PUBLIC}
+        secretKey: ${BITFINEX_SECRET}
+        pairs:
+            BTC-USD=BTCUSD,
+            LTC-BTC=LTCBTC,
+            XMR-BTC=XMRBTC,
+            DASH-BTC=DASHBTC
+        customCurrencyName:
+            BTC=bitcoin,
+            LTC=litecoin,
+            XMR=monero
+        ratePerM: 50
+        createRatePerM: 10
+    hitbtc:
+        restBase: "https://api.hitbtc.com/api/2"
+        wsBase: "wss://api.hitbtc.com/api/2/ws"
+        publicKey: ${HITBTC_PUBLIC}
+        secretKey: ${HITBTC_SECRET}
+        pairs:
+            # USD is actually usdt
+            LTC-BTC=LTCBTC,
+            XMR-BTC=XMRBTC,
+            ETH-BTC=ETHBTC,
+            XRP-BTC=XRPBTC,
+            DASH-BTC=DASHBTC,
+            NEO-BTC=NEOBTC,
+            OMG-BTC=OMGBTC,
+            LSK-BTC=LSKBTC,
+            EOS-BTC=EOSBTC,
+            QTUM-BTC=QTUMBTC,
+            ZEC-BTC=ZECBTC,
+            BTC-USDT=BTCUSD,
+            LTC-USDT=LTCUSD,
+            XMR-USDT=XMRUSD,
+            ETH-USDT=ETHUSD,
+            XRP-USDT=XRPUSD,
+            DASH-USDT=DASHUSD
+        customResponseCurrencyMapping:
+            USD=USDT
+        ratePerM: 10
+        minRequestSeparationMs: 30
+    wex:
+        restBase: "https://wex.nz/tapi"
+        publicKey: ${WEX_PUBLIC}
+        secretKey: ${WEX_SECRET}
+        pairs:
+            BTC-USD=btc_usd,
+            LTC-BTC=ltc_btc,
+            DASH-BTC=dsh_btc,
+            DASH-LTC=dsh_ltc,
+            ZEC-BTC=zec_btc
+        customResponseCurrencyMapping:
+            dsh=DASH
+        ratePerM: 50
+        createRatePerM: 10
+    huobi:
+        restBase: "https://api.huobi.pro"
+        publicKey: ${HUOBI_PUBLIC}
+        secretKey: ${HUOBI_SECRET}
+        pairs:
+            LTC-BTC=ltcbtc,
+            ETH-BTC=ethbtc,
+            XRP-BTC=xrpbtc,
+            DASH-BTC=dashbtc,
+            NEO-BTC=neobtc,
+            OMG-BTC=omgbtc,
+            LSK-BTC=lskbtc,
+            EOS-BTC=eosbtc,
+            GAS-BTC=gasbtc,
+            QTUM-BTC=qtumbtc,
+            ZEC-BTC=zecbtc,
+            BTC-USDT=btcusdt,
+            LTC-USDT=ltcusdt,
+            ETH-USDT=ethusdt,
+            XRP-USDT=xrpusdt,
+            DASH-USD=dashusdt
+        ratePerM: 50
+        minRequestSeparationMs: 15
+        createRatePerM: 10
+    therocktrading:
+        restBase: "https://api.therocktrading.com"
+        publicKey: ${THEROCKTRADING_PUBLIC}
+        secretKey: ${THEROCKTRADING_SECRET}
+        pairs:
+            BTC-USD=BTCUSD,
+            LTC-BTC=LTCBTC,
+            DASH-BTC=DSHBTC,
+            DASH-LTC=DSHLTC
+        customResponseCurrencyMapping:
+            dsh=DASH
+        ratePerM: 5
+        createRatePerM: 5
+    mock:
+        restBase: "http://localhost:9090/api"
+        publicKey: trade-gateway
+        pairs:
+            BTC-USDT=BTCUSDT
+        customResponseCurrencyMapping:
+            Bitcoin=BTC,
+            Tether=USDT
+        ratePerM: 50
+        createRatePerM: 10
+    clients:
+        # all-clients: bitfinex,binance,wex,hitbtc
+        # mocks (need MOCK_ENABLED as true): mock-asia,mock-europe
+        active: bitfinex,binance,wex,hitbtc,huobi,therocktrading
+    schedule:
+        puppeteerS: 10
+        pingMs: 5000
+    async:
+        pool:
+            core: 10
+            max: 50
+    statistics:
+        enabled: true
+        reportIntervalMs: 60000
+        window: 1000
+

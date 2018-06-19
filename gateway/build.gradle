@@ -1,0 +1,61 @@
+group 'com.gtc.gateway'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${versions.springBoot}"
+        classpath "io.spring.gradle:dependency-management-plugin:${versions.springDependencyManagement}"
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    compile project(":shared")
+
+    compileOnly "org.projectlombok:lombok"
+
+    compile "org.springframework.boot:spring-boot-configuration-processor"
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile 'org.springframework.boot:spring-boot-starter-aop'
+    compile "org.springframework.boot:spring-boot-starter-websocket"
+    compile "com.google.guava:guava:${versions.guava}"
+    compile "io.reactivex.rxjava2:rxjava:${versions.reactivex}"
+    compile "com.github.jacek-marchwicki:JavaWebsocketClient:${versions.wsClient}"
+    compile "com.newrelic.agent.java:newrelic-api:${versions.newRelicAPI}"
+    compile "commons-codec:commons-codec:${versions.commonsCodec}"
+    compile "org.apache.commons:commons-math3:${versions.commonsMath}"
+    compile "org.hibernate:hibernate-validator:${versions.validator}"
+    compile "org.isomorphism:token-bucket:${versions.tokenBucket}"
+
+    compile "io.springfox:springfox-swagger2:${versions.swagger}"
+    compile "io.springfox:springfox-swagger-ui:${versions.swagger}"
+
+    testCompile "junit:junit:${versions.junit}"
+    testCompile "org.mockito:mockito-all:${versions.mockito}"
+    testCompile "org.assertj:assertj-core:${versions.assertJ}"
+    testCompileOnly "org.projectlombok:lombok:"
+}
+
+jar {
+    baseName = "gateway"
+    version = project.version
+    archiveName = "gateway.jar"
+}
+
+bootRun {
+    systemProperties System.properties
+}

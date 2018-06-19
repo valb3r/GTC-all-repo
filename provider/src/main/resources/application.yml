@@ -1,0 +1,323 @@
+spring:
+    application:
+        name: gtc-provider
+    jackson:
+        property-naming-strategy: SNAKE_CASE
+        locale: en_US
+        serialization:
+            fail-on-empty-beans: false
+            write_dates_as_timestamps: false
+server:
+    servlet:
+      path: /api
+    port: 8080
+app:
+    clients:
+        # active clients, will get filtered by name()
+        # active (all): bitfinex,zb,hitbtc,gdax,bitstamp,binance,therocktrading,okex,huobi,exx,wex
+        # mocks (need MOCK_ENABLED as true): mock-asia,mock-europe
+        # bitmex is essentially useless since is primarily futures-based
+        active: bitfinex,zb,hitbtc,gdax,bitstamp,binance,therocktrading,okex,huobi,exx,wex
+    bitfinex:
+        ws2:
+            root: wss://api.bitfinex.com/ws/2
+        symbol:
+            bid:
+                tBTCUSD=BTC-USD,
+                tLTCBTC=LTC-BTC,
+                tXMRBTC=XMR-BTC,
+                tETHBTC=ETH-BTC,
+                tXRPBTC=XRP-BTC,
+                tDASHBTC=DASH-BTC
+            ticker:
+                tBTCUSD=BTC-USD,
+                tLTCBTC=LTC-BTC,
+                tXMRBTC=XMR-BTC,
+                tETHBTC=ETH-BTC,
+                tXRPBTC=XRP-BTC,
+                tDASHBTC=DASH-BTC
+    gdax:
+        ws2:
+            root: wss://ws-feed.gdax.com
+        symbol:
+            bid:
+                BTC-USD=BTC-USD,
+                LTC-BTC=LTC-BTC,
+                ETH-BTC=ETH-BTC
+            ticker:
+                BTC-USD=BTC-USD,
+                LTC-BTC=LTC-BTC,
+                ETH-BTC=ETH-BTC
+    zb:
+        ws2:
+            root: wss://api.zb.com:9999/websocket
+        symbol:
+            bid:
+                btcusdt=BTC-USDT,
+                ltcbtc=LTC-BTC,
+                ethbtc=ETH-BTC,
+                xrpbtc=XRP-BTC,
+                dashbtc=DASH-BTC,
+                neobtc=NEO-BTC,
+                eosbtc=EOS-BTC,
+                qtumbtc=QTUM-BTC
+            ticker:
+                btcusdt=BTC-USDT,
+                ltcbtc=LTC-BTC,
+                ethbtc=ETH-BTC,
+                xrpbtc=XRP-BTC,
+                dashbtc=DASH-BTC,
+                neobtc=NEO-BTC,
+                eosbtc=EOS-BTC,
+                qtumbtc=QTUM-BTC
+    hitbtc:
+        ws2:
+            root: wss://api.hitbtc.com/api/2/ws
+        symbol:
+            bid:
+                # there is a bug on hitbtc, despite they state USD it is USDT
+                LTCBTC=LTC-BTC,
+                XMRBTC=XMR-BTC,
+                ETHBTC=ETH-BTC,
+                XRPBTC=XRP-BTC,
+                DASHBTC=DASH-BTC,
+                NEOBTC=NEO-BTC,
+                OMGBTC=OMG-BTC,
+                LSKBTC=LSK-BTC,
+                EOSBTC=EOS-BTC,
+                QTUMBTC=QTUM-BTC,
+                ZECBTC=ZEC-BTC,
+                BTCUSD=BTC-USDT,
+                LTCUSD=LTC-USDT,
+                XMRUSD=XMR-USDT,
+                ETHUSD=ETH-USDT,
+                XRPUSD=XRP-USDT,
+                DASHUSD=DASH-USDT
+            ticker:
+                # there is a bug on hitbtc, despite they state USD it is USDT
+                LTCBTC=LTC-BTC,
+                XMRBTC=XMR-BTC,
+                ETHBTC=ETH-BTC,
+                XRPBTC=XRP-BTC,
+                DASHBTC=DASH-BTC,
+                NEOBTC=NEO-BTC,
+                OMGBTC=OMG-BTC,
+                LSKBTC=LSK-BTC,
+                EOSBTC=EOS-BTC,
+                QTUMBTC=QTUM-BTC,
+                ZECBTC=ZEC-BTC,
+                BTCUSD=BTC-USDT,
+                LTCUSD=LTC-USDT,
+                XMRUSD=XMR-USDT,
+                ETHUSD=ETH-USDT,
+                XRPUSD=XRP-USDT,
+                DASHUSD=DASH-USDT
+        disconnectIfInactiveS: 20
+    bitstamp:
+        # this seem to support USD not USDT
+        ws2:
+            root: wss://ws.pusherapp.com/app/de504dc5763aeef9ff52?protocol=7
+        symbol:
+            bid:
+                ltcbtc=LTC-BTC,
+                ethbtc=ETH-BTC,
+                xrpbtc=XRP-BTC,
+                btcusd=BTC-USD,
+                xrpusd=XRP-USD,
+                ltcusd=XRP-USD
+            ticker:
+                btcusd=BTC-USD,
+                ltcbtc=LTC-BTC,
+                ethbtc=ETH-BTC,
+                btcusd=BTC-USD,
+                xrpusd=XRP-USD,
+                ltcusd=XRP-USD
+    okex:
+        ws2:
+            root: wss://real.okex.com:10441/websocket
+        symbol:
+            bid:
+                ltc_btc=LTC-BTC,
+                xmr_btc=XMR-BTC,
+                eth_btc=ETH-BTC,
+                xrp_btc=XRP-BTC,
+                dash_btc=DASH-BTC,
+                neo_btc=NEO-BTC,
+                omg_btc=OMG-BTC,
+                eos_btc=EOS-BTC,
+                nano_btc=NANO-BTC,
+                gas_btc=GAS-BTC,
+                qtum_btc=QTUM-BTC,
+                zec_btc=ZEC-BTC,
+                btc_usdt=BTC-USDT,
+                ltc_usdt=LTC-USDT,
+                xmr_usdt=XMR-USDT,
+                eth_usdt=ETH-USDT,
+                xrp_usdt=XRP-USDT,
+                dash_usdt=DASH-USDT
+            ticker:
+                btc_usd=BTC-USD,
+                ltc_btc=LTC-BTC,
+                xmr_btc=XMR-BTC,
+                eth_btc=ETH-BTC,
+                xrp_btc=XRP-BTC,
+                dash_btc=DASH-BTC,
+                neo_btc=NEO-BTC,
+                omg_btc=OMG-BTC,
+                eos_btc=EOS-BTC,
+                nano_btc=NANO-BTC,
+                gas_btc=GAS-BTC,
+                qtum_btc=QTUM-BTC,
+                zec_btc=ZEC-BTC,
+                btc_usdt=BTC-USDT,
+                ltc_usdt=LTC-USDT,
+                xmr_usdt=XMR-USDT,
+                eth_usdt=ETH-USDT,
+                xrp_usdt=XRP-USDT,
+                dash_usdt=DASH-USDT
+    binance:
+        ws2:
+            root: wss://stream.binance.com:9443/stream
+        symbol:
+            bid:
+                LTCBTC=LTC-BTC,
+                XMRBTC=XMR-BTC,
+                ETHBTC=ETH-BTC,
+                XRPBTC=XRP-BTC,
+                NEOBTC=NEO-BTC,
+                OMGBTC=OMG-BTC,
+                LSKBTC=LSK-BTC,
+                EOSBTC=EOS-BTC,
+                NANOBTC=NANO-BTC,
+                GASBTC=GAS-BTC,
+                QTUMBTC=QTUM-BTC,
+                ZECBTC=ZEC-BTC,
+                DASHBTC=DASH-BTC,
+                BTCUSDT=BTC-USDT,
+                LTCUSDT=LTC-USDT,
+                ETHUSDT=ETH-USDT
+            ticker:
+                LTCBTC=LTC-BTC,
+                XMRBTC=XMR-BTC,
+                ETHBTC=ETH-BTC,
+                XRPBTC=XRP-BTC,
+                DASHBTC=DASH-BTC,
+                NEOBTC=NEO-BTC,
+                OMGBTC=OMG-BTC,
+                LSKBTC=LSK-BTC,
+                EOSBTC=EOS-BTC,
+                NANOBTC=NANO-BTC,
+                GASBTC=GAS-BTC,
+                QTUMBTC=QTUM-BTC,
+                ZECBTC=ZEC-BTC,
+                BTCUSDT=BTC-USDT,
+                LTCUSDT=LTC-USDT,
+                ETHUSDT=ETH-USDT
+    huobi:
+        ws2:
+            root: wss://api.huobi.pro/ws
+        symbol:
+            bid:
+                market.ltcbtc.depth.step0=LTC-BTC,
+                market.ethbtc.depth.step0=ETH-BTC,
+                market.xrpbtc.depth.step0=XRP-BTC,
+                market.dashbtc.depth.step0=DASH-BTC,
+                market.neobtc.depth.step0=NEO-BTC,
+                market.omgbtc.depth.step0=OMG-BTC,
+                market.lskbtc.depth.step0=LSK-BTC,
+                market.eosbtc.depth.step0=EOS-BTC,
+                market.gasbtc.depth.step0=GAS-BTC,
+                market.qtumbtc.depth.step0=QTUM-BTC,
+                market.zecbtc.depth.step0=ZEC-BTC,
+                market.btcusdt.depth.step0=BTC-USDT,
+                market.ltcusdt.depth.step0=LTC-USDT,
+                market.ethusdt.depth.step0=ETH-USDT,
+                market.xrpusdt.depth.step0=XRP-USDT,
+                market.dashusdt.depth.step0=DASH-USDT
+            ticker:
+                market.ltcbtc.trade.detail=LTC-BTC,
+                market.ethbtc.trade.detail=ETH-BTC,
+                market.xrpbtc.trade.detail=XRP-BTC,
+                market.dashbtc.trade.detail=DASH-BTC,
+                market.neobtc.trade.detail=NEO-BTC,
+                market.omgbtc.trade.detail=OMG-BTC,
+                market.lskbtc.trade.detail=LSK-BTC,
+                market.eosbtc.trade.detail=EOS-BTC,
+                market.gasbtc.trade.detail=GAS-BTC,
+                market.qtumbtc.trade.detail=QTUM-BTC,
+                market.zecbtc.trade.detail=ZEC-BTC,
+                market.btcusdt.trade.detail=BTC-USDT,
+                market.ltcusdt.trade.detail=LTC-USDT,
+                market.ethusdt.trade.detail=ETH-USDT,
+                market.xrpusdt.trade.detail=XRP-USDT,
+                market.dashusdt.trade.detail=DASH-USDT
+    therocktrading:
+        ws2:
+            root: wss://ws.pusherapp.com/app/bb1fafdf79a00453b5af?protocol=7
+        symbol:
+            bid:
+                BTCEUR=BTC-EUR,
+                LTCBTC=LTC-BTC,
+                ETHBTC=ETH-BTC
+            ticker:
+                BTCEUR=BTC-EUR,
+                LTCBTC=LTC-BTC,
+                ETHBTC=ETH-BTC
+    wex:
+        # this seem to support USD not USDT
+        ws2:
+            root: wss://ws-eu.pusher.com/app/ee987526a24ba107824c?protocol=7
+        symbol:
+            bid:
+                ltc_btc.depth=LTC-BTC,
+                eth_btc.depth=ETH-BTC,
+                dsh_btc.depth=DASH-BTC,
+                zec_btc.depth=ZEC-BTC,
+                btc_usd.depth=BTC-USD,
+                ltc_usd.depth=BTC-USD,
+                dsh_usd.depth=DASH-USD
+            ticker:
+                ltc_btc.trades=LTC-BTC,
+                eth_btc.trades=ETH-BTC,
+                dsh_btc.trades=DASH-BTC,
+                zec_btc.trades=ZEC-BTC,
+                btc_usd.trades=BTC-USD,
+                ltc_usd.trades=BTC-USD,
+                dsh_usd.trades=DASH-USD
+    exx:
+        ws2:
+            root: wss://ws.exx.com/websocket
+        symbol:
+            bid:
+                LTC_BTC=LTC-BTC,
+                ETH_BTC=ETH-BTC,
+                BTC_USDT=BTC-USDT
+            ticker:
+                LTC_BTC=LTC-BTC,
+                ETH_BTC=ETH-BTC,
+                BTC_USDT=BTC-USDT
+        disconnectIfInactiveS: 20
+    mock:
+        ws2:
+            root: ws://localhost:9090/api/stats
+        symbol:
+            bid:
+                BTC_USDT=BTC-USDT
+            ticker:
+                BTC_USDT=BTC-USDT
+    write:
+        histogram:
+            resolution: 10
+            # how far to deviate from buy/sell transition point (point when amount changes sign) in %
+            # should correspond to maximum expected profit.
+            # As data shows best best bid can jump no more than 0.1% /s on stable currencies
+            deviateFromSignChangePct: 1
+    schedule:
+        pool: 5
+        puppeteerS: 10
+        pingMs: 5000
+        stats:
+            histogramMS: 100
+            tickerMS: 100
+            # how long to wait until cache is populated
+            initialDelayS: 10

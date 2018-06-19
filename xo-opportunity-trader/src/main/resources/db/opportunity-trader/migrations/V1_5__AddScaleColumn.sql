@@ -1,0 +1,1 @@
+ALTER TABLE client_config ADD COLUMN scale INT DEFAULT 4 NOT NULL;

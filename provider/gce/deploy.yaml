@@ -1,0 +1,108 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bid-cacher
+  labels:
+    app: bid-cacher
+spec:
+  template:
+    metadata:
+      labels:
+        app: bid-cacher
+    spec:
+      containers:
+        - name: bid-provider-worker
+          image: gcr.io/bidcache/bidcache:67
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1024Mi"
+              cpu: "2500m"
+          ports:
+            - containerPort: 8080
+            - containerPort: 9092
+          env:
+            - name: DB_URL
+              value: jdbc:h2:mem:BidCache;MODE=MySQL;DB_CLOSE_DELAY=-1;
+            - name: DB_USER
+              value: "bid"
+            - name: DB_PASSWORD
+              value: "bid"
+            - name: ENABLE_NEWRELIC
+              value: "true"
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: newrelic-credentials
+                  key: license
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bid-cacher-svc
+  labels:
+    run: bid-cacher-svc
+spec:
+  ports:
+  - port: 9092
+    protocol: TCP
+  selector:
+    app: bid-cacher
+---
+# ESB:
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: esb-artemismq
+  labels:
+    app: esb-artemismq
+spec:
+  template:
+    metadata:
+      labels:
+        app: artemismq
+    spec:
+      containers:
+        - name: artemismq
+          # from jms/Dockerfile
+          image: gcr.io/bidcache/esb-artemismq:2
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+          ports:
+            - containerPort: 61616
+          env:
+            - name: ARTEMIS_MIN_MEMORY
+              value: "512M"
+            - name: ARTEMIS_MAX_MEMORY
+              value: "1024M"
+            - name: ARTEMIS_USERNAME
+              value: "artemis"
+            - name: ARTEMIS_PASSWORD
+              value: "artemis"
+            - name: ENABLE_NEWRELIC
+              value: "false"
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: newrelic-credentials
+                  key: license
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: esb-svc
+  labels:
+    run: esb-svc
+spec:
+  ports:
+  - port: 61616
+    protocol: TCP
+  selector:
+    app: artemismq

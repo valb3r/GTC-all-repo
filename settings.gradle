@@ -1,0 +1,11 @@
+rootProject.name = 'GTC-all'
+
+include 'shared'
+include 'provider'
+include 'gateway'
+include 'xo-opportunity-trader'
+
+project(":shared").projectDir = file("shared")
+project(":provider").projectDir = file("provider")
+project(":gateway").projectDir = file("gateway")
+project(":xo-opportunity-trader").projectDir = file("xo-opportunity-trader")

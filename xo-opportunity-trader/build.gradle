@@ -1,0 +1,65 @@
+group 'com.gtc.opportunity.trader'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${versions.springBoot}"
+        classpath "io.spring.gradle:dependency-management-plugin:${versions.springDependencyManagement}"
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url 'http://fugru.com/archiva/repository/snapshots' }
+    maven { url "https://jitpack.io" }
+}
+
+// need a fix for https://hibernate.atlassian.net/browse/HHH-11988
+ext['hibernate.version'] = versions.hibernate
+
+dependencies {
+    compile project(':shared')
+
+    compile "org.projectlombok:lombok"
+
+    compile "org.springframework.boot:spring-boot-configuration-processor"
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.springframework.boot:spring-boot-starter-data-jpa"
+    compile "org.springframework.boot:spring-boot-starter-aop"
+    compile "org.springframework.statemachine:spring-statemachine-boot:${versions.statemachine}"
+    compile "org.springframework.statemachine:spring-statemachine-data-jpa:${versions.statemachine}"
+    compile "org.hibernate:hibernate-envers"
+    compile "org.hibernate:hibernate-java8"
+    compile "mysql:mysql-connector-java"
+    compile "org.flywaydb:flyway-core:${versions.flywaydb}"
+    compile "com.google.guava:guava:${versions.guava}"
+    compile "com.newrelic.agent.java:newrelic-api:${versions.newRelicAPI}"
+    compile "com.googlecode.cqengine:cqengine:${versions.cqengine}"
+    compile "org.optaplanner:optaplanner-core:${versions.optaPlanner}"
+
+
+    testCompile "junit:junit:${versions.junit}"
+    testCompile "org.mockito:mockito-all:${versions.mockito}"
+    testCompile "org.assertj:assertj-core:${versions.assertJ}"
+}
+
+jar {
+    baseName = "opportunity-trader"
+    version = project.version
+    archiveName = "opportunity-trader.jar"
+}
+
+bootRun {
+    systemProperties System.properties
+}

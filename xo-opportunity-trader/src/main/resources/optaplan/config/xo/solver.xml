@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+    <solutionClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoTradeBalance</solutionClass>
+    <entityClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoTrade</entityClass>
+
+    <scoreDirectorFactory>
+        <easyScoreCalculatorClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoBalanceScore</easyScoreCalculatorClass>
+    </scoreDirectorFactory>
+
+    <termination/>
+
+    <constructionHeuristic>
+        <constructionHeuristicType>ALLOCATE_FROM_POOL</constructionHeuristicType>
+    </constructionHeuristic>
+
+    <localSearch>
+        <cartesianProductMoveSelector>
+            <moveIteratorFactory>
+                <moveIteratorFactoryClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoMoveIteratorFactory</moveIteratorFactoryClass>
+            </moveIteratorFactory>
+            <cacheType>JUST_IN_TIME</cacheType>
+            <selectionOrder>RANDOM</selectionOrder>
+        </cartesianProductMoveSelector>
+
+        <acceptor>
+            <lateAcceptanceSize>2000</lateAcceptanceSize>
+        </acceptor>
+        <forager>
+            <acceptedCountLimit>50</acceptedCountLimit>
+        </forager>
+    </localSearch>
+
+</solver>
