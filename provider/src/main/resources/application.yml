@@ -84,15 +84,14 @@ app:
                 NEOBTC=NEO-BTC,
                 OMGBTC=OMG-BTC,
                 LSKBTC=LSK-BTC,
-                EOSBTC=EOS-BTC,
                 QTUMBTC=QTUM-BTC,
                 ZECBTC=ZEC-BTC,
-                BTCUSD=BTC-USDT,
-                LTCUSD=LTC-USDT,
-                XMRUSD=XMR-USDT,
-                ETHUSD=ETH-USDT,
-                XRPUSD=XRP-USDT,
-                DASHUSD=DASH-USDT
+                EOSBTC=EOS-BTC,
+                GASBTC=GAS-BTC,
+                XMRBTC=XMR-BTC,
+                ADABTC=ADA-BTC,
+                TRXBTC=TRX-BTC,
+                NANOBTC=NANO-BTC
             ticker:
                 # there is a bug on hitbtc, despite they state USD it is USDT
                 LTCBTC=LTC-BTC,
@@ -103,15 +102,14 @@ app:
                 NEOBTC=NEO-BTC,
                 OMGBTC=OMG-BTC,
                 LSKBTC=LSK-BTC,
-                EOSBTC=EOS-BTC,
                 QTUMBTC=QTUM-BTC,
                 ZECBTC=ZEC-BTC,
-                BTCUSD=BTC-USDT,
-                LTCUSD=LTC-USDT,
-                XMRUSD=XMR-USDT,
-                ETHUSD=ETH-USDT,
-                XRPUSD=XRP-USDT,
-                DASHUSD=DASH-USDT
+                EOSBTC=EOS-BTC,
+                GASBTC=GAS-BTC,
+                XMRBTC=XMR-BTC,
+                ADABTC=ADA-BTC,
+                TRXBTC=TRX-BTC,
+                NANOBTC=NANO-BTC
         disconnectIfInactiveS: 20
     bitstamp:
         # this seem to support USD not USDT
@@ -181,38 +179,37 @@ app:
         symbol:
             bid:
                 LTCBTC=LTC-BTC,
-                XMRBTC=XMR-BTC,
                 ETHBTC=ETH-BTC,
                 XRPBTC=XRP-BTC,
                 NEOBTC=NEO-BTC,
                 OMGBTC=OMG-BTC,
                 LSKBTC=LSK-BTC,
-                EOSBTC=EOS-BTC,
                 NANOBTC=NANO-BTC,
-                GASBTC=GAS-BTC,
                 QTUMBTC=QTUM-BTC,
                 ZECBTC=ZEC-BTC,
                 DASHBTC=DASH-BTC,
-                BTCUSDT=BTC-USDT,
-                LTCUSDT=LTC-USDT,
-                ETHUSDT=ETH-USDT
+                EOSBTC=EOS-BTC,
+                GASBTC=GAS-BTC,
+                XMRBTC=XMR-BTC,
+                ADABTC=ADA-BTC,
+                TRXBTC=TRX-BTC,
+                NANOBTC=NANO-BTC
             ticker:
                 LTCBTC=LTC-BTC,
-                XMRBTC=XMR-BTC,
                 ETHBTC=ETH-BTC,
                 XRPBTC=XRP-BTC,
                 DASHBTC=DASH-BTC,
                 NEOBTC=NEO-BTC,
                 OMGBTC=OMG-BTC,
                 LSKBTC=LSK-BTC,
-                EOSBTC=EOS-BTC,
-                NANOBTC=NANO-BTC,
-                GASBTC=GAS-BTC,
                 QTUMBTC=QTUM-BTC,
                 ZECBTC=ZEC-BTC,
-                BTCUSDT=BTC-USDT,
-                LTCUSDT=LTC-USDT,
-                ETHUSDT=ETH-USDT
+                EOSBTC=EOS-BTC,
+                GASBTC=GAS-BTC,
+                XMRBTC=XMR-BTC,
+                ADABTC=ADA-BTC,
+                TRXBTC=TRX-BTC,
+                NANOBTC=NANO-BTC
     huobi:
         ws2:
             root: wss://api.huobi.pro/ws
@@ -225,15 +222,13 @@ app:
                 market.neobtc.depth.step0=NEO-BTC,
                 market.omgbtc.depth.step0=OMG-BTC,
                 market.lskbtc.depth.step0=LSK-BTC,
-                market.eosbtc.depth.step0=EOS-BTC,
-                market.gasbtc.depth.step0=GAS-BTC,
                 market.qtumbtc.depth.step0=QTUM-BTC,
                 market.zecbtc.depth.step0=ZEC-BTC,
-                market.btcusdt.depth.step0=BTC-USDT,
-                market.ltcusdt.depth.step0=LTC-USDT,
-                market.ethusdt.depth.step0=ETH-USDT,
-                market.xrpusdt.depth.step0=XRP-USDT,
-                market.dashusdt.depth.step0=DASH-USDT
+                market.eosbtc.depth.step0=EOS-BTC,
+                market.gasbtc.depth.step0=GAS-BTC,
+                market.xmrbtc.depth.step0=XMR-BTC,
+                market.adabtc.depth.step0=ADA-BTC,
+                market.trxbtc.depth.step0=TRX-BTC
             ticker:
                 market.ltcbtc.trade.detail=LTC-BTC,
                 market.ethbtc.trade.detail=ETH-BTC,
@@ -242,15 +237,13 @@ app:
                 market.neobtc.trade.detail=NEO-BTC,
                 market.omgbtc.trade.detail=OMG-BTC,
                 market.lskbtc.trade.detail=LSK-BTC,
-                market.eosbtc.trade.detail=EOS-BTC,
-                market.gasbtc.trade.detail=GAS-BTC,
                 market.qtumbtc.trade.detail=QTUM-BTC,
                 market.zecbtc.trade.detail=ZEC-BTC,
-                market.btcusdt.trade.detail=BTC-USDT,
-                market.ltcusdt.trade.detail=LTC-USDT,
-                market.ethusdt.trade.detail=ETH-USDT,
-                market.xrpusdt.trade.detail=XRP-USDT,
-                market.dashusdt.trade.detail=DASH-USDT
+                market.eosbtc.trade.detail=EOS-BTC,
+                market.gasbtc.trade.detail=GAS-BTC,
+                market.xmrbtc.trade.detail=XMR-BTC,
+                market.adabtc.trade.detail=ADA-BTC,
+                market.trxbtc.trade.detail=TRX-BTC
     therocktrading:
         ws2:
             root: wss://ws.pusherapp.com/app/bb1fafdf79a00453b5af?protocol=7

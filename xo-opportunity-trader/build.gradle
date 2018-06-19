@@ -23,6 +23,7 @@ repositories {
     mavenCentral()
     maven { url 'http://fugru.com/archiva/repository/snapshots' }
     maven { url "https://jitpack.io" }
+    maven { url "http://repo.spring.io/release" }
 }
 
 // need a fix for https://hibernate.atlassian.net/browse/HHH-11988
@@ -37,7 +38,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-web"
     compile "org.springframework.boot:spring-boot-starter-data-jpa"
     compile "org.springframework.boot:spring-boot-starter-aop"
-    compile "org.springframework.statemachine:spring-statemachine-boot:${versions.statemachine}"
+    compile "org.springframework.statemachine:spring-statemachine-autoconfigure:${versions.statemachine}"
     compile "org.springframework.statemachine:spring-statemachine-data-jpa:${versions.statemachine}"
     compile "org.hibernate:hibernate-envers"
     compile "org.hibernate:hibernate-java8"
