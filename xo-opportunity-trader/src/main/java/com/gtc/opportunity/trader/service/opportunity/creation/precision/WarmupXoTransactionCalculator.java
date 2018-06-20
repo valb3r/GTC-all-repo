@@ -52,6 +52,7 @@ public class WarmupXoTransactionCalculator {
 
     private XoTradeCondition buildCondition() {
         return new XoTradeCondition(
+                "TEST", 1000.0,
                 0.01, 0.1, 0.02228772013595108, 0.1, 0.044682234, 0.0448677565,
                 new BigDecimal("1.01"), new BigDecimal("1.01"),
                 new BigDecimal("0.999"), new BigDecimal("0.998"),

@@ -17,6 +17,7 @@ public enum Reason {
     MAX_LT_MIN("Calculated capacity max < min"),
     VALIDATION_FAIL("Failed DTO validation"),
     OPT_CONSTR_FAIL("Optimization failed hard constraint"),
+    TOO_FREQUENT_SOLVE("Too frequent solver invocation"),
     SOL_VALID_FAIL("Optimization solution failed validation"),
     LOW_BAL("Low wallet balance");
 

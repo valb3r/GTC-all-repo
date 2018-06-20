@@ -3,6 +3,7 @@ package com.gtc.opportunity.trader.domain;
 import com.gtc.meta.TradingCurrency;
 import lombok.*;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -59,6 +60,9 @@ public class ClientConfig extends ByClientAndCurrency {
     private boolean isReplenishable;
 
     private int maxSolveReplenishTimeMs;
+
+    @Column(name = "max_solve_rate_per_s")
+    private int maxSolveRatePerS;
 
     @Builder(toBuilder = true)
     public ClientConfig(int id, Client client, TradingCurrency currency, TradingCurrency currencyTo,

@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.opportunity.creation.precision;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.RateLimiter;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.service.dto.PreciseXoAmountDto;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
@@ -24,6 +25,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Valentyn Berezin on 07.04.18.
@@ -34,6 +37,8 @@ import java.util.Arrays;
 public class XoTransactionCalculator {
 
     private static final String SOLVER_CONFIG_LOCATION = "optaplan/config/xo/solver.xml";
+
+    private final Map<String, RateLimiter> limiters = new ConcurrentHashMap<>();
 
     private final ToLongMathMapper mapper;
     private final HistogramIntegrator integrator;
@@ -47,6 +52,11 @@ public class XoTransactionCalculator {
      * @return distributed transaction that will satisfy both.
      */
     public PreciseXoAmountDto calculate(XoTradeCondition condition) {
+        if (!limiters.computeIfAbsent(condition.getKey(), id -> RateLimiter.create(condition.getPermits()))
+                .tryAcquire()) {
+            throw new RejectionException(Reason.TOO_FREQUENT_SOLVE);
+        }
+
         XoTradeBalance bal = calculate(SOLVER_CONFIG_LOCATION, condition);
 
         if (!bal.getScore().isFeasible()) {

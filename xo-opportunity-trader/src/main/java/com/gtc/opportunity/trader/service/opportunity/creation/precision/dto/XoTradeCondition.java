@@ -17,6 +17,12 @@ import java.math.BigDecimal;
 public class XoTradeCondition {
 
     @NonNull
+    private final String key;
+
+    @NonNull
+    private final Double permits;
+
+    @NonNull
     private final Double minToSellAmount;
 
     @NonNull

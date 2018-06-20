@@ -105,7 +105,7 @@ public class RejectedTradeStatService {
         stat.setLastThreshold(ex.getThreshold());
         stat.setTotalThreshold(add(stat.getTotalThreshold(), ex.getThreshold()));
         stat.setRecordCount(stat.getRecordCount() + 1);
-        stat.setLastOpportunityId(XO_OPPORTUNITY_PREFIX + opp.getId());
+        stat.setLastOpportunityId(XO_OPPORTUNITY_PREFIX + opp.getUuid());
         stat.setLastOpportCreatedOn(null == stat.getLastOpportCreatedOn() ? opp.getOpenedOn()
                 : stat.getLastOpportCreatedOn());
         double sep = ChronoUnit.MILLIS.between(stat.getLastOpportCreatedOn(), opp.getOpenedOn()) / 1000.0;
