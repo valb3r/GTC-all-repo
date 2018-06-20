@@ -64,6 +64,7 @@ public class SeenOpportunitiesRepository {
         newOpp.getMarketFromBestBuyAmount().mergeAsPrimary(oldOpp.getMarketFromBestBuyAmount());
         newOpp.getMarketToBestSellPrice().mergeAsPrimary(oldOpp.getMarketToBestSellPrice());
         newOpp.getMarketToBestSellAmount().mergeAsPrimary(oldOpp.getMarketToBestSellAmount());
+        newOpp.setEventCount(newOpp.getEventCount() + oldOpp.getEventCount());
 
         if (doClose) {
             newOpp.setClosedOn(LocalDateTime.now());

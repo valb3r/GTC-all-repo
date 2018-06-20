@@ -105,6 +105,7 @@ public class BookRepository {
                 .marketToBestSellPrice(new Statistic(to.getBestSell()))
                 .openedOn(LocalDateTime.now())
                 .updatedOn(LocalDateTime.now())
+                .eventCount(1)
                 .build();
 
         return new FullCrossMarketOpportunity(
