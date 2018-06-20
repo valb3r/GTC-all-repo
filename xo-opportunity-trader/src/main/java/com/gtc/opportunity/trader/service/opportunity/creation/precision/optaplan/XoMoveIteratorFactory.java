@@ -58,6 +58,8 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
         private final XoTradeBalance solution;
         private final Iterator<Double> sellFromAmountRandom;
         private final Iterator<Double> sellFromPriceRandom;
+        private final Iterator<Double> buyToAmountRandom;
+        private final Iterator<Double> buyToPriceRandom;
         private final Iterator<Integer> dice;
         private final Iterator<Integer> distort;
         private final double profitCoef;
@@ -78,6 +80,18 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
                             .mapToDouble(FullCrossMarketOpportunity.Histogram::getMinPrice)
                             .min().orElse(0.0),
                     solution.getConstraint().getMaxFromSellPrice().getApprox()
+            ).iterator();
+
+            buyToAmountRandom = workingRandom.doubles(
+                    solution.getConstraint().getMinToBuyAmount().getApprox(),
+                    solution.getConstraint().getMaxToBuyAmount().getApprox()
+            ).iterator();
+
+            buyToPriceRandom = workingRandom.doubles(
+                    solution.getConstraint().getMinToBuyPrice().getApprox(),
+                    Arrays.stream(solution.getConstraint().getMarketSellTo())
+                            .mapToDouble(FullCrossMarketOpportunity.Histogram::getMaxPrice)
+                            .max().orElse(0.0)
             ).iterator();
 
             dice = workingRandom.ints(-STEP_RANGE, STEP_RANGE).iterator();
@@ -103,7 +117,10 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
         }
 
         private List<XoMove> buildPack() {
-            XoMove ini = buildMove();
+            XoMove ini = AsFixed.scaleGreater(
+                    solution.getConstraint().getMinFromSellAmount(),
+                    solution.getConstraint().getMinToBuyAmount()
+            ) ?  buildMoveSellDriven() : buildMoveBuyDriven();
 
             Set<XoMove> pack = new HashSet<>();
             pack.add(ini);
@@ -125,7 +142,7 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
             return new ArrayList<>(pack);
         }
 
-        private XoMove buildMove() {
+        private XoMove buildMoveSellDriven() {
             AsFixed sellFromAmount = randomRound(
                     sellFromAmountRandom.next(),
                     solution.getConstraint().getMinFromSellAmount()
@@ -142,6 +159,34 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
 
             AsFixed buyToPrice = solution.getConstraint().getMinToBuyPrice().floor(
                     sellFromAmount.getApprox() * sellFromPrice.getApprox() * lossFrom / buyToAmount.getApprox()
+            );
+
+            return new XoMove(
+                    solution.getTrade(),
+                    sellFromAmount.getVal(),
+                    buyToAmount.getVal(),
+                    sellFromPrice.getVal(),
+                    buyToPrice.getVal()
+            );
+        }
+
+        private XoMove buildMoveBuyDriven() {
+            AsFixed buyToAmount = randomRound(
+                    buyToAmountRandom.next(),
+                    solution.getConstraint().getMinToBuyAmount()
+            );
+
+            AsFixed sellFromAmount = solution.getConstraint().getMinFromSellAmount().floor(
+                    buyToAmount.getApprox() / profitCoef * lossTo
+            );
+
+            AsFixed buyToPrice = randomRound(
+                    buyToPriceRandom.next(),
+                    solution.getConstraint().getMinToBuyPrice()
+            );
+
+            AsFixed sellFromPrice = solution.getConstraint().getMaxFromSellPrice().ceil(
+                    buyToPrice.getApprox() / (sellFromAmount.getApprox() * lossFrom / buyToAmount.getApprox())
             );
 
             return new XoMove(

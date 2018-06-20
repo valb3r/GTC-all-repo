@@ -162,7 +162,7 @@ public class XoTransactionCalculator {
     }
 
     private IniAmounts initialSellBuyAmount(double amount, double gain, XoClientTradeConditionAsLong condition) {
-        if (condition.getMinToBuyAmount().getScale() > condition.getMinFromSellAmount().getScale()) {
+        if (AsFixed.scaleGreater(condition.getMinToBuyAmount(), condition.getMinFromSellAmount())) {
             double sellAmount = BigDecimal.valueOf(amount / gain)
                     .subtract(condition.getMinFromSellAmount().scaleStep())
                     .setScale(condition.getMinFromSellAmount().getScale(), RoundingMode.FLOOR).doubleValue();

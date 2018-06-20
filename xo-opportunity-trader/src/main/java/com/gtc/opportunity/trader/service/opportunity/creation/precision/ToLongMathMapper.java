@@ -56,18 +56,18 @@ public class ToLongMathMapper {
     }
 
     static BigDecimal fromAmount(long amount, XoTradeCondition condition) {
-        return BigDecimal.valueOf(amount).movePointLeft(condition.getStepFromAmountPow10().scale());
+        return BigDecimal.valueOf(amount).multiply(condition.getStepFromAmountPow10());
     }
 
     static BigDecimal toAmount(long amount, XoTradeCondition condition) {
-        return BigDecimal.valueOf(amount).movePointLeft(condition.getStepToAmountPow10().scale());
+        return BigDecimal.valueOf(amount).multiply(condition.getStepToAmountPow10());
     }
 
     static BigDecimal fromPrice(long price, XoTradeCondition condition) {
-        return BigDecimal.valueOf(price).movePointLeft(condition.getStepFromPricePow10().scale());
+        return BigDecimal.valueOf(price).multiply(condition.getStepFromPricePow10());
     }
 
     static BigDecimal toPrice(long price, XoTradeCondition condition) {
-        return BigDecimal.valueOf(price).movePointLeft(condition.getStepToPricePow10().scale());
+        return BigDecimal.valueOf(price).multiply(condition.getStepToPricePow10());
     }
 }
