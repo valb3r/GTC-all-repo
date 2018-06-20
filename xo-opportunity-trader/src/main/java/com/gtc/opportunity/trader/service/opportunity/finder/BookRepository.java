@@ -110,8 +110,8 @@ public class BookRepository {
         return new FullCrossMarketOpportunity(
                 FullCrossMarketOpportunity.calculateId(xo),
                 xo,
-                buildHistogram(from.getHistogramBuy()),
-                buildHistogram(to.getHistogramSell())
+                buildHistogram(to.getHistogramSell()),
+                buildHistogram(from.getHistogramBuy())
         );
     }
 

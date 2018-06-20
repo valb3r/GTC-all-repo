@@ -30,6 +30,7 @@ public class XoTransactionCalculatorTest2 extends BaseMockitoTest {
     @Before
     public void init() {
         condition = new XoTradeCondition(
+                "K1", 1000.0,
                 1.0e-4, 5.0, 0.30690191721627685, 5.0, 0.0032406195, 0.00325837,
                 new BigDecimal("1.1"), new BigDecimal("1.1"),
                 new BigDecimal("0.999"), new BigDecimal("0.998"),
