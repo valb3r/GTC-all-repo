@@ -30,21 +30,21 @@ app:
         secretKey: ${BINANCE_SECRET}
         pairs:
             LTC-BTC=LTCBTC,
-            XMR-BTC=XMRBTC,
             ETH-BTC=ETHBTC,
             XRP-BTC=XRPBTC,
             NEO-BTC=NEOBTC,
             OMG-BTC=OMGBTC,
             LSK-BTC=LSKBTC,
-            EOS-BTC=EOSBTC,
             NANO-BTC=NANOBTC,
-            GAS-BTC=GASBTC,
             QTUM-BTC=QTUMBTC,
             ZEC-BTC=ZECBTC,
             DASH-BTC=DASHBTC,
-            BTC-USDT=BTCUSDT,
-            LTC-USDT=LTCUSDT,
-            ETH-USD=ETHUSDT
+            EOS-BTC=EOSBTC,
+            GAS-BTC=GASBTC,
+            XMR-BTC=XMRBTC,
+            ADA-BTC=ADABTC,
+            TRX-BTC=TRXBTC,
+            NANO-BTC=NANOBTC
         ratePerM: 50
         createRatePerM: 10
     bitfinex:
@@ -72,22 +72,19 @@ app:
         pairs:
             # USD is actually usdt
             LTC-BTC=LTCBTC,
-            XMR-BTC=XMRBTC,
             ETH-BTC=ETHBTC,
             XRP-BTC=XRPBTC,
             DASH-BTC=DASHBTC,
             NEO-BTC=NEOBTC,
             OMG-BTC=OMGBTC,
             LSK-BTC=LSKBTC,
-            EOS-BTC=EOSBTC,
             QTUM-BTC=QTUMBTC,
             ZEC-BTC=ZECBTC,
-            BTC-USDT=BTCUSD,
-            LTC-USDT=LTCUSD,
-            XMR-USDT=XMRUSD,
-            ETH-USDT=ETHUSD,
-            XRP-USDT=XRPUSD,
-            DASH-USDT=DASHUSD
+            EOS-BTC=EOSBTC,
+            XMR-BTC=XMRBTC,
+            ADA-BTC=ADABTC,
+            TRX-BTC=TRXBTC,
+            NANO-BTC=NANOBTC
         customResponseCurrencyMapping:
             USD=USDT
         ratePerM: 10
@@ -118,15 +115,13 @@ app:
             NEO-BTC=neobtc,
             OMG-BTC=omgbtc,
             LSK-BTC=lskbtc,
-            EOS-BTC=eosbtc,
-            GAS-BTC=gasbtc,
             QTUM-BTC=qtumbtc,
             ZEC-BTC=zecbtc,
-            BTC-USDT=btcusdt,
-            LTC-USDT=ltcusdt,
-            ETH-USDT=ethusdt,
-            XRP-USDT=xrpusdt,
-            DASH-USD=dashusdt
+            EOS-BTC=eosbtc,
+            GAS-BTC=gasbtc,
+            XMR-BTC=xmrbtc,
+            ADA-BTC=adabtc,
+            TRX-BTC=trxbtc
         ratePerM: 50
         minRequestSeparationMs: 15
         createRatePerM: 10
