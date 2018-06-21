@@ -76,7 +76,7 @@ public class OpportunitySatisifactionLimiter {
 
         return XoTradeCondition.builder()
                 .key(from.getClient().getName() + to.getClient().getName() + from.getCurrency().getCode() +
-                        from.getCurrencyTo().getCode())
+                        to.getCurrencyTo().getCode())
                 .permits((double) Math.min(from.getMaxSolveRatePerS(), to.getMaxSolveRatePerS()))
                 .sellTo(opp.marketToSellHistogram())
                 .buyFrom(opp.marketFromBuyHistogram())
