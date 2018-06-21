@@ -46,7 +46,10 @@ public class XoStatService {
     private final Map<MainKey, Snapshot> snapshots = new ConcurrentHashMap<>();
 
     public void ackClosedOpportunity(CrossMarketOpportunity opportunity) {
-        snapshots.compute(keyExtractor.extractKeyOmitDate(opportunity), (key, value) -> {
+        snapshots.compute(keyExtractor.extractKeyOmitDate(
+                opportunity,
+                op -> op.getHistWin().getTotal() / op.getEventCount()),
+                (key, value) -> {
             Snapshot snapshot = null == value ? new Snapshot() : value;
             map(snapshot, opportunity);
             snapshot.setRecordCount(snapshot.getRecordCount() + 1);

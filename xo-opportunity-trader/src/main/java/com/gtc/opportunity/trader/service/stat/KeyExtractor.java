@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.function.Function;
 
 /**
  * Created by Valentyn Berezin on 01.04.18.
@@ -18,13 +19,19 @@ public final class KeyExtractor {
     private double profitHistogramResolutionPct;
 
     public MainKey extractKeyOmitDate(CrossMarketOpportunity opportunity) {
-        return new MainKey(opportunity.getClientFrom(), opportunity.getClientTo(),
-                opportunity.getCurrencyFrom(), opportunity.getCurrencyTo(),
-                computeProfitGroup(opportunity));
+        return extractKeyOmitDate(opportunity, op -> op.getHistWin().getCurr());
     }
 
-    private StatId.ProfitGroup computeProfitGroup(CrossMarketOpportunity op) {
-        double currWin = op.getHistWin().getCurr() * 100.0 - 100.0;
+    public MainKey extractKeyOmitDate(
+            CrossMarketOpportunity opportunity, Function<CrossMarketOpportunity, Double> winExtractor) {
+        return new MainKey(opportunity.getClientFrom(), opportunity.getClientTo(),
+                opportunity.getCurrencyFrom(), opportunity.getCurrencyTo(),
+                computeProfitGroup(opportunity, winExtractor));
+    }
+
+    private StatId.ProfitGroup computeProfitGroup(
+            CrossMarketOpportunity op, Function<CrossMarketOpportunity, Double> winExtractor) {
+        double currWin = winExtractor.apply(op) * 100.0 - 100.0;
         double divs = currWin / profitHistogramResolutionPct;
         long minPos = (long) Math.floor(divs);
         return new StatId.ProfitGroup(
