@@ -10,6 +10,7 @@ import com.googlecode.cqengine.resultset.ResultSet;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
+import com.gtc.opportunity.trader.config.OpportunityConfig;
 import com.gtc.opportunity.trader.cqe.domain.CrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.IndexedOrderBook;
@@ -21,8 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.googlecode.cqengine.query.QueryFactory.equal;
-import static com.googlecode.cqengine.query.QueryFactory.noQueryOptions;
+import static com.googlecode.cqengine.query.QueryFactory.*;
 
 /**
  * Created by Valentyn Berezin on 16.06.18.
@@ -30,10 +30,12 @@ import static com.googlecode.cqengine.query.QueryFactory.noQueryOptions;
 @Component
 public class BookRepository {
 
+    private final OpportunityConfig cfg;
     private final HashIndex<CurrencyPair, IndexedOrderBook> currencyPairIndex;
     private final IndexedCollection<IndexedOrderBook> books;
 
-    public BookRepository() {
+    public BookRepository(OpportunityConfig cfg) {
+        this.cfg = cfg;
         this.books = new TransactionalIndexedCollection<>(IndexedOrderBook.class);
         this.books.addIndex(UniqueIndex.onAttribute((IndexedOrderBook.A_ID)));
         currencyPairIndex = HashIndex.onAttribute(IndexedOrderBook.CURRENCY_PAIR);
@@ -86,7 +88,10 @@ public class BookRepository {
     }
 
     private List<IndexedOrderBook> findByPair(CurrencyPair pair) {
-        try (ResultSet<IndexedOrderBook> res = books.retrieve(equal(IndexedOrderBook.CURRENCY_PAIR, pair))) {
+        long notOlderThan = System.currentTimeMillis() - cfg.getIgnoreIfOlderMs();
+        try (ResultSet<IndexedOrderBook> res = books.retrieve(and(
+                equal(IndexedOrderBook.CURRENCY_PAIR, pair),
+                greaterThanOrEqualTo(IndexedOrderBook.REC_ON, notOlderThan)))) {
             return StreamSupport.stream(res.spliterator(), false).collect(Collectors.toList());
         }
     }

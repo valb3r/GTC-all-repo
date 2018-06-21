@@ -50,6 +50,7 @@ server:
     port: 8083
 app:
     opportunities:
+        ignoreIfOlderMs: 1000
         minGain: 1.003
     updater:
         maxToCheckStuckPerClient: 3

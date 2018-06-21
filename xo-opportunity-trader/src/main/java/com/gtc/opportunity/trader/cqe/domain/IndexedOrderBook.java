@@ -41,7 +41,13 @@ public class IndexedOrderBook {
             "bestSell", IndexedOrderBook::getBestSell
     );
 
+    public static final SimpleAttribute<IndexedOrderBook, Long> REC_ON = attribute(
+            "recordedOn", IndexedOrderBook::getRecordedOn
+    );
+
     private final long version = VERSION_GENERATOR.getAndIncrement();
+
+    private final long recordedOn = System.currentTimeMillis();
 
     private final String id;
 
