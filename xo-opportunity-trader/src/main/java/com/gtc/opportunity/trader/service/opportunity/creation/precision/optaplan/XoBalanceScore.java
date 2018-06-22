@@ -31,6 +31,8 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class XoBalanceScore implements EasyScoreCalculator<XoTradeBalance> {
 
+    private static final long MIN_VAL = -100000;
+
     private final Map<XoClientTradeConditionAsLong, Coeffs> coeffs = new ConcurrentHashMap<>();
 
     @Override
@@ -52,8 +54,19 @@ public class XoBalanceScore implements EasyScoreCalculator<XoTradeBalance> {
         long hasBuyAmount = histogramHasAmount(
                 bal.getTrade().getBuyPriceTo(), bal.getTrade().getBuyAmountTo() * coef.getAmountSafetyToCoef(),
                 coef.getBuyTo());
+        long hasMaxSellPrice = hasCorrectMaxSellPrice(
+                bal.getTrade().getSellPriceFrom(),
+                bal.getConstraint().getMaxFromSellPrice().getVal()
+        );
+        long hasMinBuyPrice = hasCorrectMinBuyPrice(
+                bal.getTrade().getBuyPriceTo(),
+                bal.getConstraint().getMinToBuyPrice().getVal()
+        );
 
-        return HardSoftLongScore.valueOf(noLoss + profitPositive + hasSellAmount + hasBuyAmount, profit);
+        return HardSoftLongScore.valueOf(
+                noLoss + profitPositive + hasSellAmount + hasBuyAmount + hasMaxSellPrice + hasMinBuyPrice,
+                profit
+        );
     }
 
     private long calculateNoLoss(XoTradeBalance bal, Coeffs coef) {
@@ -76,6 +89,24 @@ public class XoBalanceScore implements EasyScoreCalculator<XoTradeBalance> {
         long avail = histogram.amount(price);
         long missing = avail - amount;
         return missing > 0 ? 0 : missing;
+    }
+
+    private long hasCorrectMaxSellPrice(long sellPrice, long maxPrice) {
+        if (sellPrice <= maxPrice) {
+            return 0;
+        }
+
+        long delta = maxPrice - sellPrice;
+        return delta > MIN_VAL ? delta : MIN_VAL;
+    }
+
+    private long hasCorrectMinBuyPrice(long buyPrice, long minPrice) {
+        if (buyPrice >= minPrice) {
+            return 0;
+        }
+
+        long delta = buyPrice - minPrice;
+        return delta > MIN_VAL ? delta : MIN_VAL;
     }
 
     @Getter

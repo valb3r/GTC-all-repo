@@ -69,6 +69,6 @@ public class XoTransactionCalculatorTest4 extends BaseMockitoTest {
 
         PreciseXoAmountDto amountDto = calculator.calculate(condition);
 
-        assertThat(amountDto.getProfitPct()).isGreaterThanOrEqualTo(0.2);
+        assertThat(amountDto.getProfitPct()).isGreaterThanOrEqualTo(0.15);
     }
 }

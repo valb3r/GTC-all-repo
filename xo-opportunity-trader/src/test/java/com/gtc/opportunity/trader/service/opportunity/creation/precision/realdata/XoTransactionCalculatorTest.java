@@ -65,10 +65,12 @@ public class XoTransactionCalculatorTest extends BaseMockitoTest {
 
     @Test
     public void calculate() {
-        WarmupUtil.warmup(() -> calculator.calculate(condition), 10, RejectionException.class);
+        WarmupUtil.warmup(() -> calculator.calculate(condition), 20, RejectionException.class);
 
         PreciseXoAmountDto amountDto = calculator.calculate(condition);
 
         assertThat(amountDto.getProfitPct()).isGreaterThanOrEqualTo(0.08);
+        assertThat(amountDto.getSellPrice()).isLessThanOrEqualTo(new BigDecimal("0.044868"));
+        assertThat(amountDto.getBuyPrice()).isGreaterThanOrEqualTo(new BigDecimal("0.04462"));
     }
 }

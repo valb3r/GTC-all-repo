@@ -84,5 +84,5 @@ app:
     warmup:
         xoCalculator:
             scheduleS: 5
-            considerWarmOnNsuccess: 3
+            considerWarmOnNsuccess: 20
             solveTimeMs: 75

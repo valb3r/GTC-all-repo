@@ -31,7 +31,7 @@ public class XoTransactionCalculatorTest2 extends BaseMockitoTest {
     public void init() {
         condition = new XoTradeCondition(
                 "K1", 1000.0,
-                1.0e-4, 5.0, 0.30690191721627685, 5.0, 0.0032406195, 0.00325837,
+                1.0e-4, 5.0, 0.30690191721627685, 5.0, 0.0032409, 0.0032569,
                 new BigDecimal("1.1"), new BigDecimal("1.1"),
                 new BigDecimal("0.999"), new BigDecimal("0.998"),
                 new BigDecimal("0.000001"), new BigDecimal("0.000001"), new BigDecimal("0.01"),
@@ -69,6 +69,6 @@ public class XoTransactionCalculatorTest2 extends BaseMockitoTest {
 
         PreciseXoAmountDto amountDto = calculator.calculate(condition);
 
-        assertThat(amountDto.getProfitPct()).isGreaterThanOrEqualTo(0.2);
+        assertThat(amountDto.getProfitPct()).isGreaterThanOrEqualTo(0.15);
     }
 }
