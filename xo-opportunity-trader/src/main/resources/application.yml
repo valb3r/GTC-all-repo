@@ -67,6 +67,7 @@ app:
             liveS: 60
             size: 2048
     schedule:
+        opportunitySearchMs: 100
         wsReconnectS: 10
         pushStatsS: 10
         order:

@@ -87,6 +87,5 @@ public class WsMarketDataClient {
 
         OrderBook book = mapper.readValue(node.toString(), OrderBook.class);
         bookRepository.addOrderBook(book);
-        searcher.searchForOpportunities();
     }
 }

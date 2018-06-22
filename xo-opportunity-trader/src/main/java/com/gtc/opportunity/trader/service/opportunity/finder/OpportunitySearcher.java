@@ -4,6 +4,7 @@ import com.gtc.opportunity.trader.config.OpportunityConfig;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -22,6 +23,7 @@ public class OpportunitySearcher {
     private final BookRepository bookRepository;
     private final OpportunityAcceptor acceptor;
 
+    @Scheduled(fixedDelayString = "${app.schedule.opportunitySearchMs}")
     public void searchForOpportunities() {
         Set<FullCrossMarketOpportunity> opportunities = bookRepository.findOpportunities();
 
