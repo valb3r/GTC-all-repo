@@ -64,6 +64,11 @@ public class ClientConfig extends ByClientAndCurrency {
     @Column(name = "max_solve_rate_per_s")
     private int maxSolveRatePerS;
 
+    @Column(name = "stale_book_threshold_ms")
+    private int staleBookThresholdMS;
+
+    private boolean enabled = true;
+
     @Builder(toBuilder = true)
     public ClientConfig(int id, Client client, TradingCurrency currency, TradingCurrency currencyTo,
                         BigDecimal minProfitabilityPct, BigDecimal minOrder, BigDecimal maxOrder,

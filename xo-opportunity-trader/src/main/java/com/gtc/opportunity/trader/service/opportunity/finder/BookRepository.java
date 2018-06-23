@@ -1,5 +1,7 @@
 package com.gtc.opportunity.trader.service.opportunity.finder;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.googlecode.cqengine.IndexedCollection;
 import com.googlecode.cqengine.TransactionalIndexedCollection;
 import com.googlecode.cqengine.index.hash.HashIndex;
@@ -10,15 +12,18 @@ import com.googlecode.cqengine.resultset.ResultSet;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.opportunity.trader.config.OpportunityConfig;
 import com.gtc.opportunity.trader.cqe.domain.CrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.IndexedOrderBook;
 import com.gtc.opportunity.trader.cqe.domain.Statistic;
+import com.gtc.opportunity.trader.domain.ClientConfig;
+import com.gtc.opportunity.trader.repository.ClientConfigRepository;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -30,12 +35,18 @@ import static com.googlecode.cqengine.query.QueryFactory.*;
 @Component
 public class BookRepository {
 
-    private final OpportunityConfig cfg;
+    private static final int DEFAULT_EXPIRY_MS = 1000;
+
     private final HashIndex<CurrencyPair, IndexedOrderBook> currencyPairIndex;
     private final IndexedCollection<IndexedOrderBook> books;
+    private final ClientConfigRepository configRepository;
 
-    public BookRepository(OpportunityConfig cfg) {
-        this.cfg = cfg;
+    private final Cache<String, Integer> bookExpiryThreshold = CacheBuilder.newBuilder()
+            .expireAfterWrite(60, TimeUnit.SECONDS)
+            .build();
+
+    public BookRepository(ClientConfigRepository configRepository) {
+        this.configRepository = configRepository;
         this.books = new TransactionalIndexedCollection<>(IndexedOrderBook.class);
         this.books.addIndex(UniqueIndex.onAttribute((IndexedOrderBook.A_ID)));
         currencyPairIndex = HashIndex.onAttribute(IndexedOrderBook.CURRENCY_PAIR);
@@ -73,10 +84,18 @@ public class BookRepository {
 
     private Set<FullCrossMarketOpportunity> findOpportunitiesForPair(CurrencyPair pair) {
         Set<FullCrossMarketOpportunity> result = new HashSet<>();
-        List<IndexedOrderBook> forPair = findByPair(pair);
+        long timestamp = System.currentTimeMillis();
+        int expiryMax =
+                bookExpiryThreshold.asMap().values().stream().mapToInt(it -> it).max().orElse(DEFAULT_EXPIRY_MS);
+        long notOlderThan = timestamp - expiryMax;
+        List<IndexedOrderBook> forPair = findByPair(pair, notOlderThan);
         for (IndexedOrderBook candidateFrom : forPair) {
+            if (checkExpired(candidateFrom, timestamp, expiryMax)) {
+                continue;
+            }
+
             for (IndexedOrderBook candidateTo : forPair) {
-                if (candidateTo.equals(candidateFrom)) {
+                if (candidateTo.equals(candidateFrom) || checkExpired(candidateTo, timestamp, expiryMax)) {
                     continue;
                 }
 
@@ -87,8 +106,20 @@ public class BookRepository {
         return result;
     }
 
-    private List<IndexedOrderBook> findByPair(CurrencyPair pair) {
-        long notOlderThan = System.currentTimeMillis() - cfg.getIgnoreIfOlderMs();
+    @SneakyThrows
+    private boolean checkExpired(IndexedOrderBook orderBook, long timestamp, int defaultExpiry) {
+        long ttl = bookExpiryThreshold.get(
+                orderBook.getMeta().getClient(),
+                () -> configRepository.findActiveByKey(
+                        orderBook.getMeta().getClient(),
+                        orderBook.getMeta().getPair().getFrom(),
+                        orderBook.getMeta().getPair().getTo()
+                ).map(ClientConfig::getStaleBookThresholdMS).orElse(defaultExpiry)
+        );
+        return orderBook.getRecordedOn() >= timestamp - ttl;
+    }
+
+    private List<IndexedOrderBook> findByPair(CurrencyPair pair, long notOlderThan) {
         try (ResultSet<IndexedOrderBook> res = books.retrieve(and(
                 equal(IndexedOrderBook.CURRENCY_PAIR, pair),
                 greaterThanOrEqualTo(IndexedOrderBook.REC_ON, notOlderThan)))) {

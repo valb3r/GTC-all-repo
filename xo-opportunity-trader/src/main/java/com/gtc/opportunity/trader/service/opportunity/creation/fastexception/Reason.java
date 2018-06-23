@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Reason {
     NO_CONFIG("Missing config"),
+    DISABLED("Trade disabled"),
     LOW_PROFIT_PRE("Low profit (pre)"),
     RATE_TOO_HIGH("Opportunity creation rate limit"),
     LOW_PROFIT("Low profit"),

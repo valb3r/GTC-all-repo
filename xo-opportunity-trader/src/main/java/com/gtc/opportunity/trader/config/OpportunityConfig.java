@@ -15,6 +15,5 @@ import static com.gtc.opportunity.trader.config.Const.Opportunity.OPPORTUNITY_CO
 @ConfigurationProperties(CONF_ROOT_CHILD + OPPORTUNITY_CONF)
 public class OpportunityConfig {
 
-    private int ignoreIfOlderMs = 1000;
     private double minGain = 1.003;
 }

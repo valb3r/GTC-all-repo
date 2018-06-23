@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason.LOW_PROFIT_PRE;
 
@@ -52,9 +53,11 @@ public class OpportunityAnalyzer {
         Optional<ClientConfig> toOpt = getCfg(opportunity.getClientTo(), opportunity.getCurrencyFrom(),
                 opportunity.getCurrencyTo());
 
-        if (!fromOpt.map(it -> it.getClient().isEnabled()).orElse(false)
-                || !toOpt.map(it -> it.getClient().isEnabled()).orElse(false)) {
-            throw new RejectionException(Reason.NO_CONFIG);
+        Supplier<RejectionException> noCfg = () -> new RejectionException(Reason.NO_CONFIG);
+
+        if (!fromOpt.map(it -> it.getClient().isEnabled() && it.isEnabled()).orElseThrow(noCfg)
+                || !toOpt.map(it -> it.getClient().isEnabled() && it.isEnabled()).orElseThrow(noCfg)) {
+            throw new RejectionException(Reason.DISABLED);
         }
 
         ClientConfig from = fromOpt.get();
