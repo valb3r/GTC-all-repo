@@ -116,7 +116,7 @@ public class BookRepository {
                         orderBook.getMeta().getPair().getTo()
                 ).map(ClientConfig::getStaleBookThresholdMS).orElse(defaultExpiry)
         );
-        return orderBook.getRecordedOn() >= timestamp - ttl;
+        return orderBook.getRecordedOn() < timestamp - ttl;
     }
 
     private List<IndexedOrderBook> findByPair(CurrencyPair pair, long notOlderThan) {
