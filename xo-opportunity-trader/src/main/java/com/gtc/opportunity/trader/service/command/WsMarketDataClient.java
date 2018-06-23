@@ -9,7 +9,6 @@ import com.gtc.opportunity.trader.config.WsConfig;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.repository.ClientRepository;
 import com.gtc.opportunity.trader.service.opportunity.finder.BookRepository;
-import com.gtc.opportunity.trader.service.opportunity.finder.OpportunitySearcher;
 import com.gtc.ws.BaseWebsocketClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import static com.gtc.opportunity.trader.config.Const.Ws.WS_RECONNECT_S;
 @Service
 public class WsMarketDataClient {
 
-    private final OpportunitySearcher searcher;
     private final ObjectMapper mapper;
     private final BaseWebsocketClient wsClient;
     private final ClientRepository clientRepository;
@@ -37,11 +35,9 @@ public class WsMarketDataClient {
 
     public WsMarketDataClient(
             WsConfig wsConfig,
-            OpportunitySearcher searcher,
             ObjectMapper objectMapper,
             ClientRepository clientRepository,
             BookRepository bookRepository) {
-        this.searcher = searcher;
         this.mapper = objectMapper;
         this.clientRepository = clientRepository;
         this.bookRepository = bookRepository;

@@ -28,14 +28,18 @@ app:
                 tXMRBTC=XMR-BTC,
                 tETHBTC=ETH-BTC,
                 tXRPBTC=XRP-BTC,
-                tDASHBTC=DASH-BTC
+                tDASHBTC=DASH-BTC,
+                tEOSBTC=EOS-BTC,
+                tTRXHBTC=TRX-BTC
             ticker:
                 tBTCUSD=BTC-USD,
                 tLTCBTC=LTC-BTC,
                 tXMRBTC=XMR-BTC,
                 tETHBTC=ETH-BTC,
                 tXRPBTC=XRP-BTC,
-                tDASHBTC=DASH-BTC
+                tDASHBTC=DASH-BTC,
+                tEOSBTC=EOS-BTC,
+                tTRXHBTC=TRX-BTC
     gdax:
         ws2:
             root: wss://ws-feed.gdax.com
@@ -60,7 +64,8 @@ app:
                 dashbtc=DASH-BTC,
                 neobtc=NEO-BTC,
                 eosbtc=EOS-BTC,
-                qtumbtc=QTUM-BTC
+                qtumbtc=QTUM-BTC,
+                adabtc=ADA-BTC
             ticker:
                 btcusdt=BTC-USDT,
                 ltcbtc=LTC-BTC,
@@ -69,7 +74,8 @@ app:
                 dashbtc=DASH-BTC,
                 neobtc=NEO-BTC,
                 eosbtc=EOS-BTC,
-                qtumbtc=QTUM-BTC
+                qtumbtc=QTUM-BTC,
+                adabtc=ADA-BTC
     hitbtc:
         ws2:
             root: wss://api.hitbtc.com/api/2/ws
@@ -147,6 +153,7 @@ app:
                 gas_btc=GAS-BTC,
                 qtum_btc=QTUM-BTC,
                 zec_btc=ZEC-BTC,
+                trx_btc=TRX-BTC,
                 btc_usdt=BTC-USDT,
                 ltc_usdt=LTC-USDT,
                 xmr_usdt=XMR-USDT,
@@ -167,6 +174,7 @@ app:
                 gas_btc=GAS-BTC,
                 qtum_btc=QTUM-BTC,
                 zec_btc=ZEC-BTC,
+                trx_btc=TRX-BTC,
                 btc_usdt=BTC-USDT,
                 ltc_usdt=LTC-USDT,
                 xmr_usdt=XMR-USDT,
