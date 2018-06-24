@@ -2,6 +2,7 @@ package com.gtc.tradinggateway.config.converters;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
@@ -26,8 +27,8 @@ public class FormHttpMessageToPojoConverter extends AbstractHttpMessageConverter
 
     private static final FormHttpMessageConverter formHttpMessageConverter = new FormHttpMessageConverter();
 
-    private final ObjectMapper mapper;
-    private final Function<String, Map<String, String>> signer;
+    protected final ObjectMapper mapper;
+    private final Function<Parameters, Map<String, String>> signer;
 
     public FormHttpMessageToPojoConverter(ObjectMapper mapper) {
         super(formHttpMessageConverter.getSupportedMediaTypes().toArray(new MediaType[0]));
@@ -37,7 +38,7 @@ public class FormHttpMessageToPojoConverter extends AbstractHttpMessageConverter
 
     public FormHttpMessageToPojoConverter(
             ObjectMapper mapper,
-            Function<String, Map<String, String>> signer) {
+            Function<Parameters, Map<String, String>> signer) {
         super(formHttpMessageConverter.getSupportedMediaTypes().toArray(new MediaType[0]));
         this.mapper = mapper;
         this.signer = signer;
@@ -63,7 +64,7 @@ public class FormHttpMessageToPojoConverter extends AbstractHttpMessageConverter
     public static String pojoSerialize(
             ObjectMapper mapper,
             Object value,
-            Function<String, Map<String, String>> signer) {
+            Function<Parameters, Map<String, String>> signer) {
         WrappedHttpOutputMessage outputMessage = new WrappedHttpOutputMessage();
         pojoSerialize(mapper, value, outputMessage, signer);
         return outputMessage.content();
@@ -74,18 +75,25 @@ public class FormHttpMessageToPojoConverter extends AbstractHttpMessageConverter
             ObjectMapper mapper,
             Object value,
             HttpOutputMessage outputMessage,
-            Function<String, Map<String, String>> signer) {
+            Function<Parameters, Map<String, String>> signer) {
         Map<String, String> asMap = mapper.convertValue(value, new TypeReference<Map<String, String>>() {});
 
         if (null != signer) {
             WrappedHttpOutputMessage wrap = new WrappedHttpOutputMessage();
             pojoSerialize(mapper, value, wrap, null);
-            asMap.putAll(signer.apply(wrap.content()));
+            asMap.putAll(signer.apply(new Parameters(asMap, wrap.content())));
         }
 
         MultiValueMap<String, String> mvMap = new LinkedMultiValueMap<>();
         asMap.forEach(mvMap::add);
         formHttpMessageConverter.write(mvMap, MediaType.APPLICATION_FORM_URLENCODED, outputMessage);
+    }
+
+    @Data
+    public static class Parameters {
+
+        private final Map<String, String> asMap;
+        private final String asString;
     }
 
     private static class WrappedHttpOutputMessage implements HttpOutputMessage {
