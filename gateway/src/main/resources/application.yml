@@ -132,6 +132,8 @@ app:
         pairs:
             BTC-USD=BTCUSD,
             LTC-BTC=LTCBTC,
+            ETH-BTC=ETHBTC,
+            ZEC-BTC=ZECBTC,
             DASH-BTC=DSHBTC,
             DASH-LTC=DSHLTC
         customResponseCurrencyMapping:
