@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Reason {
+    GEN_ERR("Uncategorized exception"),
     NO_CONFIG("Missing config"),
     DISABLED("Trade disabled"),
     LOW_PROFIT_PRE("Low profit (pre)"),

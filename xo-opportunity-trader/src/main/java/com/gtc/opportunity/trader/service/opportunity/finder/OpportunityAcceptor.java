@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import com.gtc.opportunity.trader.cqe.domain.CrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.service.opportunity.creation.OpportunityAnalyzer;
+import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
 import com.gtc.opportunity.trader.service.stat.RejectedTradeStatService;
 import com.gtc.opportunity.trader.service.stat.XoStatService;
@@ -37,6 +38,7 @@ public class OpportunityAcceptor {
         } catch (RuntimeException ex) {
             // GCE looses exception traces
             log.error("Exception caught {}", Throwables.getRootCause(ex).toString(), ex);
+            rejectedStatService.ackRejection(new RejectionException(Reason.GEN_ERR), opportunity);
         } finally {
             Thread.currentThread().setName(oldName);
         }
