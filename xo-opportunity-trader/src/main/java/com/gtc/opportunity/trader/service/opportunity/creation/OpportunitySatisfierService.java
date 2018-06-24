@@ -31,7 +31,7 @@ public class OpportunitySatisfierService {
     // and both are insert-based, we increase isolation and acquire new trx.
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRES_NEW)
     public void satisfyOpportunity(ClientConfig from, ClientConfig to, FullCrossMarketOpportunity opportunity) {
-        if (!rateCheckingService.ratePass(from) || !rateCheckingService.ratePass(to)) {
+        if (!rateCheckingService.ratePass(from, to)) {
             throw new RejectionException(Reason.RATE_TOO_HIGH);
         }
 

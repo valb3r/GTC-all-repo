@@ -138,6 +138,29 @@ app:
             dsh=DASH
         ratePerM: 5
         createRatePerM: 5
+    okex:
+        restBase: "https://www.okex.com/api/v1"
+        wsBase: "wss://real.okex.com:10441/websocket"
+        publicKey: ${OKEX_PUBLIC}
+        secretKey: ${OKEX_SECRET}
+        pairs:
+            LTC-BTC=ltc_btc,
+            ETH-BTC=eth_btc,
+            XRP-BTC=xrp_btc,
+            DASH-BTC=dash_btc,
+            NEO-BTC=neo_btc,
+            OMG-BTC=omg_btc,
+            LSK-BTC=lsk_btc,
+            QTUM-BTC=qtum_btc,
+            ZEC-BTC=zec_btc,
+            EOS-BTC=eos_btc,
+            XMR-BTC=xmr_btc,
+            TRX-BTC=trx_btc,
+            NANO-BTC=nano_btc,
+            GAS-BTC=gas_btc
+        ratePerM: 30
+        createRatePerM: 60
+        minRequestSeparationMs: 30
     mock:
         restBase: "http://localhost:9090/api"
         publicKey: trade-gateway
@@ -149,9 +172,9 @@ app:
         ratePerM: 50
         createRatePerM: 10
     clients:
-        # all-clients: bitfinex,binance,wex,hitbtc
+        # all-clients: bitfinex,binance,wex,hitbtc,okex
         # mocks (need MOCK_ENABLED as true): mock-asia,mock-europe
-        active: bitfinex,binance,wex,hitbtc,huobi,therocktrading
+        active: bitfinex,binance,wex,hitbtc,huobi,therocktrading,okex
     schedule:
         puppeteerS: 10
         pingMs: 5000

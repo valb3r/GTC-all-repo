@@ -16,10 +16,11 @@ import java.time.LocalDateTime;
 public interface AcceptedXoTradeRepository extends CrudRepository<AcceptedXoTrade, Integer> {
 
     @Query("SELECT COUNT(xo) FROM AcceptedXoTrade xo WHERE " +
-            "(xo.clientFrom.name = :client OR xo.clientTo.name = :client) "
+            "xo.clientFrom.name = :clientFrom AND xo.clientTo.name = :clientTo "
             + "AND xo.currencyFrom = :currencyFrom "
             + "AND xo.currencyTo = :currencyTo AND xo.recordedOn >= :recordedOn")
-    int countByKeyOlderThan(@Param("client") String client,
+    int countByKeyOlderThan(@Param("clientFrom") String clientFrom,
+                            @Param("clientTo") String clientTo,
                              @Param("currencyFrom") TradingCurrency currencyFrom,
                              @Param("currencyTo") TradingCurrency currencyTo,
                              @Param("recordedOn") LocalDateTime recordedOn);

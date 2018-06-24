@@ -64,8 +64,8 @@ public class BinanceRestService implements ManageOrders, Withdraw, Account, Crea
 
     @SneakyThrows
     @IgnoreRateLimited
-    public Map<String, String> getSignedBody(String toSign) {
-        return ImmutableMap.of("signature", signer.generate(toSign));
+    public Map<String, String> getSignedBody(FormHttpMessageToPojoConverter.Parameters toSign) {
+        return ImmutableMap.of("signature", signer.generate(toSign.getAsString()));
     }
 
     @Override
