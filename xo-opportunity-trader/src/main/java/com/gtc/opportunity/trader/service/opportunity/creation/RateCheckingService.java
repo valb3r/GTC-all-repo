@@ -20,13 +20,14 @@ public class RateCheckingService {
     private final AcceptedXoTradeRepository tradeRepository;
 
     @Transactional(readOnly = true)
-    public boolean ratePass(ClientConfig cfg) {
-        double rate = cfg.getXoRatePerSec();
+    public boolean ratePass(ClientConfig from, ClientConfig to) {
+        double rate = Math.min(from.getXoRatePerSec(), to.getXoRatePerSec());
         long windowMs = Math.round(1000.0 / rate);
         int cnt = tradeRepository.countByKeyOlderThan(
-                cfg.getClient().getName(),
-                cfg.getCurrency(),
-                cfg.getCurrencyTo(),
+                from.getClient().getName(),
+                to.getClient().getName(),
+                from.getCurrency(),
+                from.getCurrencyTo(),
                 currentTimestamp.dbNow().minus(windowMs, ChronoUnit.MILLIS)
         );
 
