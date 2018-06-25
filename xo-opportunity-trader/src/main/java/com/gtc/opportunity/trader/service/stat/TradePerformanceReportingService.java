@@ -46,6 +46,7 @@ public class TradePerformanceReportingService {
     private static final String ACCEPTED_XO_CAN_PROFIT_BTC = "Custom/Accepted/Xo/Open/ExpectedProfitBtc";
     private static final String ACCEPTED_XO_PROFIT_BTC = "Custom/Accepted/Xo/Closed/ProfitBtc";
     private static final String ACCEPTED_ERR_LOST_BTC = "Custom/Accepted/Xo/Error/LossBtc";
+    private static final String ACCEPTED_TOTAL_BTC = "Custom/Accepted/Xo/Total/AmountBtc";
 
     private static final Set<TradeStatus> ERRORS = ImmutableSet.of(
             TradeStatus.NEED_RETRY, TradeStatus.CANCELLED, TradeStatus.ERR_OPEN, TradeStatus.GEN_ERR);
@@ -118,6 +119,7 @@ public class TradePerformanceReportingService {
         BigDecimal expectedProfitBtc = BigDecimal.ZERO;
         BigDecimal profitBtc = BigDecimal.ZERO;
         BigDecimal errorLossBtc = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
 
         // Awkward solution, but it is more robust since higher level machine is not updated
         for (AcceptedXoTrade xoTrade : xoTradeRepository.findAll()) {
@@ -127,11 +129,13 @@ public class TradePerformanceReportingService {
             }
 
             Collection<Trade> trades = tradeRepository.findByXoOrderId(xoTrade.getId());
-            Set<TradeStatus> statuses = trades.stream().map(Trade::getStatus).collect(Collectors.toSet());
+            List<TradeStatus> statuses = trades.stream().map(Trade::getStatus).collect(Collectors.toList());
+            long errorCount = errorCount(statuses);
 
-            if (hasErrors(statuses)) {
+            // loss of all items is not as severe as partial loss - it is basically NOP
+            if (errorCount > 0 && errorCount < statuses.size()) {
                 Collection<Trade> withIssue = trades.stream()
-                        .filter(it -> hasErrors(Collections.singleton(it.getStatus())))
+                        .filter(it -> errorCount(Collections.singletonList(it.getStatus())) > 0)
                         .collect(Collectors.toSet());
                 for (Trade trade : withIssue) {
                     errorLossBtc = errorLossBtc.add(trade.getAmount().abs().multiply(price.getPriceBtc()));
@@ -141,22 +145,24 @@ public class TradePerformanceReportingService {
             } else if (isDone(statuses)) {
                 profitBtc = profitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
             }
+            total = total.add(xoTrade.getAmount().multiply(price.getPriceBtc()));
         }
 
         NewRelic.recordMetric(ACCEPTED_XO_CAN_PROFIT_BTC, expectedProfitBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_XO_PROFIT_BTC, profitBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_ERR_LOST_BTC, errorLossBtc.floatValue());
+        NewRelic.recordMetric(ACCEPTED_TOTAL_BTC, total.floatValue());
     }
 
-    private boolean hasErrors(Set<TradeStatus> statuses) {
-        return statuses.stream().anyMatch(ERRORS::contains);
+    private long errorCount(List<TradeStatus> statuses) {
+        return statuses.stream().filter(ERRORS::contains).count();
     }
 
-    private boolean isOpen(Set<TradeStatus> statuses) {
+    private boolean isOpen(List<TradeStatus> statuses) {
         return statuses.stream().anyMatch(OPEN::contains);
     }
 
-    private boolean isDone(Set<TradeStatus> statuses) {
+    private boolean isDone(List<TradeStatus> statuses) {
         // IDEA-suggested replacement is incorrect
         return statuses.stream().allMatch(DONE::contains);
     }
