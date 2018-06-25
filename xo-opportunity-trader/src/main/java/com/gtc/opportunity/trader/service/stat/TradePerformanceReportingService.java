@@ -11,18 +11,19 @@ import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatTo
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.newrelic.api.agent.NewRelic;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Valentyn Berezin on 25.06.18.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TradePerformanceReportingService {
@@ -45,6 +46,15 @@ public class TradePerformanceReportingService {
     private static final String ACCEPTED_XO_CAN_PROFIT_BTC = "Custom/Accepted/Xo/Open/ExpectedProfitBtc";
     private static final String ACCEPTED_XO_PROFIT_BTC = "Custom/Accepted/Xo/Closed/ProfitBtc";
     private static final String ACCEPTED_ERR_LOST_BTC = "Custom/Accepted/Xo/Error/LossBtc";
+
+    private static final Set<TradeStatus> ERRORS = ImmutableSet.of(
+            TradeStatus.NEED_RETRY, TradeStatus.CANCELLED, TradeStatus.ERR_OPEN, TradeStatus.GEN_ERR);
+
+    private static final Set<TradeStatus> OPEN = ImmutableSet.of(
+            TradeStatus.UNKNOWN, TradeStatus.OPENED);
+
+    private static final Set<TradeStatus> DONE = ImmutableSet.of(
+            TradeStatus.CLOSED, TradeStatus.DONE_MAN);
 
     private final XoTradeRejectedStatTotalRepository rejectedStatRepository;
     private final AcceptedXoTradeRepository xoTradeRepository;
@@ -109,35 +119,45 @@ public class TradePerformanceReportingService {
         BigDecimal profitBtc = BigDecimal.ZERO;
         BigDecimal errorLossBtc = BigDecimal.ZERO;
 
-        Set<XoAcceptStatus> canOpen = ImmutableSet.of(
-                XoAcceptStatus.UNCONFIRMED, XoAcceptStatus.ACK_PART, XoAcceptStatus.ACK_PART, XoAcceptStatus.DONE_PART
-        );
-
-        Set<XoAcceptStatus> closed = ImmutableSet.of(
-                XoAcceptStatus.DONE, XoAcceptStatus.DONE_BOTH, XoAcceptStatus.REPLENISH
-        );
-
-        Set<XoAcceptStatus> failed = ImmutableSet.of(
-                XoAcceptStatus.TRADE_ISSUE, XoAcceptStatus.ERROR, XoAcceptStatus.TRANSIENT_ISSUE
-        );
-
-        for (AcceptedXoTrade trade : xoTradeRepository.findAll()) {
-            CryptoPricing price = priceList.get(trade.getCurrencyFrom());
+        // Awkward solution, but it is more robust since higher level machine is not updated
+        for (AcceptedXoTrade xoTrade : xoTradeRepository.findAll()) {
+            CryptoPricing price = priceList.get(xoTrade.getCurrencyFrom());
             if (null == price) {
                 continue;
             }
 
-            if (canOpen.contains(trade.getStatus())) {
-                expectedProfitBtc = expectedProfitBtc.add(trade.getExpectedProfit().multiply(price.getPriceBtc()));
-            } else if (closed.contains(trade.getStatus())) {
-                profitBtc = profitBtc.add(trade.getExpectedProfit().multiply(price.getPriceBtc()));
-            } else if(failed.contains(trade.getStatus())) {
-                errorLossBtc = errorLossBtc.add(trade.getAmount().multiply(price.getPriceBtc()));
+            Collection<Trade> trades = tradeRepository.findByXoOrderId(xoTrade.getId());
+            Set<TradeStatus> statuses = trades.stream().map(Trade::getStatus).collect(Collectors.toSet());
+
+            if (hasErrors(statuses)) {
+                Collection<Trade> withIssue = trades.stream()
+                        .filter(it -> hasErrors(Collections.singleton(it.getStatus())))
+                        .collect(Collectors.toSet());
+                for (Trade trade : withIssue) {
+                    errorLossBtc = errorLossBtc.add(trade.getAmount().abs().multiply(price.getPriceBtc()));
+                }
+            } else if (isOpen(statuses)) {
+                expectedProfitBtc = expectedProfitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
+            } else if (isDone(statuses)) {
+                profitBtc = profitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
             }
         }
 
         NewRelic.recordMetric(ACCEPTED_XO_CAN_PROFIT_BTC, expectedProfitBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_XO_PROFIT_BTC, profitBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_ERR_LOST_BTC, errorLossBtc.floatValue());
+    }
+
+    private boolean hasErrors(Set<TradeStatus> statuses) {
+        return statuses.stream().anyMatch(ERRORS::contains);
+    }
+
+    private boolean isOpen(Set<TradeStatus> statuses) {
+        return statuses.stream().anyMatch(OPEN::contains);
+    }
+
+    private boolean isDone(Set<TradeStatus> statuses) {
+        // IDEA-suggested replacement is incorrect
+        return statuses.stream().allMatch(DONE::contains);
     }
 }

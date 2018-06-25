@@ -11,5 +11,6 @@ public enum TradeStatus {
     OPENED,
     GEN_ERR,
     CANCELLED,
+    DONE_MAN,
     CLOSED
 }
