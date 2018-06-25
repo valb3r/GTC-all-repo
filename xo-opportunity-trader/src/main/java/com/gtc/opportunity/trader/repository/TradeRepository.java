@@ -57,9 +57,9 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             @Param("openedStatuses") Set<TradeStatus> openedStatuses);
 
 
-    Long countAllByStatusEquals(TradeStatus status);
+    long countAllByStatusEquals(TradeStatus status);
 
-    Long countAllByStatusNotIn(Collection<TradeStatus> status);
+    long countAllByStatusNotIn(Collection<TradeStatus> status);
 
     Collection<Trade> findByXoOrderNotNull();
 }

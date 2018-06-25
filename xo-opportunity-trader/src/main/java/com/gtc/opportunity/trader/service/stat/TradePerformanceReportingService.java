@@ -7,7 +7,7 @@ import com.gtc.opportunity.trader.repository.AcceptedXoTradeRepository;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.repository.WalletRepository;
-import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatDailyRepository;
+import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatTotalRepository;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.newrelic.api.agent.NewRelic;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +46,7 @@ public class TradePerformanceReportingService {
     private static final String ACCEPTED_XO_PROFIT_BTC = "Custom/Accepted/Xo/Closed/ProfitBtc";
     private static final String ACCEPTED_ERR_LOST_BTC = "Custom/Accepted/Xo/Error/LossBtc";
 
-    private final XoTradeRejectedStatDailyRepository rejectedStatDailyRepository;
+    private final XoTradeRejectedStatTotalRepository rejectedStatRepository;
     private final AcceptedXoTradeRepository xoTradeRepository;
     private final TradeRepository tradeRepository;
     private final WalletRepository walletRepository;
@@ -55,18 +55,18 @@ public class TradePerformanceReportingService {
     @Transactional(readOnly = true)
     @Scheduled(fixedRateString = "#{${app.schedule.reportTradePerformanceS} * 1000}")
     public void reportPerformance() {
-        long all = rejectedStatDailyRepository.rejectedCount();
+        long all = rejectedStatRepository.rejectedCount();
         NewRelic.recordMetric(REJECTED_ALL_COUNT, all);
-        NewRelic.recordMetric(REJECTED_LOW_BAL_COUNT, rejectedStatDailyRepository
+        NewRelic.recordMetric(REJECTED_LOW_BAL_COUNT, rejectedStatRepository
                 .rejectedCountByLikeReason(Reason.LOW_BAL.getMsg()));
-        NewRelic.recordMetric(REJECTED_GEN_ERR, rejectedStatDailyRepository
+        NewRelic.recordMetric(REJECTED_GEN_ERR, rejectedStatRepository
                 .rejectedCountByLikeReason(Reason.GEN_ERR.getMsg()));
-        NewRelic.recordMetric(REJECTED_OPT_FAIL, rejectedStatDailyRepository
+        NewRelic.recordMetric(REJECTED_OPT_FAIL, rejectedStatRepository
                 .rejectedCountByLikeReason(Reason.OPT_CONSTR_FAIL.getMsg()));
         NewRelic.recordMetric(REJECTED_ALL_WITH_ENABL_CONFIG_COUNT,
                 all
-                        - rejectedStatDailyRepository.rejectedCountByLikeReason(Reason.NO_CONFIG.getMsg())
-                        - rejectedStatDailyRepository.rejectedCountByLikeReason(Reason.DISABLED.getMsg())
+                        - rejectedStatRepository.rejectedCountByLikeReason(Reason.NO_CONFIG.getMsg())
+                        - rejectedStatRepository.rejectedCountByLikeReason(Reason.DISABLED.getMsg())
         );
 
         NewRelic.recordMetric(ACCEPTED_UNKNOWN, tradeRepository.countAllByStatusEquals(TradeStatus.UNKNOWN));
