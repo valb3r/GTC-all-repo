@@ -6,6 +6,8 @@ import com.gtc.opportunity.trader.domain.Wallet;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -15,4 +17,6 @@ import java.util.Optional;
 public interface WalletRepository extends CrudRepository<Wallet, Integer> {
 
     Optional<Wallet> findByClientAndCurrency(Client client, TradingCurrency currency);
+
+    Collection<Wallet> findByBalanceGreaterThan(BigDecimal balance);
 }

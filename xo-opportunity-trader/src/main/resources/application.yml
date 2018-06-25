@@ -66,6 +66,7 @@ app:
             liveS: 60
             size: 2048
     schedule:
+        reportTradePerformanceS: 60
         opportunitySearchMs: 100
         wsReconnectS: 10
         pushStatsS: 10

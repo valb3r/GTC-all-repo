@@ -55,4 +55,11 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             @Param("currency") TradingCurrency currency,
             @Param("unknownStatuses") Set<TradeStatus> unknownStatuses,
             @Param("openedStatuses") Set<TradeStatus> openedStatuses);
+
+
+    Long countAllByStatusEquals(TradeStatus status);
+
+    Long countAllByStatusNotIn(Collection<TradeStatus> status);
+
+    Collection<Trade> findByXoOrderNotNull();
 }
