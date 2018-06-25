@@ -10,6 +10,7 @@ import com.gtc.opportunity.trader.repository.WalletRepository;
 import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatTotalRepository;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.newrelic.api.agent.NewRelic;
+import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,7 @@ public class TradePerformanceReportingService {
     private static final String ACCEPTED_XO_PROFIT_BTC = "Custom/Accepted/Xo/Closed/ProfitBtc";
     private static final String ACCEPTED_ERR_LOST_BTC = "Custom/Accepted/Xo/Error/LossBtc";
     private static final String ACCEPTED_TOTAL_BTC = "Custom/Accepted/Xo/Total/AmountBtc";
+    private static final String LATEST_TIME_TO_CLOSE = "Custom/Accepted/Xo/LatestTimeToCloseS";
 
     private static final Set<TradeStatus> ERRORS = ImmutableSet.of(
             TradeStatus.NEED_RETRY, TradeStatus.CANCELLED, TradeStatus.ERR_OPEN, TradeStatus.GEN_ERR);
@@ -64,6 +67,7 @@ public class TradePerformanceReportingService {
     private final WalletRepository walletRepository;
     private final CryptoPricingRepository pricingRepository;
 
+    @Trace(dispatcher = true)
     @Transactional(readOnly = true)
     @Scheduled(fixedRateString = "#{${app.schedule.reportTradePerformanceS} * 1000}")
     public void reportPerformance() {
@@ -95,6 +99,7 @@ public class TradePerformanceReportingService {
 
         reportWalletValue(priceList);
         reportXoPerformanceValue(priceList);
+        reportLatestTimeToClose();
     }
 
     private void reportWalletValue(Map<TradingCurrency, CryptoPricing> priceList) {
@@ -153,6 +158,15 @@ public class TradePerformanceReportingService {
         NewRelic.recordMetric(ACCEPTED_ERR_LOST_BTC, errorLossBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_TOTAL_BTC, total.floatValue());
         NewRelic.recordMetric(AMOUNT_IN_ORDERS_BTC, inOrders.floatValue());
+    }
+
+    private void reportLatestTimeToClose() {
+        tradeRepository.findLatestByStatus(TradeStatus.CLOSED).ifPresent(trade ->
+            NewRelic.recordMetric(
+                    LATEST_TIME_TO_CLOSE,
+                    ChronoUnit.SECONDS.between(trade.getRecordedOn(), trade.getStatusUpdated())
+            )
+        );
     }
 
     private BigDecimal extractInOrders(BigDecimal inOrders, CryptoPricing price, Collection<Trade> trades) {

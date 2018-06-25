@@ -56,10 +56,12 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             @Param("unknownStatuses") Set<TradeStatus> unknownStatuses,
             @Param("openedStatuses") Set<TradeStatus> openedStatuses);
 
+    @Query("SELECT t FROM Trade t WHERE "
+            + "t.status = :status " +
+            "AND t.statusUpdated = (SELECT MAX(t.statusUpdated) FROM Trade t WHERE t.status = :status)")
+    Optional<Trade> findLatestByStatus(@Param("status") TradeStatus status);
 
     long countAllByStatusEquals(TradeStatus status);
 
     long countAllByStatusNotIn(Collection<TradeStatus> status);
-
-    Collection<Trade> findByXoOrderNotNull();
 }
