@@ -114,7 +114,7 @@ public class TradePerformanceReportingService {
         );
 
         Set<XoAcceptStatus> closed = ImmutableSet.of(
-                XoAcceptStatus.DONE_BOTH, XoAcceptStatus.REPLENISH
+                XoAcceptStatus.DONE, XoAcceptStatus.DONE_BOTH, XoAcceptStatus.REPLENISH
         );
 
         Set<XoAcceptStatus> failed = ImmutableSet.of(
