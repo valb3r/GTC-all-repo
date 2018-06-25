@@ -4,6 +4,7 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeEvent;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.TradeRepository;
+import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.statemachine.StateContext;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import static com.gtc.opportunity.trader.domain.TradeEvent.*;
 public class TradeMessageProcessor {
 
     private final TradeRepository tradeRepository;
+    private final CurrentTimestamp timestamp;
 
     @Transactional
     public Optional<Trade> acceptAndGet(StateContext<TradeStatus, TradeEvent> state,
@@ -35,7 +37,7 @@ public class TradeMessageProcessor {
             header(PRICE, BigDecimal.class, state).ifPresent(trade::setPrice);
             header(STATUS, state).ifPresent(it -> processData.accept(trade, it));
             header(NATIVE_STATUS, state).ifPresent(it -> processData.accept(trade, it));
-
+            trade.setStatusUpdated(timestamp.dbNow());
             trade.setStatus(state.getTarget().getId());
             tradeRepository.save(trade);
         });
