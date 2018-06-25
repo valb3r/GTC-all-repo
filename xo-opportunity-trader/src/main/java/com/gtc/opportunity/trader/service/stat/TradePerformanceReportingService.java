@@ -31,6 +31,7 @@ public class TradePerformanceReportingService {
     private static final String AMOUNT_RAW = "Custom/Amount/RAW";
     private static final String AMOUNT_USD = "Custom/Amount/USD";
     private static final String AMOUNT_BTC = "Custom/Amount/BTC";
+    private static final String AMOUNT_IN_ORDERS_BTC = "Custom/Amount/InOrdersBTC";
 
     private static final String REJECTED_ALL_COUNT = "Custom/Rejected/All";
     private static final String REJECTED_ALL_WITH_ENABL_CONFIG_COUNT = "Custom/Rejected/AllEnabledConfigured";
@@ -82,7 +83,9 @@ public class TradePerformanceReportingService {
 
         NewRelic.recordMetric(ACCEPTED_UNKNOWN, tradeRepository.countAllByStatusEquals(TradeStatus.UNKNOWN));
         NewRelic.recordMetric(ACCEPTED_OPEN, tradeRepository.countAllByStatusEquals(TradeStatus.OPENED));
-        NewRelic.recordMetric(ACCEPTED_CLOSED, tradeRepository.countAllByStatusEquals(TradeStatus.CLOSED));
+        NewRelic.recordMetric(ACCEPTED_CLOSED,
+                tradeRepository.countAllByStatusEquals(TradeStatus.CLOSED)
+                        + tradeRepository.countAllByStatusEquals(TradeStatus.DONE_MAN));
         NewRelic.recordMetric(ACCEPTED_OTHER, tradeRepository.countAllByStatusNotIn(
                 ImmutableSet.of(TradeStatus.UNKNOWN, TradeStatus.OPENED, TradeStatus.CLOSED)
         ));
@@ -120,6 +123,7 @@ public class TradePerformanceReportingService {
         BigDecimal profitBtc = BigDecimal.ZERO;
         BigDecimal errorLossBtc = BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
+        BigDecimal inOrders = BigDecimal.ZERO;
 
         // Awkward solution, but it is more robust since higher level machine is not updated
         for (AcceptedXoTrade xoTrade : xoTradeRepository.findAll()) {
@@ -134,14 +138,10 @@ public class TradePerformanceReportingService {
 
             // loss of all items is not as severe as partial loss - it is basically NOP
             if (errorCount > 0 && errorCount < statuses.size()) {
-                Collection<Trade> withIssue = trades.stream()
-                        .filter(it -> errorCount(Collections.singletonList(it.getStatus())) > 0)
-                        .collect(Collectors.toSet());
-                for (Trade trade : withIssue) {
-                    errorLossBtc = errorLossBtc.add(trade.getAmount().abs().multiply(price.getPriceBtc()));
-                }
+                errorLossBtc = getInErrors(errorLossBtc, price, trades);
             } else if (isOpen(statuses)) {
                 expectedProfitBtc = expectedProfitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
+                inOrders = extractInOrders(inOrders, price, trades);
             } else if (isDone(statuses)) {
                 profitBtc = profitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
             }
@@ -152,6 +152,31 @@ public class TradePerformanceReportingService {
         NewRelic.recordMetric(ACCEPTED_XO_PROFIT_BTC, profitBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_ERR_LOST_BTC, errorLossBtc.floatValue());
         NewRelic.recordMetric(ACCEPTED_TOTAL_BTC, total.floatValue());
+        NewRelic.recordMetric(AMOUNT_IN_ORDERS_BTC, inOrders.floatValue());
+    }
+
+    private BigDecimal extractInOrders(BigDecimal inOrders, CryptoPricing price, Collection<Trade> trades) {
+        for (Trade trade : trades) {
+            if (!isOpen(Collections.singletonList(trade.getStatus()))) {
+                continue;
+            }
+
+            inOrders = inOrders.add(trade.getAmount().abs().multiply(price.getPriceBtc()));
+        }
+        return inOrders;
+    }
+
+    private BigDecimal getInErrors(BigDecimal errorLossBtc, CryptoPricing price, Collection<Trade> trades) {
+        Collection<Trade> withIssue = trades.stream()
+                .filter(it -> errorCount(Collections.singletonList(it.getStatus())) > 0)
+                .collect(Collectors.toSet());
+        for (Trade trade : withIssue) {
+            if (errorCount(Collections.singletonList(trade.getStatus())) == 0) {
+                continue;
+            }
+            errorLossBtc = errorLossBtc.add(trade.getAmount().abs().multiply(price.getPriceBtc()));
+        }
+        return errorLossBtc;
     }
 
     private long errorCount(List<TradeStatus> statuses) {
