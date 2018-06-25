@@ -6,6 +6,7 @@ import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.config.CacheConfig;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.domain.Trade;
+import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.domain.Wallet;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.repository.WalletRepository;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -85,10 +87,11 @@ public class BalanceService {
 
     private BigDecimal walletReservedByTrades(Wallet wallet) {
         // any order after last wallet update should be subtracted from balance:
-        Collection<Trade> openTradesNotInBal = tradeRepository.findByWalletKeyUpdatedAfter(
+        Collection<Trade> openTradesNotInBal = tradeRepository.findByWalletKey(
                 wallet.getClient(),
                 wallet.getCurrency(),
-                wallet.getStatusUpdated());
+                Collections.singleton(TradeStatus.UNKNOWN),
+                Collections.singleton(TradeStatus.OPENED));
 
         return openTradesNotInBal.stream()
                 .map(it -> it.amountReservedOnWallet(wallet)

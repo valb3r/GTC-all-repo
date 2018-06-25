@@ -48,9 +48,11 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
 
     @Query("SELECT t FROM Trade t WHERE t.client = :client " +
             "AND (t.currencyFrom = :currency OR t.currencyTo = :currency) " +
-            "AND t.statusUpdated >= :lastUpdate")
-    Collection<Trade> findByWalletKeyUpdatedAfter(
+            "AND (t.status IN (:unknownStatuses) " +
+            "OR ((t.status IN (:openedStatuses) AND t.wallet.statusUpdated <= t.statusUpdated)))")
+    Collection<Trade> findByWalletKey(
             @Param("client") Client client,
             @Param("currency") TradingCurrency currency,
-            @Param("lastUpdate") LocalDateTime lastUpdate);
+            @Param("unknownStatuses") Set<TradeStatus> unknownStatuses,
+            @Param("openedStatuses") Set<TradeStatus> openedStatuses);
 }
