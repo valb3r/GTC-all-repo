@@ -80,14 +80,14 @@ public class TheRockTradingRestService implements Account, CreateOrder, ManageOr
 
         String url = cfg.getRestBase() + FUNDS + "/" + pair.toString() + ORDERS;
 
-        ResponseEntity<TheRockTradingCreateResponseDto> resp = cfg.getRestTemplate()
+        ResponseEntity<TheRockTradingOrderDto> resp = cfg.getRestTemplate()
                 .exchange(
                         url,
                         HttpMethod.POST,
                         new HttpEntity<>(requestDto, signer.restHeaders(url)),
-                        TheRockTradingCreateResponseDto.class);
+                        TheRockTradingOrderDto.class);
 
-        return Optional.of(resp.getBody().getOrder().mapToCreate());
+        return Optional.of(resp.getBody().mapToCreate());
     }
 
     @Override
@@ -175,7 +175,7 @@ public class TheRockTradingRestService implements Account, CreateOrder, ManageOr
             this.id = idPair[1];
         }
 
-        public SymbolAndId(String id, String pair) {
+        public SymbolAndId(String pair, String id) {
             this.pair = pair;
             this.id = id;
         }
