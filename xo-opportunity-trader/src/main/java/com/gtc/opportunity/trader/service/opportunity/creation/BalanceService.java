@@ -11,6 +11,7 @@ import com.gtc.opportunity.trader.domain.Wallet;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.repository.WalletRepository;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by Valentyn Berezin on 25.02.18.
  */
+@Slf4j
 @Service
 public class BalanceService {
 
@@ -96,7 +98,8 @@ public class BalanceService {
         return openTradesNotInBal.stream()
                 .map(it -> it.amountReservedOnWallet(wallet)
                         .orElseThrow(() -> new IllegalStateException("Wrong query result")))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .abs();
     }
 
     private static String walletKey(Client client, TradingCurrency currency) {
