@@ -120,7 +120,11 @@ public class WsCommandHandler {
             checkReadiness(name, createOps.get(name));
         });
 
-        command.getCommands().parallelStream().forEach(it -> create(session, it));
+        // FIXME - far from ideal this 'type' mapping should be redesigned
+        command.getCommands().parallelStream().forEach(it -> {
+            it.setType(it.type());
+            create(session, it);
+        });
     }
 
     @Trace(dispatcher = true)
