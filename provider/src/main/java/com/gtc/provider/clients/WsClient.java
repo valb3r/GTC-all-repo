@@ -9,6 +9,7 @@ public interface WsClient {
 
     String name();
     void connect(Map<String, String> headers);
+    void resubscribe();
     boolean isDisconnected();
     long connectedAtTimestamp();
 

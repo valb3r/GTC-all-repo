@@ -40,6 +40,11 @@ public class ExternalApiPuppeteer {
         }
     }
 
+    @Scheduled(fixedDelayString = "#{${app.schedule.resubscribeS} * 1000}")
+    public void resubscription() {
+        clients.getClientList().forEach(WsClient::resubscribe);
+    }
+
     private Map<String, String> getHeaders(String name) {
         Map<String, String> headers = clientHeaders.get(name);
         if (null == headers) {

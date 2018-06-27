@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -80,7 +79,7 @@ public abstract class BaseRawClient implements WsClient {
         return name;
     }
 
-    @Scheduled(fixedDelayString = "#{${app.schedule.resubscribeS} * 1000}")
+    @Override
     public void resubscribe() {
         RxObjectEventConnected connected = conn.get();
         if (isDisconnected() || null == connected) {
