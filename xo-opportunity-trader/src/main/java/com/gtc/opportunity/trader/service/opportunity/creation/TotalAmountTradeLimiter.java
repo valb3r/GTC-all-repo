@@ -31,6 +31,6 @@ public class TotalAmountTradeLimiter {
         ClientConfig cfg = cache.getCfg(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo())
                 .orElseThrow(() -> new RejectionException(Reason.NO_CONFIG));
 
-        return cfg.getSingleSideTradeLimit().compareTo(bal) <= 0;
+        return cfg.getSingleSideTradeLimit().compareTo(bal.abs()) <= 0;
     }
 }
