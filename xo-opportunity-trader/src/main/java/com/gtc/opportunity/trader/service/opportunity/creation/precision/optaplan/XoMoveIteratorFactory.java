@@ -51,6 +51,7 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
     private static class RandomIterator implements Iterator<Move<XoTradeBalance>> {
 
         private static final int STEP_RANGE = 100;
+        private static final double DOUBLE_EPS = 1e-12;
 
         private static final int DISTORT_RANGE = 10;
         private static final int N_DISTORT = 10;
@@ -71,24 +72,24 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
         RandomIterator(XoTradeBalance solution, Random workingRandom) {
             this.solution = solution;
             sellFromAmountRandom = workingRandom.doubles(
-                    solution.getConstraint().getMinFromSellAmount().getApprox(),
+                    solution.getConstraint().getMinFromSellAmount().getApprox() - DOUBLE_EPS,
                     solution.getConstraint().getMaxFromSellAmount().getApprox()
             ).iterator();
 
             sellFromPriceRandom = workingRandom.doubles(
                     Arrays.stream(solution.getConstraint().getMarketBuyFrom())
                             .mapToDouble(FullCrossMarketOpportunity.Histogram::getMinPrice)
-                            .min().orElse(0.0),
+                            .min().orElse(0.0) - DOUBLE_EPS,
                     solution.getConstraint().getMaxFromSellPrice().getApprox()
             ).iterator();
 
             buyToAmountRandom = workingRandom.doubles(
-                    solution.getConstraint().getMinToBuyAmount().getApprox(),
+                    solution.getConstraint().getMinToBuyAmount().getApprox()- DOUBLE_EPS,
                     solution.getConstraint().getMaxToBuyAmount().getApprox()
             ).iterator();
 
             buyToPriceRandom = workingRandom.doubles(
-                    solution.getConstraint().getMinToBuyPrice().getApprox(),
+                    solution.getConstraint().getMinToBuyPrice().getApprox() - DOUBLE_EPS,
                     Arrays.stream(solution.getConstraint().getMarketSellTo())
                             .mapToDouble(FullCrossMarketOpportunity.Histogram::getMaxPrice)
                             .max().orElse(0.0)
