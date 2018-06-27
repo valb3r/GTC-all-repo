@@ -40,6 +40,7 @@ public class TradePerformanceReportingService {
     private static final String REJECTED_LOW_BAL_COUNT = "Custom/Rejected/LowBalance";
     private static final String REJECTED_GEN_ERR = "Custom/Rejected/GenError";
     private static final String REJECTED_OPT_FAIL = "Custom/Rejected/OptFail";
+    private static final String REJECTED_SINGLE_SIDE_LIMIT = "Custom/Rejected/SingleSideLimit";
 
     private static final String ACCEPTED_UNKNOWN = "Custom/Accepted/Unknown";
     private static final String ACCEPTED_OPEN = "Custom/Accepted/Open";
@@ -84,6 +85,8 @@ public class TradePerformanceReportingService {
                         - rejectedStatRepository.rejectedCountByLikeReason(Reason.NO_CONFIG.getMsg())
                         - rejectedStatRepository.rejectedCountByLikeReason(Reason.DISABLED.getMsg())
         );
+        NewRelic.recordMetric(REJECTED_SINGLE_SIDE_LIMIT, rejectedStatRepository
+                .rejectedCountByLikeReason(Reason.SIDE_LIMIT.getMsg()));
 
         NewRelic.recordMetric(ACCEPTED_UNKNOWN, tradeRepository.countAllByStatusEquals(TradeStatus.UNKNOWN));
         NewRelic.recordMetric(ACCEPTED_OPEN, tradeRepository.countAllByStatusEquals(TradeStatus.OPENED));
