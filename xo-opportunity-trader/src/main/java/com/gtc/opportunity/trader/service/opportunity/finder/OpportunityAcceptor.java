@@ -8,6 +8,7 @@ import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Rea
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
 import com.gtc.opportunity.trader.service.stat.RejectedTradeStatService;
 import com.gtc.opportunity.trader.service.stat.XoStatService;
+import com.newrelic.api.agent.NewRelic;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class OpportunityAcceptor {
             // GCE looses exception traces
             log.error("Exception caught {}", Throwables.getRootCause(ex).toString(), ex);
             rejectedStatService.ackRejection(new RejectionException(Reason.GEN_ERR), opportunity);
+            NewRelic.noticeError(ex);
         } finally {
             Thread.currentThread().setName(oldName);
         }
