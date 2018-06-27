@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import static com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason.LOW_BAL;
 import static com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason.LOW_PROFIT;
+import static com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason.MAX_LT_MIN;
 
 /**
  * Approximate price changes:
@@ -73,6 +74,8 @@ public class OpportunitySatisifactionLimiter {
         // precise check - using histogram and worst case prices try to find solution with minimum req. profit
         double maxSellAmount = calculateMaxAmount(to, minBal).doubleValue();
         double maxBuyAmount = calculateMaxAmount(from, minBal).doubleValue();
+
+        Checker.validateAtLeast(MAX_LT_MIN, maxSellAmount, minSellAmount);
 
         return XoTradeCondition.builder()
                 .key(from.getClient().getName() + to.getClient().getName() + from.getCurrency().getCode() +

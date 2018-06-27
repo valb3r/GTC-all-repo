@@ -66,7 +66,7 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
 
     long countAllByStatusNotIn(Collection<TradeStatus> status);
 
-    @Query("SELECT SUM(t.amount) FROM Trade t WHERE "
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Trade t WHERE "
             + "t.client = :client AND t.currencyFrom = :currencyFrom AND t.currencyTo = :currencyTo "
             + "AND t.status IN (:statuses)")
     BigDecimal tradeBalance(@Param("client") Client client,
