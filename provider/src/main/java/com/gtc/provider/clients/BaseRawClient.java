@@ -86,6 +86,8 @@ public abstract class BaseRawClient implements WsClient {
             return;
         }
 
+        market.clear();
+        ticker.clear();
         attachToBidsAndTicker(connected);
     }
 
