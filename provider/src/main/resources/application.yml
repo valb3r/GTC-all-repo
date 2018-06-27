@@ -314,6 +314,7 @@ app:
             # As data shows best best bid can jump no more than 0.1% /s on stable currencies
             deviateFromSignChangePct: 1
     schedule:
+        resubscribeS: 300
         pool: 5
         puppeteerS: 10
         pingMs: 5000

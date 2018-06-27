@@ -3,19 +3,21 @@ package com.gtc.provider.clients;
 import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gtc.model.provider.Bid;
 import com.gtc.meta.CurrencyPair;
+import com.gtc.model.provider.Bid;
 import com.gtc.ws.BaseWebsocketClient;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Raw websocket client, to deal with no-protocol WS.
@@ -30,6 +32,8 @@ public abstract class BaseRawClient implements WsClient {
     protected final Map<ChannelDto, Ticker> ticker = new ConcurrentHashMap<>();
 
     private final BaseWebsocketClient client;
+
+    private final AtomicReference<RxObjectEventConnected> conn = new AtomicReference<>();
 
     public BaseRawClient(String wsPath, String name, int disconnectIfInactiveS, ObjectMapper mapper) {
         this.name = name;
@@ -76,7 +80,18 @@ public abstract class BaseRawClient implements WsClient {
         return name;
     }
 
+    @Scheduled(fixedDelayString = "#{${app.schedule.resubscribeS} * 1000}")
+    public void resubscribe() {
+        RxObjectEventConnected connected = conn.get();
+        if (isDisconnected() || null == connected) {
+            return;
+        }
+
+        attachToBidsAndTicker(connected);
+    }
+
     protected void attachToBidsAndTicker(RxObjectEventConnected evt) {
+        conn.set(evt);
         bidConfig().forEach((key, value) ->
                 BaseWebsocketClient.sendIfNotNull(evt, subscribeBidEvent(key))
         );
