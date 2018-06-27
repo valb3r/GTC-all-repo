@@ -11,6 +11,7 @@ import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.opportunity.creation.BalanceService;
+import com.gtc.opportunity.trader.service.opportunity.creation.TotalAmountTradeLimiter;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
 import lombok.extern.slf4j.Slf4j;
@@ -36,16 +37,18 @@ public class TradeCreationService {
     private final TradeRepository tradeRepository;
     private final Validator validator;
     private final BalanceService balanceService;
+    private final TotalAmountTradeLimiter amountTradeLimiter;
 
     public TradeCreationService(
             @Qualifier(TRADE_MACHINE_SERVICE) StateMachineService<TradeStatus, TradeEvent> stateMachineService,
             CurrentTimestamp currentTimestamp, TradeRepository tradeRepository,
-            Validator validator, BalanceService balanceService) {
+            Validator validator, BalanceService balanceService, TotalAmountTradeLimiter amountTradeLimiter) {
         this.stateMachineService = stateMachineService;
         this.currentTimestamp = currentTimestamp;
         this.tradeRepository = tradeRepository;
         this.validator = validator;
         this.balanceService = balanceService;
+        this.amountTradeLimiter = amountTradeLimiter;
     }
 
     @Transactional
@@ -75,6 +78,10 @@ public class TradeCreationService {
 
         if (!balanceService.canProceed(trade)) {
             throw new RejectionException(Reason.LOW_BAL);
+        }
+
+        if (!amountTradeLimiter.canProceed(trade)) {
+            throw new RejectionException(Reason.SIDE_LIMIT);
         }
 
         balanceService.proceed(trade);

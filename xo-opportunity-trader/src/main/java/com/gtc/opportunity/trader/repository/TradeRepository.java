@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -64,4 +65,12 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
     long countAllByStatusEquals(TradeStatus status);
 
     long countAllByStatusNotIn(Collection<TradeStatus> status);
+
+    @Query("SELECT SUM(t.amount) FROM Trade t WHERE "
+            + "t.client = :client AND t.currencyFrom = :currencyFrom AND t.currencyTo = :currencyTo "
+            + "AND t.status IN (:statuses)")
+    BigDecimal tradeBalance(@Param("client") Client client,
+                            @Param("currencyFrom") TradingCurrency currencyFrom,
+                            @Param("currencyTo") TradingCurrency currencyTo,
+                            @Param("statuses") Set<TradeStatus> statuses);
 }

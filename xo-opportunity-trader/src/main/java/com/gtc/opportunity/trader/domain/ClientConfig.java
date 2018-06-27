@@ -69,6 +69,8 @@ public class ClientConfig extends ByClientAndCurrency {
 
     private boolean enabled = true;
 
+    private BigDecimal singleSideTradeLimit;
+
     @Builder(toBuilder = true)
     public ClientConfig(int id, Client client, TradingCurrency currency, TradingCurrency currencyTo,
                         BigDecimal minProfitabilityPct, BigDecimal minOrder, BigDecimal maxOrder,
