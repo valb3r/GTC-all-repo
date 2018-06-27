@@ -1,8 +1,6 @@
 package com.gtc.provider.service;
 
-import com.google.common.collect.ImmutableList;
 import com.gtc.meta.CurrencyPair;
-import com.gtc.meta.TradingCurrency;
 import com.gtc.model.provider.*;
 import com.gtc.provider.clients.MarketDto;
 import com.gtc.provider.clients.WsClient;
@@ -16,8 +14,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.gtc.provider.config.Const.CONF_ROOT_SCHEDULE_CHILD;
@@ -71,61 +70,6 @@ public class StatsReporter {
             NewRelic.noticeError(ex);
             log.error("Failed writing ticker stats", ex);
         }
-    }
-
-    private AtomicBoolean hasHeader = new AtomicBoolean();
-    private Map<TradingCurrency, Map<String, Double[]>> table = new LinkedHashMap<>();
-
-    @Scheduled(fixedRateString = SPEL_TICKER_RATE, initialDelayString = SPEL_DELAY_INI)
-    public void writeAveStats() {
-        List<TradingCurrency> currencies = ImmutableList.of(TradingCurrency.Litecoin, TradingCurrency.EOS, TradingCurrency.Gas);
-        if (!hasHeader.get()) {
-            hasHeader.set(true);
-
-            StringBuilder builder = new StringBuilder();
-            currencies.forEach(it -> {
-                table.put(it, new LinkedHashMap<>());
-                getWriteableClients().forEach(client -> {
-                    table.get(it).put(client.name(), null);
-                    builder.append("SELL");
-                    builder.append(it.getCode());
-                    builder.append("-");
-                    builder.append(client.name());
-                    builder.append(" ");
-                    builder.append("BUY");
-                    builder.append(it.getCode());
-                    builder.append("-");
-                    builder.append(client.name());
-                    builder.append(" ");
-                });
-            });
-            log.info("TABL {}", builder.toString());
-        }
-
-        getWriteableClients()
-                .forEach(client -> {
-                    MarketDto dto = client.market();
-                    dto.getMarket().entrySet().stream()
-                            .filter(it -> currencies.contains(it.getKey().getFrom()) && it.getKey().getTo() == TradingCurrency.Bitcoin)
-                            .forEach(curr -> table.get(curr.getKey().getFrom())
-                                    .put(client.name(), new Double[] {
-                                            curr.getValue().stream()
-                                                    .filter(it -> it.getAmount() < 0)
-                                                    .mapToDouble(it -> it.getPriceMin()).min().orElse(0.0),
-                                            curr.getValue().stream()
-                                                    .filter(it -> it.getAmount() > 0)
-                                                    .mapToDouble(it -> it.getPriceMax()).max().orElse(0.0),
-                                    }));
-                });
-
-        StringBuilder builder = new StringBuilder();
-        table.forEach((c, v) -> v.forEach((name, tv) -> {
-            builder.append(null != tv ? tv[0] : null);
-            builder.append(" ");
-            builder.append(null != tv ? tv[1] : null);
-            builder.append(" ");
-        }));
-        log.info("TABL {}", builder.toString());
     }
 
     private Stream<? extends WsClient> getWriteableClients() {
