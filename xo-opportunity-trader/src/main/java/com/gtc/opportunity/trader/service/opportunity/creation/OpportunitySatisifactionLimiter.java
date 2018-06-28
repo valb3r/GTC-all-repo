@@ -76,6 +76,7 @@ public class OpportunitySatisifactionLimiter {
         double maxBuyAmount = calculateMaxAmount(from, minBal).doubleValue();
 
         Checker.validateAtLeast(MAX_LT_MIN, maxSellAmount, minSellAmount);
+        Checker.validateAtLeast(MAX_LT_MIN, maxBuyAmount, minBuyAmount);
 
         return XoTradeCondition.builder()
                 .key(from.getClient().getName() + to.getClient().getName() + from.getCurrency().getCode() +
