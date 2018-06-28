@@ -25,7 +25,7 @@ public class TotalAmountTradeLimiter {
 
     @Transactional(readOnly = true)
     public boolean canProceed(Trade trade) {
-        BigDecimal bal = tradeRepository.tradeBalance(trade.getClient(), trade.getCurrencyFrom(),
+        BigDecimal bal = tradeRepository.tradeBalanceWithSide(trade.getClient(), trade.getCurrencyFrom(),
                 trade.getCurrencyTo(), ImmutableSet.of(TradeStatus.UNKNOWN, TradeStatus.OPENED,
                         TradeStatus.CLOSED, TradeStatus.DONE_MAN));
         ClientConfig cfg = cache.getCfg(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo())

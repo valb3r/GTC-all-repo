@@ -68,9 +68,9 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
 
     @Query("SELECT COALESCE(SUM(t.openingAmount), 0) FROM Trade t WHERE "
             + "t.client = :client AND t.currencyFrom = :currencyFrom AND t.currencyTo = :currencyTo "
-            + "AND t.status IN (:statuses)")
-    BigDecimal tradeBalance(@Param("client") Client client,
-                            @Param("currencyFrom") TradingCurrency currencyFrom,
-                            @Param("currencyTo") TradingCurrency currencyTo,
-                            @Param("statuses") Set<TradeStatus> statuses);
+            + "AND t.status IN (:statuses) AND t.ignoreAsSideLimit = FALSE")
+    BigDecimal tradeBalanceWithSide(@Param("client") Client client,
+                                    @Param("currencyFrom") TradingCurrency currencyFrom,
+                                    @Param("currencyTo") TradingCurrency currencyTo,
+                                    @Param("statuses") Set<TradeStatus> statuses);
 }

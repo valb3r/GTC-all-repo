@@ -103,6 +103,8 @@ public class Trade implements Serializable {
     @NotNull
     private BigDecimal expectedReverseAmount;
 
+    private boolean ignoreAsSideLimit;
+
     public void setLastError(String lastError) {
         this.lastError = LongMessageLimiter.trunc(lastError);
     }
