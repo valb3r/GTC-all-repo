@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.stat;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.AcceptedXoTradeRepository;
@@ -164,11 +165,14 @@ public class TradePerformanceReportingService {
     }
 
     private void reportLatestTimeToClose() {
-        tradeRepository.findLatestByStatus(TradeStatus.CLOSED).ifPresent(trade ->
-            NewRelic.recordMetric(
-                    LATEST_TIME_TO_CLOSE,
-                    ChronoUnit.SECONDS.between(trade.getRecordedOn(), trade.getStatusUpdated())
-            )
+        Trade last = Iterables.getFirst(tradeRepository.findLatestByStatus(TradeStatus.CLOSED), null);
+        if (null == last) {
+            return;
+        }
+
+        NewRelic.recordMetric(
+                LATEST_TIME_TO_CLOSE,
+                ChronoUnit.SECONDS.between(last.getRecordedOn(), last.getStatusUpdated())
         );
     }
 

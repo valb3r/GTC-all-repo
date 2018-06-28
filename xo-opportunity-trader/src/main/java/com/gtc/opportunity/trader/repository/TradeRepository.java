@@ -60,7 +60,7 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
     @Query("SELECT t FROM Trade t WHERE "
             + "t.status = :status " +
             "AND t.statusUpdated = (SELECT MAX(t.statusUpdated) FROM Trade t WHERE t.status = :status)")
-    Optional<Trade> findLatestByStatus(@Param("status") TradeStatus status);
+    List<Trade> findLatestByStatus(@Param("status") TradeStatus status);
 
     long countAllByStatusEquals(TradeStatus status);
 
