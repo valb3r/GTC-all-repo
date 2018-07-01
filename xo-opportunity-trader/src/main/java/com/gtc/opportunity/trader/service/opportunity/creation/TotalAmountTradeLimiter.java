@@ -37,6 +37,6 @@ public class TotalAmountTradeLimiter {
             return true;
         }
 
-        return cfg.getSingleSideTradeLimit().compareTo(bal.abs()) <= 0;
+        return cfg.getSingleSideTradeLimit().compareTo(bal.abs()) >= 0;
     }
 }
