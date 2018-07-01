@@ -38,6 +38,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-web"
     compile "org.springframework.boot:spring-boot-starter-data-jpa"
     compile "org.springframework.boot:spring-boot-starter-aop"
+    compile "org.springframework.retry:spring-retry:${versions.retry}"
     compile "org.springframework.statemachine:spring-statemachine-autoconfigure:${versions.statemachine}"
     compile "org.springframework.statemachine:spring-statemachine-data-jpa:${versions.statemachine}"
     compile "org.hibernate:hibernate-envers"
