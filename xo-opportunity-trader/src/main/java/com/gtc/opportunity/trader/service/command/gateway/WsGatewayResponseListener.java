@@ -13,7 +13,7 @@ import com.gtc.opportunity.trader.service.trade.management.TradeEsbEventHandler;
 import com.gtc.opportunity.trader.service.trade.management.WalletEsbEventHandler;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.TransientDataAccessException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ import java.util.function.BiConsumer;
  */
 @Service
 @RequiredArgsConstructor
-@Retryable(value = TransientDataAccessException.class,
+@Retryable(value = JpaSystemException.class, // FIXME hackish fix for locks (this retries on any db exception)
         maxAttemptsExpression = "3",
         backoff = @Backoff(multiplier = 3)
 )
