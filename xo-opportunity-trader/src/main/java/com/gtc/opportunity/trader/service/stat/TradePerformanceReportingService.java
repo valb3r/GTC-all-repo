@@ -33,8 +33,8 @@ public class TradePerformanceReportingService {
 
     private static final String AMOUNT_RAW = "Custom/Amount/RAW";
     private static final String AMOUNT_USD = "Custom/Amount/USD";
-    private static final String AMOUNT_BTC = "Custom/Amount/BTC";
-    private static final String AMOUNT_IN_ORDERS_BTC = "Custom/Amount/InOrdersBTC";
+    private static final String AMOUNT_MILLI_BTC = "Custom/Amount/MilliBTC";
+    private static final String AMOUNT_IN_ORDERS_MILLI_BTC = "Custom/Amount/InOrdersMilliBTC";
 
     private static final String REJECTED_ALL_COUNT = "Custom/Rejected/All";
     private static final String REJECTED_ALL_WITH_ENABL_CONFIG_COUNT = "Custom/Rejected/AllEnabledConfigured";
@@ -48,10 +48,10 @@ public class TradePerformanceReportingService {
     private static final String ACCEPTED_CLOSED = "Custom/Accepted/Closed";
     private static final String ACCEPTED_OTHER = "Custom/Accepted/Other";
 
-    private static final String ACCEPTED_XO_CAN_PROFIT_BTC = "Custom/Accepted/Xo/Open/ExpectedProfitBtc";
-    private static final String ACCEPTED_XO_PROFIT_BTC = "Custom/Accepted/Xo/Closed/ProfitBtc";
-    private static final String ACCEPTED_ERR_LOST_BTC = "Custom/Accepted/Xo/Error/LossBtc";
-    private static final String ACCEPTED_TOTAL_BTC = "Custom/Accepted/Xo/Total/AmountBtc";
+    private static final String ACCEPTED_XO_CAN_PROFIT_MILLI_BTC = "Custom/Accepted/Xo/Open/ExpectedProfitMilliBtc";
+    private static final String ACCEPTED_XO_PROFIT_MILLI_BTC = "Custom/Accepted/Xo/Closed/ProfitMilliBtc";
+    private static final String ACCEPTED_ERR_LOST_MILLI_BTC = "Custom/Accepted/Xo/Error/LossMilliBtc";
+    private static final String ACCEPTED_TOTAL_MILLI_BTC = "Custom/Accepted/Xo/Total/AmountMilliBtc";
     private static final String LATEST_TIME_TO_CLOSE = "Custom/Accepted/Xo/LatestTimeToCloseS";
 
     private static final Set<TradeStatus> ERRORS = ImmutableSet.of(
@@ -124,7 +124,7 @@ public class TradePerformanceReportingService {
 
         NewRelic.recordMetric(AMOUNT_RAW, rawValue.floatValue());
         NewRelic.recordMetric(AMOUNT_USD, usdValue.floatValue());
-        NewRelic.recordMetric(AMOUNT_BTC, btcValue.floatValue());
+        NewRelic.recordMetric(AMOUNT_MILLI_BTC, btcValue.floatValue() * 1000.0f);
     }
 
     private void reportXoPerformanceValue(Map<TradingCurrency, CryptoPricing> priceList) {
@@ -157,11 +157,11 @@ public class TradePerformanceReportingService {
             total = total.add(xoTrade.getAmount().multiply(price.getPriceBtc()));
         }
 
-        NewRelic.recordMetric(ACCEPTED_XO_CAN_PROFIT_BTC, expectedProfitBtc.floatValue());
-        NewRelic.recordMetric(ACCEPTED_XO_PROFIT_BTC, profitBtc.floatValue());
-        NewRelic.recordMetric(ACCEPTED_ERR_LOST_BTC, errorLossBtc.floatValue());
-        NewRelic.recordMetric(ACCEPTED_TOTAL_BTC, total.floatValue());
-        NewRelic.recordMetric(AMOUNT_IN_ORDERS_BTC, inOrders.floatValue());
+        NewRelic.recordMetric(ACCEPTED_XO_CAN_PROFIT_MILLI_BTC, expectedProfitBtc.floatValue() * 1000.0f);
+        NewRelic.recordMetric(ACCEPTED_XO_PROFIT_MILLI_BTC, profitBtc.floatValue() * 1000.0f);
+        NewRelic.recordMetric(ACCEPTED_ERR_LOST_MILLI_BTC, errorLossBtc.floatValue() * 1000.0f);
+        NewRelic.recordMetric(ACCEPTED_TOTAL_MILLI_BTC, total.floatValue() * 1000.0f);
+        NewRelic.recordMetric(AMOUNT_IN_ORDERS_MILLI_BTC, inOrders.floatValue() * 1000.0f);
     }
 
     private void reportLatestTimeToClose() {
