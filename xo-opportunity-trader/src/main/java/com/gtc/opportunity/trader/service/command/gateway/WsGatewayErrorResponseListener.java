@@ -5,9 +5,6 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.service.trade.management.TradeEsbEventHandler;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.TransientDataAccessException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,10 +12,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-@Retryable(value = TransientDataAccessException.class,
-        maxAttemptsExpression = "3",
-        backoff = @Backoff(multiplier = 3)
-)
 public class WsGatewayErrorResponseListener {
 
     private final TradeEsbEventHandler esbEventHandler;

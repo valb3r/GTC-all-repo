@@ -13,9 +13,6 @@ import com.gtc.opportunity.trader.service.trade.management.TradeEsbEventHandler;
 import com.gtc.opportunity.trader.service.trade.management.WalletEsbEventHandler;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.TransientDataAccessException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -26,10 +23,6 @@ import java.util.function.BiConsumer;
  */
 @Service
 @RequiredArgsConstructor
-@Retryable(value = TransientDataAccessException.class,
-        maxAttemptsExpression = "3",
-        backoff = @Backoff(multiplier = 3)
-)
 public class WsGatewayResponseListener {
 
     private final Map<OrderStatus, BiConsumer<BaseMessage, OrderDto>> manageHandlers =

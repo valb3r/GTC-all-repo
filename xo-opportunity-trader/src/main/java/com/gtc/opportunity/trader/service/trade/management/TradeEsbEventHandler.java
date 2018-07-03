@@ -9,12 +9,13 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 /**
- * Created by Valentyn Berezin on 28.02.18.
+ * Statemachine eats all exceptions so sharing transaction with it is not a good idea.
  */
 @Service
 @RequiredArgsConstructor
@@ -22,10 +23,10 @@ public class TradeEsbEventHandler {
 
     private final StateMachineService<TradeStatus, TradeEvent> stateMachineService;
     private final TradeRepository tradeRepository;
+    private final TransactionTemplate template;
 
-    @Transactional
     public void ackError(Trade.EsbKey key, String source, String error) {
-        tradeRepository.findByAssignedId(key).ifPresent(order ->
+        findTradeByAssignedId(key).ifPresent(order ->
             stateMachineService.acquireStateMachine(order.getId())
                     .sendEvent(MessageBuilder
                             .withPayload(TradeEvent.ERROR)
@@ -35,9 +36,8 @@ public class TradeEsbEventHandler {
         );
     }
 
-    @Transactional
     public void ackTransientError(Trade.EsbKey key, String source, String error) {
-        tradeRepository.findByAssignedId(key).ifPresent(order ->
+        findTradeByAssignedId(key).ifPresent(order ->
                 stateMachineService.acquireStateMachine(order.getId())
                 .sendEvent(MessageBuilder
                         .withPayload(TradeEvent.TRANSIENT_ERR)
@@ -47,10 +47,9 @@ public class TradeEsbEventHandler {
         );
     }
 
-    @Transactional
     public void ackOrder(Trade.EsbKey key, String source, String status, String nativeStatus,
                          BigDecimal amount, BigDecimal price) {
-        tradeRepository.findByAssignedId(key).ifPresent(order -> {
+        findTradeByAssignedId(key).ifPresent(order -> {
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
                     .withPayload(TradeEvent.ACK)
@@ -63,9 +62,8 @@ public class TradeEsbEventHandler {
         });
     }
 
-    @Transactional
     public void ackDone(Trade.EsbKey key, String source, String status, String nativeStatus) {
-        tradeRepository.findByAssignedId(key).ifPresent(order -> {
+        findTradeByAssignedId(key).ifPresent(order -> {
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
                     .withPayload(TradeEvent.DONE)
@@ -77,9 +75,8 @@ public class TradeEsbEventHandler {
         });
     }
 
-    @Transactional
     public void ackCancel(Trade.EsbKey key, String source, String status, String nativeStatus) {
-        tradeRepository.findByAssignedId(key).ifPresent(order -> {
+        findTradeByAssignedId(key).ifPresent(order -> {
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
                     .withPayload(TradeEvent.CANCELLED)
@@ -90,9 +87,8 @@ public class TradeEsbEventHandler {
         });
     }
 
-    @Transactional
     public void ackCreate(String requestedId, String source, String status, String nativeStatus, Trade.EsbKey key) {
-        tradeRepository.findById(requestedId).ifPresent(order -> {
+        findTrade(requestedId).ifPresent(order -> {
             order.setAssignedId(key.getAssignedId());
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
@@ -104,9 +100,8 @@ public class TradeEsbEventHandler {
         });
     }
 
-    @Transactional
     public void ackCreateAndDone(String reqId, String source, String status, String nativeStatus, Trade.EsbKey key) {
-        tradeRepository.findById(reqId).ifPresent(order -> {
+        findTrade(reqId).ifPresent(order -> {
             order.setAssignedId(key.getAssignedId() + "." + order.getId());
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
@@ -123,5 +118,13 @@ public class TradeEsbEventHandler {
                     .setHeader(TradeEvent.MSG_ID, source)
                     .build());
         });
+    }
+
+    private Optional<Trade> findTrade(String requestId) {
+        return template.execute(tx -> tradeRepository.findById(requestId));
+    }
+
+    private Optional<Trade> findTradeByAssignedId(Trade.EsbKey id) {
+        return template.execute(tx -> tradeRepository.findByAssignedId(id));
     }
 }

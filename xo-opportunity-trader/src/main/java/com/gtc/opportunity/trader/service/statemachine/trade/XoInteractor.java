@@ -7,8 +7,11 @@ import com.gtc.opportunity.trader.domain.XoAcceptStatus;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,11 @@ import static com.gtc.opportunity.trader.config.Const.Common.XO_OPPORTUNITY_PREF
  */
 @Slf4j
 @Service
+@Retryable(value = TransientDataAccessException.class,
+        maxAttemptsExpression = "3",
+        backoff = @Backoff(delay = 5000L, multiplier = 3),
+        exceptionExpression = "#{#root.cause instanceof T(org.hibernate.exception.LockAcquisitionException)}"
+)
 @RequiredArgsConstructor
 public class XoInteractor {
 

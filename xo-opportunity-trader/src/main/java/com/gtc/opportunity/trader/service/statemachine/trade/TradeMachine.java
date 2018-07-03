@@ -6,6 +6,9 @@ import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.domain.XoAcceptEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.TransientDataAccessException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.statemachine.StateContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Slf4j
 @Service
+@Retryable(value = TransientDataAccessException.class,
+        maxAttemptsExpression = "3",
+        backoff = @Backoff(delay = 5000L, multiplier = 3),
+        exceptionExpression = "#{#root.cause instanceof T(org.hibernate.exception.LockAcquisitionException)}"
+)
 @RequiredArgsConstructor
 public class TradeMachine {
 
