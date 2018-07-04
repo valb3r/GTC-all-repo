@@ -70,7 +70,8 @@ public class BinanceRestService implements ManageOrders, Withdraw, Account, Crea
 
     @Override
     public List<OrderDto> getOpen(TradingCurrency from, TradingCurrency to) {
-        BinanceRequestDto dto = new BinanceRequestDto();
+        PairSymbol pair = cfg.pairFromCurrencyOrThrow(from, to);
+        BinanceRequestOpenOrdersDto dto = new BinanceRequestOpenOrdersDto(pair.getSymbol());
         RestTemplate template = cfg.getRestTemplate();
         ResponseEntity<BinanceGetOrderDto[]> resp = template
                 .exchange(
