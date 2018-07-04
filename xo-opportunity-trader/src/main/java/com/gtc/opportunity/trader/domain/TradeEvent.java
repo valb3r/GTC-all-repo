@@ -15,6 +15,7 @@ public enum TradeEvent {
 
     public static final String DATA = "data";
     public static final String MSG_ID = "messageId";
+    public static final String ASSIGNED_ID = "assignedId";
     public static final String AMOUNT = "amount";
     public static final String PRICE = "price";
     public static final String STATUS = "status";

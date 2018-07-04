@@ -37,6 +37,7 @@ public class TradeMessageProcessor {
             header(PRICE, BigDecimal.class, state).ifPresent(trade::setPrice);
             header(STATUS, state).ifPresent(it -> processData.accept(trade, it));
             header(NATIVE_STATUS, state).ifPresent(it -> processData.accept(trade, it));
+            header(ASSIGNED_ID, state).ifPresent(trade::setAssignedId);
             trade.setStatusUpdated(timestamp.dbNow());
             trade.setStatus(state.getTarget().getId());
             tradeRepository.save(trade);

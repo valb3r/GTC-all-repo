@@ -89,26 +89,26 @@ public class TradeEsbEventHandler {
 
     public void ackCreate(String requestedId, String source, String status, String nativeStatus, Trade.EsbKey key) {
         findTrade(requestedId).ifPresent(order -> {
-            order.setAssignedId(key.getAssignedId());
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
                     .withPayload(TradeEvent.ACK)
                     .setHeader(TradeEvent.STATUS, status)
                     .setHeader(TradeEvent.NATIVE_STATUS, nativeStatus)
                     .setHeader(TradeEvent.MSG_ID, source)
+                    .setHeader(TradeEvent.ASSIGNED_ID, key.getAssignedId())
                     .build());
         });
     }
 
     public void ackCreateAndDone(String reqId, String source, String status, String nativeStatus, Trade.EsbKey key) {
         findTrade(reqId).ifPresent(order -> {
-            order.setAssignedId(key.getAssignedId() + "." + order.getId());
             StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
             machine.sendEvent(MessageBuilder
                     .withPayload(TradeEvent.ACK)
                     .setHeader(TradeEvent.STATUS, status)
                     .setHeader(TradeEvent.NATIVE_STATUS, nativeStatus)
                     .setHeader(TradeEvent.MSG_ID, source)
+                    .setHeader(TradeEvent.ASSIGNED_ID, key.getAssignedId() + "." + order.getId())
                     .build());
 
             machine.sendEvent(MessageBuilder
