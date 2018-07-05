@@ -34,7 +34,7 @@ public class TradePerformanceReportingService {
     private static final String AMOUNT_RAW = "Custom/Amount/RAW";
     private static final String AMOUNT_USD = "Custom/Amount/USD";
     private static final String AMOUNT_MILLI_BTC = "Custom/Amount/MilliBTC";
-    private static final String AMOUNT_IN_ORDERS_MILLI_BTC = "Custom/Amount/InOrdersMilliBTC";
+    private static final String AMOUNT_IN_ORDERS_MILLI_BTC = "Custom/Amount/LockedByOrdersMilliBTC";
 
     private static final String REJECTED_ALL_COUNT = "Custom/Rejected/All";
     private static final String REJECTED_ALL_WITH_ENABL_CONFIG_COUNT = "Custom/Rejected/AllEnabledConfigured";
@@ -150,7 +150,7 @@ public class TradePerformanceReportingService {
                 errorLossBtc = getInErrors(errorLossBtc, price, trades);
             } else if (isOpen(statuses)) {
                 expectedProfitBtc = expectedProfitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
-                inOrders = extractInOrders(inOrders, price, trades);
+                inOrders = extractInOrders(inOrders, priceList, trades);
             } else if (isDone(statuses)) {
                 profitBtc = profitBtc.add(xoTrade.getExpectedProfit().multiply(price.getPriceBtc()));
             }
@@ -176,13 +176,20 @@ public class TradePerformanceReportingService {
         );
     }
 
-    private BigDecimal extractInOrders(BigDecimal inOrders, CryptoPricing price, Collection<Trade> trades) {
+    private BigDecimal extractInOrders(BigDecimal inOrders, Map<TradingCurrency, CryptoPricing> priceList,
+                                       Collection<Trade> trades) {
         for (Trade trade : trades) {
             if (!isOpen(Collections.singletonList(trade.getStatus()))) {
                 continue;
             }
 
-            inOrders = inOrders.add(trade.getAmount().abs().multiply(price.getPriceBtc()));
+            if (trade.isSell() && priceList.containsKey(trade.getCurrencyFrom())) {
+                inOrders = inOrders.add(trade.getAmount().abs()
+                        .multiply(priceList.get(trade.getCurrencyFrom()).getPriceBtc()));
+            } else if (!trade.isSell() && priceList.containsKey(trade.getCurrencyTo())) {
+                inOrders = inOrders.add(trade.getAmount().abs().multiply(trade.getOpeningPrice())
+                        .multiply(priceList.get(trade.getCurrencyTo()).getPriceBtc()));
+            }
         }
         return inOrders;
     }
