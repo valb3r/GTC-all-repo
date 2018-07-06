@@ -16,4 +16,6 @@ public class ByClientAndCurrency {
     protected String client;
 
     protected CurrencyPair pair;
+
+    private final long timestamp = System.currentTimeMillis();
 }

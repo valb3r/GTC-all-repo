@@ -1,0 +1,51 @@
+group 'com.gtc.persistor'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${versions.springBoot}"
+        classpath "io.spring.gradle:dependency-management-plugin:${versions.springDependencyManagement}"
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url 'http://fugru.com/archiva/repository/snapshots' }
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    compile project(":shared")
+
+    compileOnly "org.projectlombok:lombok"
+
+    compile "org.springframework.boot:spring-boot-configuration-processor"
+    compile "org.springframework.boot:spring-boot-starter-websocket"
+    compile "io.reactivex.rxjava2:rxjava:${versions.reactivex}"
+    compile "com.google.guava:guava:${versions.guava}"
+    compile "ws.wamp.jawampa:jawampa-netty:${versions.rxWamp}"
+    compile "com.newrelic.agent.java:newrelic-api:${versions.newRelicAPI}"
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+jar {
+    baseName = "persistor"
+    version = project.version
+    archiveName = "persistor.jar"
+}
+
+bootRun {
+    systemProperties System.properties
+}
