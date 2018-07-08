@@ -22,6 +22,7 @@ public class Const {
     @UtilityClass
     public class Persist {
 
+        static final String PERSIST_CFG = CONF_ROOT_CHILD + "persist";
         public static final String PERSIST_S = "#{${app.schedule.persistS} * 1000}";
     }
 }
