@@ -9,20 +9,23 @@ import lombok.SneakyThrows;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.FileOutputStream;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.zip.GZIPOutputStream;
 
 import static com.gtc.persistor.config.Const.Persist.PERSIST_S;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
@@ -33,6 +36,7 @@ import static java.nio.file.StandardOpenOption.CREATE;
 @RequiredArgsConstructor
 public class BookPersistor {
 
+    private static final String TO_ZIP = ".to_zip";
     private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH");
 
     private final PersistConfig cfg;
@@ -40,21 +44,20 @@ public class BookPersistor {
 
     @Scheduled(fixedDelayString = PERSIST_S)
     public void persist() {
-        LocalDateTime date = LocalDateTime.now(ZoneOffset.UTC);
         List<OrderBook> orderBooks = new ArrayList<>(bookRepository.getOrders());
-        appendData(date, orderBooks);
+        appendData(orderBooks);
         bookRepository.clear();
         zipFinishedDataIfNecessary();
     }
 
-    private void appendData(LocalDateTime time, List<OrderBook> books) {
+    private void appendData(List<OrderBook> books) {
         books.sort(Comparator.comparingLong(a -> a.getMeta().getTimestamp()));
-        books.forEach(it -> writeBook(time, it));
+        books.forEach(this::writeBook);
     }
 
     @SneakyThrows
-    private void writeBook(LocalDateTime time, OrderBook book) {
-        String filename = baseName(book) + "-" + FORMAT.format(time);
+    private void writeBook(OrderBook book) {
+        String filename = baseName(book);
         Path dest = Paths.get(cfg.getDir(), filename);
         try (Writer file = MoreFiles.asCharSink(dest, UTF_8, CREATE, APPEND).openBufferedStream()) {
             if (!dest.toFile().exists()) {
@@ -113,14 +116,39 @@ public class BookPersistor {
         file.write(String.valueOf(value) + (hasSeparator ? "\t" : ""));
     }
 
+    @SneakyThrows
     private void zipFinishedDataIfNecessary() {
+        List<Path> files = Files.list(Paths.get(cfg.getDir()))
+                .filter(it -> !it.endsWith(suffix()))
+                .filter(it -> !it.endsWith(TO_ZIP))
+                .collect(Collectors.toList());
+
+        for (Path path : files) {
+            Path toZip = path.getParent().resolve(path.getFileName().toString() + TO_ZIP);
+            Files.move(path, toZip, REPLACE_EXISTING);
+            String origName = path.getFileName().toString();
+            try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(origName + ".gz"))) {
+                Files.copy(path, out);
+            }
+            Files.delete(toZip);
+        }
+    }
+
+    private LocalDateTime utcDate() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 
     private String baseName(OrderBook book) {
-        return String.format("%s-%s_%s",
+        return String.format("%s-%s_%s%s",
                 book.getMeta().getPair().getFrom(),
                 book.getMeta().getPair().getTo(),
-                book.getMeta().getClient()
+                book.getMeta().getClient(),
+                suffix()
         );
+    }
+
+    private String suffix() {
+        LocalDateTime date = utcDate();
+        return String.format("-%s.tsv", FORMAT.format(date));
     }
 }
