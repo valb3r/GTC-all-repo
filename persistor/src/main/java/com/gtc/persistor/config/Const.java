@@ -15,7 +15,7 @@ public class Const {
     public class Ws {
 
         static final String CHILD = CONF_ROOT_CHILD + "ws.";
-        public static final String PROVIDER = "provider";
+        public static final String MARKET = "market";
         public static final String WS_RECONNECT_S = "#{${app.schedule.wsReconnectS} * 1000}";
     }
 

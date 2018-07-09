@@ -17,8 +17,9 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
@@ -37,6 +38,7 @@ import static java.nio.file.StandardOpenOption.CREATE;
 public class BookPersistor {
 
     private static final String TO_ZIP = ".to_zip";
+    private static final String GZ = ".gz";
     private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH");
 
     private final PersistConfig cfg;
@@ -59,8 +61,9 @@ public class BookPersistor {
     private void writeBook(OrderBook book) {
         String filename = baseName(book);
         Path dest = Paths.get(cfg.getDir(), filename);
+        boolean exists = dest.toFile().exists();
         try (Writer file = MoreFiles.asCharSink(dest, UTF_8, CREATE, APPEND).openBufferedStream()) {
-            if (!dest.toFile().exists()) {
+            if (!exists) {
                 writeHeader(file, book.getHistogramBuy().length, book.getHistogramSell().length);
             }
 
@@ -75,20 +78,20 @@ public class BookPersistor {
         file.write("Best sell\t");
         file.write("Histogram price sell step\t");
         file.write("Histogram price buy step\t");
-        BiConsumer<String, Integer> writeAmounts = (name, precision) -> {
-            for (int i = 0; i < precision; ++i) {
-                file.write(name + i);
 
-                if (i != precision - 1) {
-                    file.write("\t");
-                }
-            }
-        };
-
-        writeAmounts.accept("Buy amount at ", histogramBuyPrecision);
-        writeAmounts.accept("Sell amount at ", histogramSellPrecision);
+        writeAmounts(file, "Buy amount at ", histogramBuyPrecision);
+        writeAmounts(file, "Sell amount at ", histogramSellPrecision);
+        file.write(System.lineSeparator());
     }
 
+    @SneakyThrows
+    private void writeAmounts(Writer file, String name, int precision) {
+        for (int i = 0; i < precision; ++i) {
+            file.write(name + i + "\t");
+        }
+    }
+
+    @SneakyThrows
     private void writeBook(Writer file, OrderBook book) {
         writeField(file, book.getMeta().getTimestamp());
         writeField(file, book.getBestBuy());
@@ -104,6 +107,7 @@ public class BookPersistor {
 
         writeHistogram.accept(book.getHistogramBuy());
         writeHistogram.accept(book.getHistogramSell());
+        file.write(System.lineSeparator());
     }
 
     @SneakyThrows
@@ -119,16 +123,20 @@ public class BookPersistor {
     @SneakyThrows
     private void zipFinishedDataIfNecessary() {
         List<Path> files = Files.list(Paths.get(cfg.getDir()))
-                .filter(it -> !it.endsWith(suffix()))
-                .filter(it -> !it.endsWith(TO_ZIP))
+                .filter(it -> it.toFile().isFile())
+                .filter(it -> {
+                    String path = it.toString();
+                    return !path.endsWith(suffix()) && !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
+                })
                 .collect(Collectors.toList());
 
         for (Path path : files) {
             Path toZip = path.getParent().resolve(path.getFileName().toString() + TO_ZIP);
             Files.move(path, toZip, REPLACE_EXISTING);
             String origName = path.getFileName().toString();
-            try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(origName + ".gz"))) {
-                Files.copy(path, out);
+            try (GZIPOutputStream out = new GZIPOutputStream(
+                    new FileOutputStream(path.getParent().resolve(origName + ".gz").toFile()))) {
+                Files.copy(toZip, out);
             }
             Files.delete(toZip);
         }

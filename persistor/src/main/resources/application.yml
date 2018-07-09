@@ -1,0 +1,22 @@
+spring:
+    application:
+        name: gtc-persistor
+    jackson:
+        property-naming-strategy: SNAKE_CASE
+        locale: en_US
+        serialization:
+            fail-on-empty-beans: false
+            write_dates_as_timestamps: false
+server:
+    port: 8085
+app:
+  schedule:
+      persistS: 10
+      wsReconnectS: 10
+  persist:
+      dir: /home/valb3r/Documents/projects/GTC/temp
+  ws:
+      market:
+          disconnect-if-inactive-s: 5
+          markets-to-subscribe: hitbtc,okex,binance
+          provider: ws://localhost:8080/api/market
