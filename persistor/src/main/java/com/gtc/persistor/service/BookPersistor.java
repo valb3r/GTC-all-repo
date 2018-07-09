@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
 
 import static com.gtc.persistor.config.Const.Persist.PERSIST_S;
@@ -122,15 +123,7 @@ public class BookPersistor {
 
     @SneakyThrows
     private void zipFinishedDataIfNecessary() {
-        List<Path> files = Files.list(Paths.get(cfg.getDir()))
-                .filter(it -> it.toFile().isFile())
-                .filter(it -> {
-                    String path = it.toString();
-                    return !path.endsWith(suffix()) && !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
-                })
-                .collect(Collectors.toList());
-
-        for (Path path : files) {
+        for (Path path : listFilesToZip()) {
             Path toZip = path.getParent().resolve(path.getFileName().toString() + TO_ZIP);
             Files.move(path, toZip, REPLACE_EXISTING);
             String origName = path.getFileName().toString();
@@ -139,6 +132,19 @@ public class BookPersistor {
                 Files.copy(toZip, out);
             }
             Files.delete(toZip);
+        }
+    }
+
+    @SneakyThrows
+    private List<Path> listFilesToZip() {
+        try (Stream<Path> pathStream = Files.list(Paths.get(cfg.getDir()))) {
+            return pathStream
+                    .filter(it -> it.toFile().isFile())
+                    .filter(it -> {
+                        String path = it.toString();
+                        return !path.endsWith(suffix()) && !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
+                    })
+                    .collect(Collectors.toList());
         }
     }
 
