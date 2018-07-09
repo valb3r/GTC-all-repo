@@ -8,6 +8,7 @@ import com.gtc.opportunity.trader.repository.AcceptedXoTradeRepository;
 import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.opportunity.replenishment.TradeReplenishmentService;
+import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -64,6 +65,7 @@ public class XoAcceptMachine {
     }
 
     @Async
+    @Trace(dispatcher = true)
     @Transactional
     public void replenish(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
         log.info("Replenish evt {}", state);
