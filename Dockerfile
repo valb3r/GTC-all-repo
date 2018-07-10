@@ -1,6 +1,7 @@
 FROM openjdk:8
 VOLUME /tmp
 RUN mkdir -p /var/app
+RUN mkdir /var/app/book_history
 WORKDIR /var/app
 
 ADD all.sh all.sh
