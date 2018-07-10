@@ -50,8 +50,8 @@ public class BookPersistor {
     @Scheduled(fixedDelayString = PERSIST_S)
     public void persist() {
         List<OrderBook> orderBooks = new ArrayList<>(bookRepository.getOrders());
-        appendData(orderBooks);
         bookRepository.clear();
+        appendData(orderBooks);
         zipFinishedDataIfNecessary();
     }
 
