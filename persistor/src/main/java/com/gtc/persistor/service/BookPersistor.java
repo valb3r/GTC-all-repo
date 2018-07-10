@@ -4,6 +4,7 @@ import com.google.common.io.MoreFiles;
 import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.persistor.config.PersistConfig;
+import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -45,6 +46,7 @@ public class BookPersistor {
     private final PersistConfig cfg;
     private final OrderBookRepository bookRepository;
 
+    @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = PERSIST_S)
     public void persist() {
         List<OrderBook> orderBooks = new ArrayList<>(bookRepository.getOrders());
