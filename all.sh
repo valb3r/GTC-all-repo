@@ -28,7 +28,7 @@ java \
     -javaagent:/var/app/newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=Persistor \
-    -Xms32m -Xmx64m -Djava.security.egd=file:/dev/./urandom \
+    -Xms32m -Xmx128m -Djava.security.egd=file:/dev/./urandom \
     -Dfile.encoding=UTF8 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=15008 \
     -jar persistor.jar &
 
