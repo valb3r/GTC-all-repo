@@ -109,6 +109,7 @@ public class BookPersistor {
         };
 
         writeHistogram.accept(book.getHistogramBuy());
+        file.write("\t");
         writeHistogram.accept(book.getHistogramSell());
         file.write(System.lineSeparator());
     }
