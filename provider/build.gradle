@@ -26,12 +26,13 @@ repositories {
 }
 
 dependencies {
-    compile project(":shared")
+    compile(project(":shared")) {
+        exclude group: 'org.hibernate', module: 'hibernate-java8'
+    }
 
     compileOnly "org.projectlombok:lombok"
 
     compile "org.springframework.boot:spring-boot-configuration-processor"
-    compile "org.springframework.boot:spring-boot-starter-web"
     compile "org.springframework.boot:spring-boot-starter-websocket"
     compile "io.reactivex.rxjava2:rxjava:${versions.reactivex}"
     compile "com.google.guava:guava:${versions.guava}"
