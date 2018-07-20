@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(value = "NO_CREATE", havingValue = "true")
 public class PreventCreationAspect {
 
-    @Around("execution(public * create(..))")
+    @Around("execution(public * com.gtc.tradinggateway..create(..))")
     public Object abort(ProceedingJoinPoint joinPoint) throws Throwable {
         if (!(joinPoint.getThis() instanceof CreateOrder)) {
             return joinPoint.proceed();
