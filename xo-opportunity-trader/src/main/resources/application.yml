@@ -44,10 +44,14 @@ spring:
         locations: classpath:/db/opportunity-trader/migrations
         placeholders:
             PART_INDEX_SZ: "(3)"
+    jmx:
+      enabled: false
 server:
     servlet:
         path: /api
     port: 8083
+    tomcat:
+        max-threads: 4
 app:
     opportunities:
         minGain: 1.003

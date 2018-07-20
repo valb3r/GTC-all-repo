@@ -1,4 +1,6 @@
 spring:
+    main:
+        web-application-type: none
     application:
         name: gtc-persistor
     jackson:
@@ -7,8 +9,12 @@ spring:
         serialization:
             fail-on-empty-beans: false
             write_dates_as_timestamps: false
+    jmx:
+        enabled: false
 server:
     port: 8085
+    tomcat:
+        max-threads: 4
 app:
   schedule:
       persistS: 10
