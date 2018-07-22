@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,12 +47,19 @@ public class BookPersistor {
     private final PersistConfig cfg;
     private final OrderBookRepository bookRepository;
 
+    private final AtomicReference<String> lastSuffix = new AtomicReference<>();
+
     @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = PERSIST_S)
     public void persist() {
         List<OrderBook> orderBooks = new ArrayList<>(bookRepository.getOrders());
         bookRepository.clear();
         appendData(orderBooks);
+    }
+
+    @Trace(dispatcher = true)
+    @Scheduled(fixedDelayString = PERSIST_S)
+    public void zipIfNeeded() {
         zipFinishedDataIfNecessary();
     }
 
@@ -145,7 +153,7 @@ public class BookPersistor {
                     .filter(it -> it.toFile().isFile())
                     .filter(it -> {
                         String path = it.toString();
-                        return !path.endsWith(suffix()) && !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
+                        return !path.endsWith(lastSuffix.get()) && !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
                     })
                     .collect(Collectors.toList());
         }
@@ -156,11 +164,13 @@ public class BookPersistor {
     }
 
     private String baseName(OrderBook book) {
+        String suffix = suffix();
+        lastSuffix.set(suffix);
         return String.format("%s-%s_%s%s",
                 book.getMeta().getPair().getFrom(),
                 book.getMeta().getPair().getTo(),
                 book.getMeta().getClient(),
-                suffix()
+                suffix
         );
     }
 
