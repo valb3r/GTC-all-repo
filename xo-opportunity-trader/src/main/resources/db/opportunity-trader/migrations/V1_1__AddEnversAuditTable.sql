@@ -18,7 +18,6 @@ CREATE TABLE accepted_xo_trade_aud
   CONSTRAINT accepted_xo_trade_aud_pkey PRIMARY KEY (id, rev),
   CONSTRAINT accepted_xo_trade_aud_revinfo FOREIGN KEY (rev)
   REFERENCES revinfo (rev)
-    MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
 )
@@ -40,7 +39,6 @@ CREATE TABLE trade_aud
   CONSTRAINT trade_aud_pkey PRIMARY KEY (id, rev),
   CONSTRAINT aud_revinfo FOREIGN KEY (rev)
   REFERENCES revinfo (rev)
-    MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
 )

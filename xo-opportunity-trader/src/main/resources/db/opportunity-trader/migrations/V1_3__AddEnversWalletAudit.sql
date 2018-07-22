@@ -7,7 +7,6 @@ CREATE TABLE wallet_aud
   CONSTRAINT wallet_aud_pkey PRIMARY KEY (id, rev),
   CONSTRAINT wallet_aud_revinfo FOREIGN KEY (rev)
   REFERENCES revinfo (rev)
-    MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
 )
