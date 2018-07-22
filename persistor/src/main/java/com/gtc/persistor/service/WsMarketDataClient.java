@@ -72,7 +72,7 @@ public class WsMarketDataClient {
             return;
         }
 
-        OrderBook book = mapper.readValue(node.toString(), OrderBook.class);
+        OrderBook book = mapper.readValue(node.traverse(), OrderBook.class);
         bookRepository.storeOrderBook(book);
     }
 }

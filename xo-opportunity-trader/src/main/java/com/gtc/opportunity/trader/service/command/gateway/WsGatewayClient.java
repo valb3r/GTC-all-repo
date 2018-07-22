@@ -97,7 +97,7 @@ public class WsGatewayClient {
 
     @SneakyThrows
     private void handleMessage(JsonNode node) {
-        BaseMessage message = mapper.readValue(node.toString(), BaseMessage.class);
+        BaseMessage message = mapper.readValue(node.traverse(), BaseMessage.class);
         Consumer<JsonNode> handler = handlers.get(message.getType());
         if (null != handler) {
             handler.accept(node);
@@ -114,6 +114,6 @@ public class WsGatewayClient {
 
     @SneakyThrows
     private <T> T read(JsonNode message, Class<T> clazz) {
-        return mapper.readValue(message.toString(), clazz);
+        return mapper.readValue(message.traverse(), clazz);
     }
 }
