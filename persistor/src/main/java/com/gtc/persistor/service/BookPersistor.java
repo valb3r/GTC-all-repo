@@ -44,7 +44,7 @@ public class BookPersistor {
 
     private static final String TO_ZIP = ".to_zip";
     private static final String GZ = ".gz";
-    private static final DateTimeFormatter FULL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final DateTimeFormatter FULL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
     private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH");
     private static final Pattern TIME_PATTERN = Pattern.compile(".+(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d)\\.tsv");
     private AtomicReference<LocalDateTime> maxTime = new AtomicReference<>(LocalDateTime.MIN);
