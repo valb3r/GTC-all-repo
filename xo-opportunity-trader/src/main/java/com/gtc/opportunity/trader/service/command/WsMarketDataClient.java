@@ -3,6 +3,7 @@ package com.gtc.opportunity.trader.service.command;
 import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.SubscribeDto;
 import com.gtc.opportunity.trader.config.WsConfig;
@@ -28,17 +29,16 @@ import static com.gtc.opportunity.trader.config.Const.Ws.WS_RECONNECT_S;
 @Service
 public class WsMarketDataClient {
 
-    private final ObjectMapper mapper;
     private final BaseWebsocketClient wsClient;
     private final ClientRepository clientRepository;
     private final BookRepository bookRepository;
+    private final ObjectReader bookReader;
 
     public WsMarketDataClient(
             WsConfig wsConfig,
             ObjectMapper objectMapper,
             ClientRepository clientRepository,
             BookRepository bookRepository) {
-        this.mapper = objectMapper;
         this.clientRepository = clientRepository;
         this.bookRepository = bookRepository;
         this.wsClient = new BaseWebsocketClient(
@@ -54,6 +54,7 @@ public class WsMarketDataClient {
                         node -> {}
                 )
         );
+        this.bookReader = objectMapper.readerFor(OrderBook.class);
     }
 
     @Scheduled(fixedDelayString = WS_RECONNECT_S)
@@ -81,7 +82,7 @@ public class WsMarketDataClient {
             return;
         }
 
-        OrderBook book = mapper.readValue(node.traverse(), OrderBook.class);
+        OrderBook book = bookReader.readValue(node);
         bookRepository.addOrderBook(book);
     }
 }

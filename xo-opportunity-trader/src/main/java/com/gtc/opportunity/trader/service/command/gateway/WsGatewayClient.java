@@ -3,6 +3,7 @@ package com.gtc.opportunity.trader.service.command.gateway;
 import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.collect.ImmutableMap;
 import com.gtc.model.gateway.BaseMessage;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -38,6 +40,8 @@ public class WsGatewayClient {
 
     private final Map<String, Consumer<JsonNode>> handlers;
     private final Map<String, Consumer<ErrorResponse>> errorHandlers;
+
+    private final Map<String, ObjectReader> readers = new ConcurrentHashMap<>();
 
     public WsGatewayClient(WsConfig wsConfig, ObjectMapper objectMapper, WsGatewayResponseListener respListener,
                            WsGatewayErrorResponseListener errListener) {
@@ -114,6 +118,6 @@ public class WsGatewayClient {
 
     @SneakyThrows
     private <T> T read(JsonNode message, Class<T> clazz) {
-        return mapper.readValue(message.traverse(), clazz);
+        return readers.computeIfAbsent(clazz.getCanonicalName(), id -> mapper.readerFor(clazz)).readValue(message);
     }
 }
