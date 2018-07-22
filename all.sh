@@ -6,7 +6,7 @@ java \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=BookProvider \
     -Xms64m -Xmx128m -XX:-TieredCompilation -Xss256k -XX:+UseStringDeduplication -XX:+UseG1GC \
     -Djava.security.egd=file:/dev/./urandom \
-    -Dfile.encoding=UTF8 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=15005 \
+    -Dfile.encoding=UTF8 \
     -jar provider.jar &
 
 java \
@@ -15,7 +15,7 @@ java \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=TradeGateway \
     -Xms32m -Xmx64m -XX:-TieredCompilation -Xss256k -XX:+UseStringDeduplication -XX:+UseG1GC \
     -Djava.security.egd=file:/dev/./urandom \
-    -Dfile.encoding=UTF8 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=15006 \
+    -Dfile.encoding=UTF8 \
     -jar gateway.jar &
 
 java \
@@ -24,7 +24,7 @@ java \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=XoOpportunityTrader \
     -Xms128m -Xmx256m -XX:-TieredCompilation -Xss256k -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseG1GC \
     -Djava.security.egd=file:/dev/./urandom \
-    -Dfile.encoding=UTF8 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=15007 \
+    -Dfile.encoding=UTF8 \
     -jar opportunity-trader.jar &
 
 java \
@@ -33,7 +33,7 @@ java \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=Persistor \
     -Xms32m -Xmx64m -XX:-TieredCompilation -Xss256k -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseG1GC \
     -Djava.security.egd=file:/dev/./urandom \
-    -Dfile.encoding=UTF8 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=15008 \
+    -Dfile.encoding=UTF8 \
     -jar persistor.jar &
 
 wait
