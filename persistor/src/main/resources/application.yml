@@ -18,7 +18,7 @@ server:
         max-threads: 4
 app:
   schedule:
-      persistS: 10
+      persistS: 5
       wsReconnectS: 10
   persist:
       dir: ${PERSIST_DIR}
