@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -148,6 +149,11 @@ public class BookPersistor {
 
     @SneakyThrows
     private List<Path> listFilesToZip() {
+        String suffix = lastSuffix.get();
+        if (null == suffix) {
+            return Collections.emptyList();
+        }
+        
         try (Stream<Path> pathStream = Files.list(Paths.get(cfg.getDir()))) {
             return pathStream
                     .filter(it -> it.toFile().isFile())
