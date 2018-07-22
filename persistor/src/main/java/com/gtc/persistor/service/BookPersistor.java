@@ -19,11 +19,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
@@ -43,12 +44,13 @@ public class BookPersistor {
 
     private static final String TO_ZIP = ".to_zip";
     private static final String GZ = ".gz";
-    private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH");
+    private static final DateTimeFormatter FULL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH");
+    private static final Pattern TIME_PATTERN = Pattern.compile(".+(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d)\\.tsv");
+    private AtomicReference<LocalDateTime> maxTime = new AtomicReference<>(LocalDateTime.MIN);
 
     private final PersistConfig cfg;
     private final OrderBookRepository bookRepository;
-
-    private final AtomicReference<String> lastSuffix = new AtomicReference<>();
 
     @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = PERSIST_S)
@@ -60,7 +62,7 @@ public class BookPersistor {
 
     @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = PERSIST_S)
-    public void zipIfNeeded() {
+    public void zipIfNecessary() {
         zipFinishedDataIfNecessary();
     }
 
@@ -149,20 +151,26 @@ public class BookPersistor {
 
     @SneakyThrows
     private List<Path> listFilesToZip() {
-        String suffix = lastSuffix.get();
-        if (null == suffix) {
-            return Collections.emptyList();
-        }
-        
         try (Stream<Path> pathStream = Files.list(Paths.get(cfg.getDir()))) {
             return pathStream
                     .filter(it -> it.toFile().isFile())
                     .filter(it -> {
                         String path = it.toString();
-                        return !path.endsWith(lastSuffix.get()) && !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
+                        return !path.endsWith(TO_ZIP) && !path.endsWith(GZ)
+                                && extractFromPath(path).compareTo(maxTime.get()) < 0;
                     })
                     .collect(Collectors.toList());
         }
+    }
+
+    private LocalDateTime extractFromPath(String path) {
+        Matcher matcher = TIME_PATTERN.matcher(path);
+        if (!matcher.matches()) {
+            return LocalDateTime.MIN;
+        }
+
+        String dateAndHour = matcher.group(1);
+        return LocalDateTime.parse(dateAndHour + ":00", FULL_FORMAT);
     }
 
     private LocalDateTime utcDate() {
@@ -170,18 +178,17 @@ public class BookPersistor {
     }
 
     private String baseName(OrderBook book) {
-        String suffix = suffix();
-        lastSuffix.set(suffix);
         return String.format("%s-%s_%s%s",
                 book.getMeta().getPair().getFrom(),
                 book.getMeta().getPair().getTo(),
                 book.getMeta().getClient(),
-                suffix
+                suffix()
         );
     }
 
     private String suffix() {
         LocalDateTime date = utcDate();
+        maxTime.set(date);
         return String.format("-%s.tsv", FORMAT.format(date));
     }
 }
