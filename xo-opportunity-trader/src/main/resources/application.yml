@@ -49,6 +49,7 @@ spring:
     jmx:
       enabled: false
 server:
+    address: 127.0.0.1
     servlet:
         path: /api
     port: 8083
