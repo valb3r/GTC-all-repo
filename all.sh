@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
+if [ -f newrelic.zip ]; then
+    rm -rf newrelic
+    unzip newrelic.zip
+fi
+
 java \
-    -javaagent:newrelic.jar \
+    -javaagent:newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=BookProvider \
     -Xms64m -Xmx128m -XX:-TieredCompilation -Xss256k -XX:+UseStringDeduplication -XX:+UseG1GC \
@@ -10,7 +15,7 @@ java \
     -jar provider.jar &
 
 java \
-    -javaagent:newrelic.jar \
+    -javaagent:newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=TradeGateway \
     -Xms32m -Xmx64m -XX:-TieredCompilation -Xss256k -XX:+UseStringDeduplication -XX:+UseG1GC \
@@ -19,7 +24,7 @@ java \
     -jar gateway.jar &
 
 java \
-    -javaagent:newrelic.jar \
+    -javaagent:newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=XoOpportunityTrader \
     -Xms128m -Xmx256m -XX:-TieredCompilation -Xss256k -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseG1GC \
@@ -28,7 +33,7 @@ java \
     -jar opportunity-trader.jar &
 
 java \
-    -javaagent:newrelic.jar \
+    -javaagent:newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=Persistor \
     -Xms32m -Xmx64m -XX:-TieredCompilation -Xss256k -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseG1GC \
@@ -36,4 +41,4 @@ java \
     -Dfile.encoding=UTF8 \
     -jar persistor.jar &
 
-wait
+wait &
