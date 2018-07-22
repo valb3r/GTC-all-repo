@@ -3,6 +3,7 @@ package com.gtc.persistor.service;
 import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.SubscribeDto;
 import com.gtc.persistor.config.WsConfig;
@@ -28,6 +29,8 @@ public class WsMarketDataClient {
     private final ObjectMapper mapper;
     private final BaseWebsocketClient wsClient;
 
+    private final ObjectReader bookReader;
+
     public WsMarketDataClient(
             WsConfig wsConfig,
             OrderBookRepository bookRepository,
@@ -48,6 +51,8 @@ public class WsMarketDataClient {
                         node -> {}
                 )
         );
+
+        this.bookReader = objectMapper.readerFor(OrderBook.class);
     }
 
     @Scheduled(fixedDelayString = WS_RECONNECT_S)
@@ -72,7 +77,7 @@ public class WsMarketDataClient {
             return;
         }
 
-        OrderBook book = mapper.readValue(node.traverse(), OrderBook.class);
+        OrderBook book = bookReader.readValue(node);
         bookRepository.storeOrderBook(book);
     }
 }
