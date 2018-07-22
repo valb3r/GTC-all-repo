@@ -191,6 +191,10 @@ public class XoTransactionCalculator {
             return new ListValueRange<>(ImmutableList.of(min));
         }
 
+        if (max < min) {
+            return new LongValueRange(max, min);
+        }
+
         return new LongValueRange(min, max);
     }
 

@@ -71,29 +71,33 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
 
         RandomIterator(XoTradeBalance solution, Random workingRandom) {
             this.solution = solution;
-            sellFromAmountRandom = workingRandom.doubles(
+            sellFromAmountRandom = buildStream(
+                    workingRandom,
                     solution.getConstraint().getMinFromSellAmount().getApprox() - DOUBLE_EPS,
                     solution.getConstraint().getMaxFromSellAmount().getApprox()
-            ).iterator();
+            );
 
-            sellFromPriceRandom = workingRandom.doubles(
+            sellFromPriceRandom = buildStream(
+                    workingRandom,
                     Arrays.stream(solution.getConstraint().getMarketBuyFrom())
                             .mapToDouble(FullCrossMarketOpportunity.Histogram::getMinPrice)
                             .min().orElse(0.0) - DOUBLE_EPS,
                     solution.getConstraint().getMaxFromSellPrice().getApprox()
-            ).iterator();
+            );
 
-            buyToAmountRandom = workingRandom.doubles(
+            buyToAmountRandom = buildStream(
+                    workingRandom,
                     solution.getConstraint().getMinToBuyAmount().getApprox()- DOUBLE_EPS,
                     solution.getConstraint().getMaxToBuyAmount().getApprox()
-            ).iterator();
+            );
 
-            buyToPriceRandom = workingRandom.doubles(
+            buyToPriceRandom = buildStream(
+                    workingRandom,
                     solution.getConstraint().getMinToBuyPrice().getApprox() - DOUBLE_EPS,
                     Arrays.stream(solution.getConstraint().getMarketSellTo())
                             .mapToDouble(FullCrossMarketOpportunity.Histogram::getMaxPrice)
                             .max().orElse(0.0)
-            ).iterator();
+            );
 
             dice = workingRandom.ints(-STEP_RANGE, STEP_RANGE).iterator();
             distort = workingRandom.ints(-DISTORT_RANGE, DISTORT_RANGE).iterator();
@@ -115,6 +119,10 @@ public class XoMoveIteratorFactory implements MoveIteratorFactory<XoTradeBalance
             }
 
             return moves.poll();
+        }
+
+        private static Iterator<Double> buildStream(Random workingRandom, double min, double max) {
+            return workingRandom.doubles(Math.min(min, max), Math.max(min, max)).iterator();
         }
 
         private List<XoMove> buildPack() {

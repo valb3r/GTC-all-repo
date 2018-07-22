@@ -35,7 +35,9 @@ dependencies {
     compile "org.projectlombok:lombok"
 
     compile "org.springframework.boot:spring-boot-configuration-processor"
-    compile "org.springframework.boot:spring-boot-starter-web"
+    compile("org.springframework.boot:spring-boot-starter-websocket") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-web"
+    }
     compile "org.springframework.boot:spring-boot-starter-data-jpa"
     compile "org.springframework.boot:spring-boot-starter-aop"
     compile "org.springframework.retry:spring-retry:${versions.retry}"

@@ -7,10 +7,14 @@ spring:
         serialization:
             fail-on-empty-beans: false
             write_dates_as_timestamps: false
+    jmx:
+        enabled: false
 server:
     servlet:
         path: /api
     port: 8084
+    tomcat:
+        max-threads: 4
 app:
     gdax:
         restBase:

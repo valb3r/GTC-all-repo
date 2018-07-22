@@ -1,0 +1,28 @@
+spring:
+    main:
+        web-application-type: none
+    application:
+        name: gtc-persistor
+    jackson:
+        property-naming-strategy: SNAKE_CASE
+        locale: en_US
+        serialization:
+            fail-on-empty-beans: false
+            write_dates_as_timestamps: false
+    jmx:
+        enabled: false
+server:
+    port: 8085
+    tomcat:
+        max-threads: 4
+app:
+  schedule:
+      persistS: 10
+      wsReconnectS: 10
+  persist:
+      dir: ${PERSIST_DIR}
+  ws:
+      market:
+          disconnect-if-inactive-s: 5
+          markets-to-subscribe: hitbtc,huobi,okex,binance,therocktrading
+          provider: ws://localhost:8080/api/market

@@ -152,7 +152,7 @@ public class PreciseReplenishmentCalculator {
                 BigDecimal.ZERO
                         .setScale(fittedXo.getPriceGridStepBuy().scale(), BigDecimal.ROUND_CEILING),
                 fittedXo.getTargetBuyPrice().multiply(BigDecimal.TEN)
-                        .setScale(fittedXo.getPriceGridStepSell().scale(), BigDecimal.ROUND_CEILING),
+                        .setScale(fittedXo.getPriceGridStepBuy().scale(), BigDecimal.ROUND_CEILING),
                 fittedXo.getPriceGridStepBuy()
         );
     }

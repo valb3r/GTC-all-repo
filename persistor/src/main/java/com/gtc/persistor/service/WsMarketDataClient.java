@@ -1,26 +1,20 @@
-package com.gtc.opportunity.trader.service.command;
+package com.gtc.persistor.service;
 
 import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.SubscribeDto;
-import com.gtc.opportunity.trader.config.WsConfig;
-import com.gtc.opportunity.trader.domain.Client;
-import com.gtc.opportunity.trader.repository.ClientRepository;
-import com.gtc.opportunity.trader.service.opportunity.finder.BookRepository;
+import com.gtc.persistor.config.WsConfig;
 import com.gtc.ws.BaseWebsocketClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.stream.StreamSupport;
 
-import static com.gtc.opportunity.trader.config.Const.Ws.WS_RECONNECT_S;
+import static com.gtc.persistor.config.Const.Ws.WS_RECONNECT_S;
 
 /**
  * Created by Valentyn Berezin on 16.06.18.
@@ -29,21 +23,21 @@ import static com.gtc.opportunity.trader.config.Const.Ws.WS_RECONNECT_S;
 @Service
 public class WsMarketDataClient {
 
+    private final WsConfig cfg;
+    private final OrderBookRepository bookRepository;
+    private final ObjectMapper mapper;
     private final BaseWebsocketClient wsClient;
-    private final ClientRepository clientRepository;
-    private final BookRepository bookRepository;
-    private final ObjectReader bookReader;
 
     public WsMarketDataClient(
             WsConfig wsConfig,
-            ObjectMapper objectMapper,
-            ClientRepository clientRepository,
-            BookRepository bookRepository) {
-        this.clientRepository = clientRepository;
+            OrderBookRepository bookRepository,
+            ObjectMapper objectMapper) {
+        this.cfg = wsConfig;
         this.bookRepository = bookRepository;
+        this.mapper = objectMapper;
         this.wsClient = new BaseWebsocketClient(
                 new BaseWebsocketClient.Config(
-                        wsConfig.getMarket(),
+                        wsConfig.getProvider(),
                         "market",
                         wsConfig.getDisconnectIfInactiveS(),
                         objectMapper, log
@@ -54,7 +48,6 @@ public class WsMarketDataClient {
                         node -> {}
                 )
         );
-        this.bookReader = objectMapper.readerFor(OrderBook.class);
     }
 
     @Scheduled(fixedDelayString = WS_RECONNECT_S)
@@ -66,13 +59,10 @@ public class WsMarketDataClient {
         wsClient.connect(new HashMap<>());
     }
 
-    @Transactional(readOnly = true)
-    public void subscribeOnConnect(RxObjectEventConnected conn) {
-        StreamSupport
-                .stream(clientRepository.findAll().spliterator(), false)
-                .map(Client::getName)
+    private void subscribeOnConnect(RxObjectEventConnected conn) {
+        cfg.getMarketsToSubscribe()
                 .forEach(name ->
-                    BaseWebsocketClient.sendIfNotNull(conn, new SubscribeDto(name, SubscribeDto.Mode.BOOK))
+                        BaseWebsocketClient.sendIfNotNull(conn, new SubscribeDto(name, SubscribeDto.Mode.BOOK))
                 );
     }
 
@@ -82,7 +72,7 @@ public class WsMarketDataClient {
             return;
         }
 
-        OrderBook book = bookReader.readValue(node);
-        bookRepository.addOrderBook(book);
+        OrderBook book = mapper.readValue(node.traverse(), OrderBook.class);
+        bookRepository.storeOrderBook(book);
     }
 }
