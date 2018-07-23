@@ -81,7 +81,7 @@ public class BookPersistor {
         if (books.isEmpty()) {
             return;
         }
-        
+
         books.sort(Comparator.comparingLong(a -> a.getMeta().getTimestamp()));
         Path dest = Paths.get(cfg.getDir(), filename);
         boolean exists = dest.toFile().exists();
