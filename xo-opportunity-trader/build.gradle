@@ -45,7 +45,7 @@ dependencies {
     compile "org.springframework.statemachine:spring-statemachine-data-jpa:${versions.statemachine}"
     compile "org.hibernate:hibernate-envers"
     compile "org.hibernate:hibernate-java8"
-    compile "com.h2database:h2"
+    compile "mysql:mysql-connector-java"
     compile "org.flywaydb:flyway-core:${versions.flywaydb}"
     compile "com.google.guava:guava:${versions.guava}"
     compile "com.newrelic.agent.java:newrelic-api:${versions.newRelicAPI}"

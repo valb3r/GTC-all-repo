@@ -10,8 +10,8 @@ spring:
             fail-on-empty-beans: false
             write_dates_as_timestamps: false
     datasource:
-        driverClassName: org.h2.Driver
-        url: ${DB_URL}
+        driverClassName: com.mysql.jdbc.Driver
+        url: jdbc:mysql://${DB_URL}?useSSL=${USE_SSL}&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8
         username: ${DB_USER}
         password: ${DB_PASSWORD}
         tomcat:
@@ -34,7 +34,7 @@ spring:
             use-new-id-generator-mappings: false
         properties:
             hibernate:
-                dialect: org.hibernate.dialect.H2Dialect
+                dialect: com.gtc.opportunity.trader.config.MySqlDialect
                 jdbc:
                     batch_size: 100
                 order_inserts: true
@@ -45,7 +45,7 @@ spring:
         enabled: true
         locations: classpath:/db/opportunity-trader/migrations
         placeholders:
-            PART_INDEX_SZ: ""
+            PART_INDEX_SZ: "(3)"
     jmx:
       enabled: false
 server:
