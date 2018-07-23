@@ -180,7 +180,8 @@ public class BookPersistor {
         }
 
         String dateAndHour = matcher.group(1);
-        return LocalDateTime.parse(dateAndHour + ":00", FULL_FORMAT);
+        // since active file for 17:35:00 has 17 hour, we can touch it only at 18:00
+        return LocalDateTime.parse(dateAndHour + ":00", FULL_FORMAT).plusHours(1);
     }
 
     private LocalDateTime utcDate() {
