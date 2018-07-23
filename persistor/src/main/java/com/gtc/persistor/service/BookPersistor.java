@@ -18,9 +18,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -67,21 +65,33 @@ public class BookPersistor {
     }
 
     private void appendData(List<OrderBook> books) {
-        books.sort(Comparator.comparingLong(a -> a.getMeta().getTimestamp()));
-        books.forEach(this::writeBook);
+        Map<String, List<OrderBook>> booksToFile = new HashMap<>();
+        String suffix = getSuffixAndLockDate();
+
+        books.forEach(it -> booksToFile
+                .computeIfAbsent(baseName(it, suffix), id -> new ArrayList<>())
+                .add(it)
+        );
+
+        booksToFile.forEach(this::writeBooks);
     }
 
     @SneakyThrows
-    private void writeBook(OrderBook book) {
-        String filename = baseName(book);
+    private void writeBooks(String filename, List<OrderBook> books) {
+        if (books.isEmpty()) {
+            return;
+        }
+        
+        books.sort(Comparator.comparingLong(a -> a.getMeta().getTimestamp()));
         Path dest = Paths.get(cfg.getDir(), filename);
         boolean exists = dest.toFile().exists();
+
         try (Writer file = MoreFiles.asCharSink(dest, UTF_8, CREATE, APPEND).openBufferedStream()) {
             if (!exists) {
-                writeHeader(file, book.getHistogramBuy().length, book.getHistogramSell().length);
+                writeHeader(file, books.get(0).getHistogramBuy().length, books.get(0).getHistogramSell().length);
             }
 
-            writeBook(file, book);
+            books.forEach(book -> writeBook(file, book));
         }
     }
 
@@ -177,16 +187,16 @@ public class BookPersistor {
         return LocalDateTime.now(ZoneOffset.UTC);
     }
 
-    private String baseName(OrderBook book) {
+    private String baseName(OrderBook book, String suffix) {
         return String.format("%s-%s_%s%s",
                 book.getMeta().getPair().getFrom(),
                 book.getMeta().getPair().getTo(),
                 book.getMeta().getClient(),
-                suffix()
+                suffix
         );
     }
 
-    private String suffix() {
+    private String getSuffixAndLockDate() {
         LocalDateTime date = utcDate();
         maxTime.set(date);
         return String.format("-%s.tsv", FORMAT.format(date));
