@@ -2,6 +2,8 @@ package com.gtc.opportunity.trader.domain;
 
 import com.gtc.meta.TradingCurrency;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.envers.Audited;
 
 import javax.persistence.*;
@@ -21,6 +23,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
+@DynamicInsert
+@DynamicUpdate
 public class AcceptedXoTrade implements Serializable {
 
     @Id
