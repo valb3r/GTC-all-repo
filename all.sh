@@ -36,7 +36,7 @@ java \
     -javaagent:newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=Persistor \
-    -Xms32m -Xmx128m -Xss256k \
+    -Xms32m -Xmx128m -Xss256k -XX:-UseGCOverheadLimit \
     -Djava.security.egd=file:/dev/./urandom \
     -Dfile.encoding=UTF8 \
     -jar persistor.jar &
