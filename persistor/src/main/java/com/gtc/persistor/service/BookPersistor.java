@@ -106,13 +106,13 @@ public class BookPersistor {
         }
     }
 
-    private void writeBooksInterruptably(String filename, List<OrderBook> books, Writer file) {
+    private void writeBooksInterruptably(String filename, List<OrderBook> books, Writer file)
+            throws InterruptedException {
         for (OrderBook book : books) {
             writeBook(file, book);
 
             if (Thread.interrupted()) {
-                log.info("Interrupted writing file {}", filename);
-                return;
+                throw new InterruptedException("Interrupted on " + filename);
             }
         }
     }
