@@ -21,7 +21,8 @@ app:
       persistS: 5
       wsReconnectS: 10
   persist:
-      dir: ${PERSIST_DIR}
+      localDir: ${PERSIST_LOCAL_DIR}
+      storageDir: ${PERSIST_STORAGE_DIR}
   ws:
       market:
           disconnect-if-inactive-s: 5

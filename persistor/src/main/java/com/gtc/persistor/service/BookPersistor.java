@@ -1,12 +1,15 @@
 package com.gtc.persistor.service;
 
 import com.google.common.io.MoreFiles;
+import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.persistor.config.PersistConfig;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +22,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
@@ -36,35 +37,44 @@ import static java.nio.file.StandardOpenOption.CREATE;
 /**
  * Created by Valentyn Berezin on 01.07.18.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookPersistor {
 
     private static final String TO_ZIP = ".to_zip";
     private static final String GZ = ".gz";
-    private static final DateTimeFormatter FULL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+    private static final long MILLIS_IN_HOUR = 3600 * 1000L;
     private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH");
-    private static final Pattern TIME_PATTERN = Pattern.compile(".+(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d)\\.tsv");
-    private AtomicReference<LocalDateTime> maxTime = new AtomicReference<>(LocalDateTime.MIN);
 
     private final PersistConfig cfg;
     private final OrderBookRepository bookRepository;
 
+    @Value(PERSIST_S)
+    private Integer persistS;
+
     @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = PERSIST_S)
+    @SneakyThrows
     public void persist() {
         List<OrderBook> orderBooks = new ArrayList<>(bookRepository.getOrders());
         bookRepository.clear();
-        appendData(orderBooks);
+        new SimpleTimeLimiter().callWithTimeout(
+                () -> appendData(orderBooks),
+                persistS,
+                TimeUnit.SECONDS,
+                true
+        );
     }
 
     @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = PERSIST_S)
     public void zipIfNecessary() {
-        zipFinishedDataIfNecessary();
+        zipFinishedDataAndMoveToStorageIfNecessary();
     }
 
-    private void appendData(List<OrderBook> books) {
+    // Void for prettier call using SimpleTimeLimiter
+    private Void appendData(List<OrderBook> books) {
         Map<String, List<OrderBook>> booksToFile = new HashMap<>();
         String suffix = getSuffixAndLockDate();
 
@@ -74,6 +84,7 @@ public class BookPersistor {
         );
 
         booksToFile.forEach(this::writeBooks);
+        return null;
     }
 
     @SneakyThrows
@@ -83,7 +94,7 @@ public class BookPersistor {
         }
 
         books.sort(Comparator.comparingLong(a -> a.getMeta().getTimestamp()));
-        Path dest = Paths.get(cfg.getDir(), filename);
+        Path dest = Paths.get(cfg.getLocalDir(), filename);
         boolean exists = dest.toFile().exists();
 
         try (Writer file = MoreFiles.asCharSink(dest, UTF_8, CREATE, APPEND).openBufferedStream()) {
@@ -91,7 +102,18 @@ public class BookPersistor {
                 writeHeader(file, books.get(0).getHistogramBuy().length, books.get(0).getHistogramSell().length);
             }
 
-            books.forEach(book -> writeBook(file, book));
+            writeBooksInterruptably(filename, books, file);
+        }
+    }
+
+    private void writeBooksInterruptably(String filename, List<OrderBook> books, Writer file) {
+        for (OrderBook book : books) {
+            writeBook(file, book);
+
+            if (Thread.interrupted()) {
+                log.info("Interrupted writing file {}", filename);
+                return;
+            }
         }
     }
 
@@ -146,42 +168,34 @@ public class BookPersistor {
     }
 
     @SneakyThrows
-    private void zipFinishedDataIfNecessary() {
+    private void zipFinishedDataAndMoveToStorageIfNecessary() {
         for (Path path : listFilesToZip()) {
             Path toZip = path.getParent().resolve(path.getFileName().toString() + TO_ZIP);
             Files.move(path, toZip, REPLACE_EXISTING);
+
             String origName = path.getFileName().toString();
-            try (GZIPOutputStream out = new GZIPOutputStream(
-                    new FileOutputStream(path.getParent().resolve(origName + ".gz").toFile()))) {
+            Path zipLocal = path.getParent().resolve(origName + ".gz");
+            try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(zipLocal.toFile()))) {
                 Files.copy(toZip, out);
             }
             Files.delete(toZip);
+
+            Files.move(zipLocal, Paths.get(cfg.getStorageDir(), zipLocal.getFileName().toString()), REPLACE_EXISTING);
         }
     }
 
     @SneakyThrows
     private List<Path> listFilesToZip() {
-        try (Stream<Path> pathStream = Files.list(Paths.get(cfg.getDir()))) {
+        try (Stream<Path> pathStream = Files.list(Paths.get(cfg.getLocalDir()))) {
             return pathStream
                     .filter(it -> it.toFile().isFile())
+                    .filter(it -> System.currentTimeMillis() - it.toFile().lastModified() > MILLIS_IN_HOUR)
                     .filter(it -> {
                         String path = it.toString();
-                        return !path.endsWith(TO_ZIP) && !path.endsWith(GZ)
-                                && extractFromPath(path).compareTo(maxTime.get()) < 0;
+                        return !path.endsWith(TO_ZIP) && !path.endsWith(GZ);
                     })
                     .collect(Collectors.toList());
         }
-    }
-
-    private LocalDateTime extractFromPath(String path) {
-        Matcher matcher = TIME_PATTERN.matcher(path);
-        if (!matcher.matches()) {
-            return LocalDateTime.MIN;
-        }
-
-        String dateAndHour = matcher.group(1);
-        // since active file for 17:35:00 has 17 hour, we can touch it only at 18:00
-        return LocalDateTime.parse(dateAndHour + ":00", FULL_FORMAT).plusHours(1);
     }
 
     private LocalDateTime utcDate() {
@@ -199,7 +213,6 @@ public class BookPersistor {
 
     private String getSuffixAndLockDate() {
         LocalDateTime date = utcDate();
-        maxTime.set(date);
         return String.format("-%s.tsv", FORMAT.format(date));
     }
 }

@@ -14,5 +14,6 @@ import static com.gtc.persistor.config.Const.Persist.PERSIST_CFG;
 @ConfigurationProperties(PERSIST_CFG)
 public class PersistConfig {
 
-    private String dir;
+    private String localDir;
+    private String storageDir;
 }
