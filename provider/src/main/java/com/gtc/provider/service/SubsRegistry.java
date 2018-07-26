@@ -46,18 +46,23 @@ public class SubsRegistry {
         locks.remove(session.getId());
     }
 
+    @SneakyThrows
     public void publishTicker(String clientName, Ticker ticker) {
+        String msg = mapper.writeValueAsString(ticker);
         tickerClientToSessionId
                 .getOrDefault(clientName, Collections.emptySet())
-                .forEach(it -> doSend(it, ticker));
+                .forEach(it -> doSend(it, msg));
     }
 
+    @SneakyThrows
     public void publishOrderBook(String clientName, OrderBook orderBook) {
+        String msg = mapper.writeValueAsString(orderBook);
         bookClientToSessionId
                 .getOrDefault(clientName, Collections.emptySet())
-                .forEach(it -> doSend(it, orderBook));
+                .forEach(it -> doSend(it, msg));
     }
 
+    @SneakyThrows
     @Scheduled(fixedRateString = "${app.schedule.pingMs}")
     public void ping() {
         Set<WebSocketSession> sessions = new HashSet<>();
@@ -69,13 +74,13 @@ public class SubsRegistry {
                 .flatMap(it -> it.getValue().stream())
                 .collect(Collectors.toSet()));
 
-        sessions.forEach(subs -> doSend(subs, new Ping()));
+        String msg = mapper.writeValueAsString(new Ping());
+        sessions.forEach(subs -> doSend(subs, msg));
     }
 
     @SneakyThrows
-    private void doSend(WebSocketSession session, Object payload) {
+    private void doSend(WebSocketSession session, String msg) {
         synchronized (locks.computeIfAbsent(session.getId(), id -> new Object())) {
-            String msg = mapper.writeValueAsString(payload);
             try {
                 session.sendMessage(new TextMessage(msg));
             } catch (IllegalStateException ex) {
