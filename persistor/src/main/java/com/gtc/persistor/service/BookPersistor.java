@@ -111,7 +111,7 @@ public class BookPersistor {
         for (OrderBook book : books) {
             writeBook(file, book);
 
-            if (Thread.interrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("Interrupted on " + filename);
             }
         }
