@@ -2,3 +2,6 @@
 .gradle
 build
 out
+logs
+newrelic
+db

@@ -2,6 +2,8 @@ package com.gtc.opportunity.trader.domain;
 
 import com.gtc.meta.TradingCurrency;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.envers.Audited;
@@ -24,6 +26,8 @@ import java.util.Optional;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
+@DynamicInsert
+@DynamicUpdate
 public class Trade implements Serializable {
 
     @Id

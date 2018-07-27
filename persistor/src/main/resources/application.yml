@@ -12,15 +12,17 @@ spring:
     jmx:
         enabled: false
 server:
+    address: 127.0.0.1
     port: 8085
     tomcat:
         max-threads: 4
 app:
   schedule:
-      persistS: 10
+      persistS: 5
       wsReconnectS: 10
   persist:
-      dir: ${PERSIST_DIR}
+      localDir: ${PERSIST_LOCAL_DIR}
+      storageDir: ${PERSIST_STORAGE_DIR}
   ws:
       market:
           disconnect-if-inactive-s: 5

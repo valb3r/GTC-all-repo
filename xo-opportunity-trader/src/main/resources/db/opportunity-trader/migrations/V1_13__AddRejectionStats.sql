@@ -30,9 +30,9 @@ CREATE INDEX xo_trade_rejected_stat_currency_to
   ON xo_trade_rejected_stat (currency_to${PART_INDEX_SZ});
 CREATE INDEX xo_trade_rejected_stat_kind
   ON xo_trade_rejected_stat (kind${PART_INDEX_SZ});
-CREATE INDEX xo_trade_profit_group_pct_min
+CREATE INDEX xo_trade_rejected_stat_profit_group_pct_min
   ON xo_trade_rejected_stat (profit_group_pct_min);
-CREATE INDEX xo_trade_profit_group_pct_max
+CREATE INDEX xo_trade_rejected_stat_profit_group_pct_max
   ON xo_trade_rejected_stat (profit_group_pct_max);
 ALTER TABLE xo_trade_rejected_stat
   ADD CONSTRAINT unique_xo_trade_rejected_stat UNIQUE (client_from_name, client_to_name, currency_from, currency_to,
