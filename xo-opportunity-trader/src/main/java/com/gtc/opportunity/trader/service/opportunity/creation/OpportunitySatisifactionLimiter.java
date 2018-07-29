@@ -145,7 +145,7 @@ public class OpportunitySatisifactionLimiter {
             return cfg.getMinOrder().doubleValue();
         }
 
-        return cfg.getMinOrderInToCurrency().doubleValue() / price;
+        return Math.max(cfg.getMinOrderInToCurrency().doubleValue() / price, cfg.getMinOrder().doubleValue());
     }
 
     private BigDecimal lossCoef(ClientConfig config) {

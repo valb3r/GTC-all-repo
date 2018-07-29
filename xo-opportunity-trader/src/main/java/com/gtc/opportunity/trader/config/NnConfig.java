@@ -33,4 +33,5 @@ public class NnConfig {
     private double learningRate;
     private double momentum;
     private double l2;
+    private double futurePriceGainPct;
 }
