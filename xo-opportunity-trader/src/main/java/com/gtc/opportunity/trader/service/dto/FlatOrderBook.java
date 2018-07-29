@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class FlatOrderBook {
 
+    private final long timestamp;
     private final float bestSell;
     private final float bestBuy;
     private final float histogramBuyStep;

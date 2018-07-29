@@ -20,4 +20,17 @@ public class NnConfig {
     private Set<String> exchanges;
     private int collectNlabeled;
     private float noopThreshold;
+    private float truthThreshold;
+    private float proceedFalsePositive;
+
+    private double booksPerS;
+    private int oldThresholdM;
+    private double trainRelativeSize;
+
+    private int layers;
+    private int layerDim;
+    private int iterations;
+    private double learningRate;
+    private double momentum;
+    private double l2;
 }

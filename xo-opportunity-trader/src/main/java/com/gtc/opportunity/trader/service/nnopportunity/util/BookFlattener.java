@@ -13,6 +13,7 @@ public final class BookFlattener {
 
     public static FlatOrderBook simplify(OrderBook book) {
         return new FlatOrderBook(
+                book.getMeta().getTimestamp(),
                 (float) book.getBestSell(),
                 (float) book.getBestBuy(),
                 (float) (book.getHistogramBuy()[0].getMaxPrice() - book.getHistogramBuy()[0].getMinPrice()),

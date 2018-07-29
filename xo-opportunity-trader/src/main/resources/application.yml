@@ -96,5 +96,17 @@ app:
             solveTimeMs: 75
     nn:
         exchanges: hitbtc
-        collectNlabeled: 10000
+        collectNlabeled: 5000
         noopThreshold: 1.2
+        truthThreshold: 0.7
+        createModelsEachS: 300
+        oldThresholdM: 300
+        trainRelativeSize: 0.7
+        proceedFalsePositive: 0.3
+        booksPerS: 1
+        layers: 4
+        layerDim: 10
+        iterations: 10000
+        learningRate: 0.006
+        momentum: 0.9
+        l2: 0.0001
