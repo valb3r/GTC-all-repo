@@ -52,6 +52,10 @@ dependencies {
     compile "com.googlecode.cqengine:cqengine:${versions.cqengine}"
     compile "org.optaplanner:optaplanner-core:${versions.optaPlanner}"
 
+    compile "org.deeplearning4j:deeplearning4j-core:${versions.deep4j}"
+    compile "org.nd4j:nd4j-native-platform:${versions.deep4j}"
+    compile "org.datavec:datavec-api:${versions.deep4j}"
+
 
     testCompile "junit:junit:${versions.junit}"
     testCompile "org.mockito:mockito-all:${versions.mockito}"

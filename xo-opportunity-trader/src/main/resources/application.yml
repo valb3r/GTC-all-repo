@@ -94,3 +94,7 @@ app:
             scheduleS: 5
             considerWarmOnNsuccess: 20
             solveTimeMs: 75
+    nn:
+        exchanges: hitbtc
+        collectNlabeled: 10000
+        noopThreshold: 1.2

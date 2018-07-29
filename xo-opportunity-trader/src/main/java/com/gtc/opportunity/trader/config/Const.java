@@ -41,4 +41,10 @@ public final class Const {
 
         public static final String OPPORTUNITY_CONF = "opportunities";
     }
+
+    @UtilityClass
+    public static final class NeuralNet {
+
+        public static final String NN_CONF = "nn";
+    }
 }
