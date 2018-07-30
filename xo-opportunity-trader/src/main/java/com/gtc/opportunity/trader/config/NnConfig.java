@@ -18,10 +18,12 @@ import static com.gtc.opportunity.trader.config.Const.NeuralNet.NN_CONF;
 public class NnConfig {
 
     private Set<String> exchanges;
+    private int futureNwindow;
     private int collectNlabeled;
     private float noopThreshold;
     private float truthThreshold;
     private float proceedFalsePositive;
+    private double averageDtSBetweenLabels;
 
     private double booksPerS;
     private int oldThresholdM;

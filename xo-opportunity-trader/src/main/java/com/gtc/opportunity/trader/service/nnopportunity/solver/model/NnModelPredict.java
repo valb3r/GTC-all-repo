@@ -4,6 +4,7 @@ import com.gtc.opportunity.trader.config.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -15,6 +16,7 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
@@ -41,6 +43,7 @@ public class NnModelPredict {
     NnModelPredict(NnConfig config, Snapshot snapshot, FeatureMapper mapper) throws TrainingFailed {
         this.nnConfig = config;
         this.model = new MultiLayerNetwork(buildModelConfig(config));
+        this.model.init();
         this.featureMapper = mapper;
         this.creationTimestamp = System.currentTimeMillis();
         Splitter split = new Splitter(config, snapshot);
@@ -53,9 +56,10 @@ public class NnModelPredict {
         return results.getFloat(CAN_PROCEED_POS) > nnConfig.getTruthThreshold();
     }
 
+    @SneakyThrows
     private void trainModel(Splitter splitter) {
         log.info("Training model");
-        INDArray trainData = featureMapper.extract(splitter.getProceedTrain(), splitter.getNoopTrain());
+        DataSet trainData = featureMapper.extract(splitter.getProceedTrain(), splitter.getNoopTrain());
         for (int i = 0; i < nnConfig.getIterations(); ++i) {
             model.fit(trainData);
         }
@@ -82,9 +86,7 @@ public class NnModelPredict {
         NeuralNetConfiguration.ListBuilder builder = new NeuralNetConfiguration.Builder()
                 .seed(System.currentTimeMillis())
                 .optimizationAlgo(OptimizationAlgorithm.CONJUGATE_GRADIENT)
-                .learningRate(cfg.getLearningRate())
                 .updater(new Nesterovs(cfg.getMomentum()))
-                .regularization(true)
                 .biasInit(0.0)
                 .weightInit(WeightInit.XAVIER)
                 .l2(cfg.getL2())
@@ -104,7 +106,7 @@ public class NnModelPredict {
                     .build());
         }
 
-        builder.layer(cfg.getLayers() + 1, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+        builder.layer(cfg.getLayers() + 1, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
                 .nIn(cfg.getLayerDim())
                 .nOut(N_CLASSES)
                 .activation(Activation.SOFTMAX)

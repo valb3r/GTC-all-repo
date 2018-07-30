@@ -62,7 +62,7 @@ app:
         maxToCheckStuckPerClient: 3
         orderTimeoutS: 600
     ws:
-        market: ws://localhost:8080/api/market
+        market: ws://localhost:9090/api/market
         gateway: ws://localhost:8084/api/ws
         disconnectIfInactiveS: 10
     cache:
@@ -96,17 +96,19 @@ app:
             solveTimeMs: 75
     nn:
         exchanges: hitbtc
+        futureNwindow: 5000
         collectNlabeled: 5000
-        noopThreshold: 1.2
+        averageDtSBetweenLabels: 0.5
+        noopThreshold: 1.002
         truthThreshold: 0.7
-        createModelsEachS: 300
+        createModelsEachS: 30
         oldThresholdM: 300
         trainRelativeSize: 0.7
         proceedFalsePositive: 0.3
         booksPerS: 1
         layers: 4
-        layerDim: 10
-        iterations: 10000
+        layerDim: 20
+        iterations: 100
         learningRate: 0.006
         momentum: 0.9
         l2: 0.0001

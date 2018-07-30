@@ -27,11 +27,8 @@ public class NnDataRepository {
     private final NnConfig nnConfig;
 
     public void addOrderBook(OrderBook orderBook) {
-        dataStream.computeIfAbsent(key(orderBook), id -> new NnDataContainer(
-                id,
-                nnConfig.getCollectNlabeled(),
-                nnConfig.getNoopThreshold())
-        ).add(BookFlattener.simplify(orderBook));
+        dataStream.computeIfAbsent(key(orderBook), id -> new NnDataContainer(id, nnConfig))
+                .add(BookFlattener.simplify(orderBook));
     }
 
     public Optional<Snapshot> getDataToAnalyze(Key key, Strategy strategy) {

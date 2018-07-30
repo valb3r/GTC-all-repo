@@ -60,7 +60,9 @@ public class NnCreateTradesService {
 
     private void handleBuySellStrategy(OrderBook book) {
         ClientConfig config = getConfig(book);
-        BigDecimal weBuyPrice = BigDecimal.valueOf(book.getBestSell())
+        // using futur'ish buy price too
+        double charge = 1.0 + config.getTradeChargeRatePct().doubleValue() / 100.0;
+        BigDecimal weBuyPrice = BigDecimal.valueOf(book.getBestSell() / charge)
                 .setScale(config.getScalePrice(), ROUND_UP);
         BigDecimal weSellPrice = weBuyPrice
                 .multiply(BigDecimal.valueOf(1.0 + nnConfig.getFuturePriceGainPct() / 100.0))
@@ -81,7 +83,9 @@ public class NnCreateTradesService {
 
     private void handleSellBuyStrategy(OrderBook book) {
         ClientConfig config = getConfig(book);
-        BigDecimal weSellPrice = BigDecimal.valueOf(book.getBestBuy())
+        // using futur'ish sell price too
+        double charge = 1.0 + config.getTradeChargeRatePct().doubleValue() / 100.0;
+        BigDecimal weSellPrice = BigDecimal.valueOf(book.getBestBuy() / charge)
                 .setScale(config.getScalePrice(), ROUND_UP);
         BigDecimal weBuyPrice = weSellPrice
                 .divide(BigDecimal.valueOf(1.0 + nnConfig.getFuturePriceGainPct() / 100.0), MathContext.DECIMAL128)

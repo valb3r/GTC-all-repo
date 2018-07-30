@@ -62,13 +62,17 @@ public class NnSolver {
 
     @Scheduled(fixedDelayString = "#{${app.nn.createModelsEachS} * 1000}")
     public void createModels() {
-        Arrays.stream(Strategy.values()).forEach(strategy ->
-                repository.getModellable().stream()
-                    .map(it -> repository.getDataToAnalyze(it, strategy))
-                    .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
-                    .filter(it -> !oldData(it))
-                    .forEach(it -> createPredictor(strategy, it))
-        );
+        try {
+            Arrays.stream(Strategy.values()).forEach(strategy ->
+                    repository.getModellable().stream()
+                            .map(it -> repository.getDataToAnalyze(it, strategy))
+                            .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
+                            .filter(it -> !oldData(it))
+                            .forEach(it -> createPredictor(strategy, it))
+            );
+        } catch (RuntimeException ex) {
+            log.error("Failed creating models", ex);
+        }
     }
 
     private boolean solveForStrategy(OrderBook book, Strategy strategy) {

@@ -3,10 +3,12 @@ package com.gtc.opportunity.trader.service.nnopportunity.solver;
 import com.gtc.meta.CurrencyPair;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 /**
  * Created by Valentyn Berezin on 29.07.18.
  */
+@ToString
 @EqualsAndHashCode
 @RequiredArgsConstructor
 public class Key {

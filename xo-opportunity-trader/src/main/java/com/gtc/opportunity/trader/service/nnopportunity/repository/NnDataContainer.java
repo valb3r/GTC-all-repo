@@ -1,5 +1,6 @@
 package com.gtc.opportunity.trader.service.nnopportunity.repository;
 
+import com.gtc.opportunity.trader.config.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;
@@ -15,11 +16,11 @@ class NnDataContainer {
 
     private final int capacity;
 
-    NnDataContainer(Key key, int capacity, float gainNoopThreshold) {
+    NnDataContainer(Key key, NnConfig config) {
         this.key = key;
-        this.capacity = capacity;
+        this.capacity = config.getFutureNwindow();
         this.strategies = Arrays.stream(Strategy.values())
-                .collect(Collectors.toMap(it -> it, it -> new StrategyData(it, capacity, gainNoopThreshold)));
+                .collect(Collectors.toMap(it -> it, it -> new StrategyData(it, config)));
     }
 
     void add(FlatOrderBook book) {
