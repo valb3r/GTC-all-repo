@@ -24,7 +24,7 @@ public class NnWsMarketDataClient extends BaseWsMarketDataClient {
         super(
                 wsConfig,
                 objectMapper,
-                () -> new ArrayList<>(nnConfig.getExchanges()),
+                () -> new ArrayList<>(nnConfig.getEnabledOn().keySet()),
                 disptacher::acceptOrderBook
         );
     }

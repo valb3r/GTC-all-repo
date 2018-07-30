@@ -95,7 +95,7 @@ app:
             considerWarmOnNsuccess: 20
             solveTimeMs: 75
     nn:
-        exchanges: hitbtc
+        enabledOn: hitbtc=EOS-BTC
         futureNwindow: 5000
         collectNlabeled: 1000
         averageDtSBetweenLabels: 0.5

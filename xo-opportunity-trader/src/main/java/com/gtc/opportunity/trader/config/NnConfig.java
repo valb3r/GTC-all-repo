@@ -1,10 +1,12 @@
 package com.gtc.opportunity.trader.config;
 
+import com.gtc.meta.CurrencyPair;
+import com.gtc.meta.TradingCurrency;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Set;
+import java.util.*;
 
 import static com.gtc.opportunity.trader.config.Const.CONF_ROOT_CHILD;
 import static com.gtc.opportunity.trader.config.Const.NeuralNet.NN_CONF;
@@ -17,7 +19,7 @@ import static com.gtc.opportunity.trader.config.Const.NeuralNet.NN_CONF;
 @ConfigurationProperties(CONF_ROOT_CHILD + NN_CONF)
 public class NnConfig {
 
-    private Set<String> exchanges;
+    private Map<String, Set<CurrencyPair>> enabledOn;
     private int futureNwindow;
     private int collectNlabeled;
     private float noopThreshold;
@@ -36,4 +38,24 @@ public class NnConfig {
     private double momentum;
     private double l2;
     private double futurePriceGainPct;
+
+    public void setEnabledOn(List<String> input) {
+        enabledOn = parse(input);
+    }
+
+    private Map<String, Set<CurrencyPair>> parse(List<String> input) {
+        return input.stream()
+                .collect(
+                        HashMap::new,
+                        (HashMap<String, Set<CurrencyPair>> map, String val) -> {
+                            String[] exchange = val.split("=", 2);
+                            String[] symbol = exchange[1].split("-", 2);
+                            map.computeIfAbsent(exchange[0], (String mKey) -> new HashSet<>())
+                                    .add(new CurrencyPair(
+                                            TradingCurrency.fromCode(symbol[0]),
+                                            TradingCurrency.fromCode(symbol[1]))
+                                    );
+                        },
+                        HashMap::putAll);
+    }
 }
