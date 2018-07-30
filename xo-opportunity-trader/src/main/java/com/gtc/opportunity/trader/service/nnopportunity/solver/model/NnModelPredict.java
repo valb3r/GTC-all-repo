@@ -95,14 +95,14 @@ public class NnModelPredict {
         builder.layer(0, new DenseLayer.Builder()
                 .nIn(N_INPUT_FEATURES)
                 .nOut(cfg.getLayerDim())
-                .activation(Activation.SIGMOID)
+                .activation(Activation.TANH)
                 .build());
 
         for (int i = 1; i <= cfg.getLayers(); ++i) {
             builder.layer(i, new DenseLayer.Builder()
                     .nIn(cfg.getLayerDim())
                     .nOut(cfg.getLayerDim())
-                    .activation(Activation.SIGMOID)
+                    .activation(Activation.TANH)
                     .build());
         }
 

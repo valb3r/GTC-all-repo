@@ -33,7 +33,7 @@ public class NnDataRepository {
 
     public Optional<Snapshot> getDataToAnalyze(Key key, Strategy strategy) {
         NnDataContainer container = dataStream.get(key);
-        if (null == container || !container.actReady(strategy) || !container.noopReady(strategy)) {
+        if (null == container || !container.isReady(strategy)) {
             return Optional.empty();
         }
 

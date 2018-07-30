@@ -28,7 +28,7 @@ class NnDataContainer {
             FlatOrderBook mature = uncategorized.remove(0);
             strategies.forEach((name, data) -> {
                 data.evictPrice(mature);
-                data.labelAndStore(mature);
+                data.labelIfCompliantAndStore(mature);
             });
         }
 
@@ -41,13 +41,8 @@ class NnDataContainer {
         return new Snapshot(key, new ArrayList<>(data.getNoopLabel()), new ArrayList<>(data.getActLabel()));
     }
 
-    boolean noopReady(Strategy strategy) {
+    boolean isReady(Strategy strategy) {
         StrategyData data = strategies.get(strategy);
-        return capacity == data.getNoopLabel().size();
-    }
-
-    boolean actReady(Strategy strategy) {
-        StrategyData data = strategies.get(strategy);
-        return capacity == data.getActLabel().size();
+        return data.isReady();
     }
 }

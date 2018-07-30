@@ -4,9 +4,11 @@ import com.google.common.collect.EvictingQueue;
 import com.gtc.opportunity.trader.config.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -14,9 +16,12 @@ import java.util.stream.Stream;
 /**
  * Created by Valentyn Berezin on 29.07.18.
  */
+@Slf4j
 class StrategyData {
 
     private final Map<Float, AtomicInteger> pricesInFuture = new HashMap<>();
+
+    private final AtomicLong lastBookTimestamp = new AtomicLong();
 
     @Getter
     private final Queue<FlatOrderBook> noopLabel;
@@ -53,6 +58,10 @@ class StrategyData {
         }
     }
 
+    boolean isReady() {
+        return cfg.getCollectNlabeled() == noopLabel.size() && cfg.getCollectNlabeled() == actLabel.size();
+    }
+
     void addPrice(FlatOrderBook book) {
         synchronized (pricesInFuture) {
             pricesInFuture.computeIfAbsent(getSecondPrice.apply(book), id -> new AtomicInteger()).incrementAndGet();
@@ -68,7 +77,16 @@ class StrategyData {
         }
     }
 
-    void labelAndStore(FlatOrderBook book) {
+    void labelIfCompliantAndStore(FlatOrderBook book) {
+        if (!canStore(book)) {
+            log.info("Dropping timestamp {}", book.getTimestamp());
+            return;
+        }
+
+        log.info("Using timestamp {}", book.getTimestamp());
+
+        lastBookTimestamp.set(book.getTimestamp());
+
         Set<Float> futurePrices;
         synchronized (pricesInFuture) {
             futurePrices = new HashSet<>(pricesInFuture.keySet());
@@ -84,5 +102,10 @@ class StrategyData {
                 actLabel.add(book);
             }
         }
+    }
+
+    private boolean canStore(FlatOrderBook book) {
+        long lastTimestamp = lastBookTimestamp.get();
+        return book.getTimestamp() - lastTimestamp >= cfg.getAverageDtSBetweenLabels() * 1000;
     }
 }
