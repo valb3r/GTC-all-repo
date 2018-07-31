@@ -79,11 +79,8 @@ class StrategyData {
 
     void labelIfCompliantAndStore(FlatOrderBook book) {
         if (!canStore(book)) {
-            log.info("Dropping timestamp {}", book.getTimestamp());
             return;
         }
-
-        log.info("Using timestamp {}", book.getTimestamp());
 
         lastBookTimestamp.set(book.getTimestamp());
 

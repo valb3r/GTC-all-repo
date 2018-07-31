@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity.global;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
@@ -23,11 +24,13 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapp
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
 import com.gtc.opportunity.trader.service.opportunity.common.TradeCreationService;
 import com.gtc.opportunity.trader.service.opportunity.creation.ClientConfigCache;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.mockito.Matchers.any;
@@ -37,6 +40,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by Valentyn Berezin on 31.07.18.
  */
+@Slf4j
 public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private static final String HISTORY_DIR = "/mnt/storage-box/bid/history";
@@ -63,8 +67,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     @Before
     public void init() {
         System.setProperty("ND4J_FALLBACK", "true");
-        testTradeRepository = new TestTradeRepository();
         buildConfig();
+        testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig(getClientName())));
         repository = new NnDataRepository(config);
         mapper = new FeatureMapper();
         modelFactory = new ModelFactory(config, mapper);
@@ -78,12 +82,18 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     public void test() {
         long pointIndex = 0;
         try (HistoryBookReader reader = reader()) {
-            OrderBook book = reader.read();
-            testTradeRepository.acceptOrderBook(book);
-            pointIndex++;
-            disptacher.acceptOrderBook(book);
-            createModelsIfNeeded(pointIndex, reader);
+            while (true) {
+                OrderBook book = reader.read();
+                testTradeRepository.acceptOrderBook(book);
+                pointIndex++;
+                disptacher.acceptOrderBook(book);
+                createModelsIfNeeded(pointIndex, reader);
+            }
+        } catch (NoSuchElementException ex) {
+            // NOP
         } catch (Exception ex) {
+            log.error("Exception caught", ex);
+        } finally {
             testTradeRepository.logStats();
         }
     }
@@ -148,6 +158,11 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     }
 
     private void initClientConfigCache(String name) {
+        when(clientConfigCache.getCfg(name, TradingCurrency.EOS, TradingCurrency.Bitcoin))
+                .thenReturn(Optional.of(getConfig(name)));
+    }
+
+    private ClientConfig getConfig(String name) {
         ClientConfig cfg = ClientConfig.builder()
                 .client(new Client(name, true, null, null))
                 .currency(TradingCurrency.EOS)
@@ -160,9 +175,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .tradeChargeRatePct(new BigDecimal("0.1"))
                 .build();
         cfg.setEnabled(true);
-
-        when(clientConfigCache.getCfg(name, TradingCurrency.EOS, TradingCurrency.Bitcoin))
-                .thenReturn(Optional.of(cfg));
+        return cfg;
     }
 
     private void initTradeCreationService(String name) {
