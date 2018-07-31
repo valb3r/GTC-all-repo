@@ -122,8 +122,8 @@ public class BookPersistor {
         file.write("Time\t");
         file.write("Best buy\t");
         file.write("Best sell\t");
-        file.write("Histogram price sell step\t");
         file.write("Histogram price buy step\t");
+        file.write("Histogram price sell step\t");
 
         writeAmounts(file, "Buy amount at ", histogramBuyPrecision);
         writeAmounts(file, "Sell amount at ", histogramSellPrecision);
