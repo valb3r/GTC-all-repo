@@ -17,5 +17,10 @@ public class ByClientAndCurrency {
 
     protected CurrencyPair pair;
 
-    private final long timestamp = System.currentTimeMillis();
+    protected long timestamp = System.currentTimeMillis();
+
+    public ByClientAndCurrency(String client, CurrencyPair pair) {
+        this.client = client;
+        this.pair = pair;
+    }
 }

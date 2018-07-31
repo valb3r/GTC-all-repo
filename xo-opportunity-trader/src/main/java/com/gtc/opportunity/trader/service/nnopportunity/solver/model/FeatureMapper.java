@@ -14,7 +14,7 @@ import java.util.List;
  * Created by Valentyn Berezin on 29.07.18.
  */
 @Component
-class FeatureMapper {
+public class FeatureMapper {
 
     public static final int CAN_PROCEED_POS = 0;
     private static final int FEATURE_SIZE = 20;

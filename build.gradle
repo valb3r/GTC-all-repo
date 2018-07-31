@@ -23,7 +23,8 @@ buildscript {
                 cqengine            : "2.12.4",
                 hibernate           : "5.2.16.Final",
                 retry               : "1.2.2.RELEASE",
-                deep4j              : "0.9.1"
+                deep4j              : "0.9.1",
+                csv                 : "1.4"
         ]
     }
     dependencies {
