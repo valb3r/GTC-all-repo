@@ -62,7 +62,7 @@ app:
         maxToCheckStuckPerClient: 3
         orderTimeoutS: 600
     ws:
-        market: ws://localhost:9090/api/market
+        market: ws://localhost:8080/api/market
         gateway: ws://localhost:8084/api/ws
         disconnectIfInactiveS: 10
     cache:
@@ -95,8 +95,8 @@ app:
             considerWarmOnNsuccess: 20
             solveTimeMs: 75
     nn:
-        enabledOn: hitbtc=EOS-BTC
-        futureNwindow: 5000
+        enabledOn: hitbtc=EOS-BTC,binance=EOS-BTC,hitbtc=ADA-BTC,binance=ADA-BTC
+        futureNwindow: 36000
         collectNlabeled: 1000
         averageDtSBetweenLabels: 0.5
         noopThreshold: 1.002
