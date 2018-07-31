@@ -60,12 +60,9 @@ public class NnCreateTradesService {
 
     private void handleBuySellStrategy(OrderBook book) {
         ClientConfig config = getConfig(book);
-        // using futur'ish buy price too
-        double charge = 1.0 + config.getTradeChargeRatePct().doubleValue() / 100.0;
-        BigDecimal weBuyPrice = BigDecimal.valueOf(book.getBestSell() / charge)
-                .setScale(config.getScalePrice(), ROUND_UP);
+        BigDecimal weBuyPrice = BigDecimal.valueOf(book.getBestSell());
         BigDecimal weSellPrice = weBuyPrice
-                .multiply(BigDecimal.valueOf(1.0 + nnConfig.getFuturePriceGainPct() / 100.0))
+                .multiply(computeGain(config))
                 .setScale(config.getScalePrice(), ROUND_UP);
 
         BigDecimal amount = calculateAmount(config, weBuyPrice.doubleValue());
@@ -83,12 +80,9 @@ public class NnCreateTradesService {
 
     private void handleSellBuyStrategy(OrderBook book) {
         ClientConfig config = getConfig(book);
-        // using futur'ish sell price too
-        double charge = 1.0 + config.getTradeChargeRatePct().doubleValue() / 100.0;
-        BigDecimal weSellPrice = BigDecimal.valueOf(book.getBestBuy() / charge)
-                .setScale(config.getScalePrice(), ROUND_UP);
+        BigDecimal weSellPrice = BigDecimal.valueOf(book.getBestBuy());
         BigDecimal weBuyPrice = weSellPrice
-                .divide(BigDecimal.valueOf(1.0 + nnConfig.getFuturePriceGainPct() / 100.0), MathContext.DECIMAL128)
+                .divide(computeGain(config), MathContext.DECIMAL128)
                 .setScale(config.getScalePrice(), ROUND_DOWN);
         BigDecimal amount = calculateAmount(config, weBuyPrice.doubleValue());
         TradeDto buy = tradeCreationService.createTradeNoSideValidation(config, weBuyPrice, amount, false);
@@ -100,6 +94,14 @@ public class NnCreateTradesService {
                 .commands(new HashSet<>(ImmutableSet.of(buy.getCommand(), sell.getCommand())))
                 .build()
         );
+    }
+
+    private BigDecimal computeGain(ClientConfig cfg) {
+        return cfg.getTradeChargeRatePct()
+                .multiply(BigDecimal.valueOf(2)) // we do 2 trades so gain should accomodate both
+                .add(BigDecimal.valueOf(nnConfig.getFuturePriceGainPct()))
+                .movePointLeft(2)
+                .add(BigDecimal.ONE);
     }
 
     private BigDecimal calculateAmount(ClientConfig config, double minPrice) {
