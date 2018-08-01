@@ -10,12 +10,13 @@ import com.gtc.opportunity.trader.domain.ClientConfig;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,18 +29,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class TestTradeRepository {
 
-    private final Map<String, Map<CurrencyPair, List<CreateOrderCommand>>> byClientPairOrders =
+    private final Map<String, Map<CurrencyPair, List<Opened>>> byClientPairOrders =
             new ConcurrentHashMap<>();
 
     private final List<Closed> done = new CopyOnWriteArrayList<>();
 
     private LocalDateTime min = LocalDateTime.MAX;
     private LocalDateTime max = LocalDateTime.MIN;
+    private LocalDateTime current = LocalDateTime.MIN;
 
     private final Map<String, ClientConfig> configs;
 
     void acceptTrade(MultiOrderCreateCommand command) {
-        Map<CurrencyPair, List<CreateOrderCommand>> orders =
+        Map<CurrencyPair, List<Opened>> orders =
                 byClientPairOrders.computeIfAbsent(command.getClientName(), id -> new ConcurrentHashMap<>());
 
         command.getCommands().forEach(cmd -> {
@@ -48,17 +50,18 @@ class TestTradeRepository {
                     TradingCurrency.fromCode(cmd.getCurrencyTo())
             );
 
-            orders.computeIfAbsent(pair, id -> new CopyOnWriteArrayList<>()).add(cmd);
+            orders.computeIfAbsent(pair, id -> new CopyOnWriteArrayList<>())
+                    .add(new Opened(current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(), cmd));
         });
     }
 
     void acceptOrderBook(OrderBook book) {
         computeMinMaxDate(book);
-        List<CreateOrderCommand> open = byClientPairOrders
+        List<Opened> open = byClientPairOrders
                 .getOrDefault(book.getMeta().getClient(), ImmutableMap.of())
                 .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
-        List<CreateOrderCommand> closed = open.stream()
-                .filter(it -> canCompleteCommand(it, book))
+        List<Opened> closed = open.stream()
+                .filter(it -> canCompleteCommand(it.getCommand(), book))
                 .collect(Collectors.toList());
 
         if (closed.isEmpty()) {
@@ -68,12 +71,22 @@ class TestTradeRepository {
         closed.forEach(opn -> log.info("Satisfy(close) {} with {}", opn, book));
         open.removeAll(closed);
         done.addAll(
-                closed.stream().map(it -> new Closed(book.getMeta().getTimestamp(), it)).collect(Collectors.toList())
+                closed.stream().map(it -> new Closed(
+                        it.getTimestamp(), book.getMeta().getTimestamp(), it.getCommand())
+                ).collect(Collectors.toList())
         );
     }
 
     void logStats() {
-        log.info("In period {} to {} completed {} orders", min, max, done.size());
+        log.info("In period {} to {} opened {} / completed {} orders",
+                min,
+                max,
+                byClientPairOrders.entrySet().stream()
+                        .flatMap(it -> it.getValue().values().stream())
+                        .mapToLong(Collection::size)
+                        .sum(),
+                done.size());
+
         configs.keySet().forEach(this::computeStatsForClient);
     }
 
@@ -89,8 +102,7 @@ class TestTradeRepository {
 
             if (isSell) {
                 from = val.getCommand().getAmount();
-                to = val.getCommand().getAmount().abs()
-                        .divide(val.getCommand().getPrice(), MathContext.DECIMAL128)
+                to = val.getCommand().getAmount().abs().multiply(val.getCommand().getPrice())
                         .multiply(getCharge(client));
             } else {
                 from = val.getCommand().getAmount().multiply(getCharge(client));
@@ -107,23 +119,32 @@ class TestTradeRepository {
             );
 
             timeToClose.computeIfAbsent(isSell, id -> new ArrayList<>()).add(
-                    val.getTimestamp() - val.getCommand().getCreatedTimestamp()
+                    val.getTimestampClose() - val.getTimestampOpen()
             );
         }
 
-        log.info("For client {} done balance is {}", client, doneBalance);
-        log.info("For client {} time to average time to close is (by side, isSell) {}",
-                client,
-                timeToClose.entrySet().stream()
-                        .collect(Collectors.toMap(
-                                it -> it,
-                                it -> it.getValue().stream().mapToDouble(v -> v).average())
-                        )
-        );
+        log.info("--------------------------- Statistics for {} ------------------------", client);
+        doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
+        log.info("Order closing time statistics");
+        timeToClose.forEach((k, v) -> {
+            log.info("{}:", k ? "SELL" : "BUY");
+            logSeriesStats(v);
+        });
+    }
+
+    private void logSeriesStats(List<Long> values) {
+        DescriptiveStatistics statistics = new DescriptiveStatistics();
+        values.forEach(statistics::addValue);
+        log.info("Mean: {}", statistics.getMean());
+        log.info("Stdev: {}", statistics.getStandardDeviation());
+        log.info("25percentile: {}", statistics.getPercentile(25.0));
+        log.info("50percentile: {}", statistics.getPercentile(50.0));
+        log.info("75percentile: {}", statistics.getPercentile(75.0));
+        log.info("90percentile: {}", statistics.getPercentile(90.0));
     }
 
     private BigDecimal getCharge(String client) {
-        return configs.get(client).getTradeChargeRatePct().movePointRight(2).add(BigDecimal.ONE);
+        return configs.get(client).getTradeChargeRatePct().movePointLeft(2).negate().add(BigDecimal.ONE);
     }
 
     private boolean canCompleteCommand(CreateOrderCommand command, OrderBook book) {
@@ -137,12 +158,21 @@ class TestTradeRepository {
     private void computeMinMaxDate(OrderBook book) {
         LocalDateTime time = Instant.ofEpochMilli(book.getMeta().getTimestamp())
                 .atZone(ZoneId.systemDefault()).toLocalDateTime();
+        current = time;
         min = time.compareTo(min) < 0 ? time : min;
         max = time.compareTo(max) > 0 ? time : max;
     }
 
     @Data
     private static class Closed {
+
+        private final long timestampOpen;
+        private final long timestampClose;
+        private final CreateOrderCommand command;
+    }
+
+    @Data
+    private static class Opened {
 
         private final long timestamp;
         private final CreateOrderCommand command;

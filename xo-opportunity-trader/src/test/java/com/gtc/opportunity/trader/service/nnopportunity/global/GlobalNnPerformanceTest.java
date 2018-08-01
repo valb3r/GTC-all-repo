@@ -46,8 +46,12 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private static final String HISTORY_DIR = "/mnt/storage-box/bid/history";
     private static final LocalDateTime FROM = LocalDateTime.of(2018, 7, 27, 0, 0, 0);
     private static final LocalDateTime TO = LocalDateTime.of(2018, 7, 31, 8, 0, 0);
-    private static final int REBUILD_MODEL_EACH_N = 3000;
+
+    // This one is part of config
+    private static final int REBUILD_MODEL_EACH_N = 30000;
+
     private static final int SKIP_PTS_COST_PER_S = 10;
+    private static final int LOG_STATS_EACH_N = 10000;
 
     private TestTradeRepository testTradeRepository;
 
@@ -87,6 +91,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 testTradeRepository.acceptOrderBook(book);
                 pointIndex++;
                 disptacher.acceptOrderBook(book);
+                printIntermediateStatsIfNeeded(pointIndex);
                 createModelsIfNeeded(pointIndex, reader);
             }
         } catch (NoSuchElementException ex) {
@@ -98,18 +103,27 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         }
     }
 
-    private void createModelsIfNeeded(long pointIndex, HistoryBookReader toSkipOn) {
-        if (pointIndex % REBUILD_MODEL_EACH_N == 0) {
-            long st = System.currentTimeMillis();
-            solver.createModels();
-            long en = System.currentTimeMillis();
+    private void printIntermediateStatsIfNeeded(long pointIndex) {
+        if (pointIndex % LOG_STATS_EACH_N != 0) {
+            return;
+        }
 
-            // it is not what happens in reality, since old model will accept point while new is absent
-            long skip = (en - st) * 1000L / SKIP_PTS_COST_PER_S;
-            for (long i = 0; i < skip; ++i) {
-                OrderBook book = toSkipOn.read();
-                testTradeRepository.acceptOrderBook(book);
-            }
+        testTradeRepository.logStats();
+    }
+
+    private void createModelsIfNeeded(long pointIndex, HistoryBookReader toSkipOn) {
+        if (pointIndex % REBUILD_MODEL_EACH_N != 0) {
+            return;
+        }
+        long st = System.currentTimeMillis();
+        solver.createModels();
+        long en = System.currentTimeMillis();
+
+        // it is not what happens in reality, since old model will accept point while new is absent
+        long skip = (en - st) / 1000L * SKIP_PTS_COST_PER_S;
+        for (long i = 0; i < skip; ++i) {
+            OrderBook book = toSkipOn.read();
+            testTradeRepository.acceptOrderBook(book);
         }
     }
 
@@ -170,8 +184,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .scaleAmount(2)
                 .scalePrice(7)
                 .minOrder(BigDecimal.ONE)
-                .minOrderInToCurrency(BigDecimal.TEN)
-                .maxOrder(new BigDecimal("0.001"))
+                .maxOrder(BigDecimal.TEN)
+                .minOrderInToCurrency(new BigDecimal("0.001"))
                 .tradeChargeRatePct(new BigDecimal("0.1"))
                 .build();
         cfg.setEnabled(true);
