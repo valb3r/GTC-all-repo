@@ -48,7 +48,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private static final LocalDateTime TO = LocalDateTime.of(2018, 7, 31, 8, 0, 0);
 
     // This one is part of config
-    private static final int REBUILD_MODEL_EACH_N = 30000;
+    private static final int REBUILD_MODEL_EACH_N = 10000;
 
     private static final int SKIP_PTS_COST_PER_S = 10;
     private static final int LOG_STATS_EACH_N = 10000;

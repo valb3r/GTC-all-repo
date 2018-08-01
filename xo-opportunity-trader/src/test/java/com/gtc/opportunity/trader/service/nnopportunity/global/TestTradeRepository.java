@@ -20,6 +20,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +38,7 @@ class TestTradeRepository {
     private LocalDateTime min = LocalDateTime.MAX;
     private LocalDateTime max = LocalDateTime.MIN;
     private LocalDateTime current = LocalDateTime.MIN;
+    private int currentPairId = 0;
 
     private final Map<String, ClientConfig> configs;
 
@@ -44,6 +46,7 @@ class TestTradeRepository {
         Map<CurrencyPair, List<Opened>> orders =
                 byClientPairOrders.computeIfAbsent(command.getClientName(), id -> new ConcurrentHashMap<>());
 
+        currentPairId++;
         command.getCommands().forEach(cmd -> {
             CurrencyPair pair = new CurrencyPair(
                     TradingCurrency.fromCode(cmd.getCurrencyFrom()),
@@ -51,7 +54,11 @@ class TestTradeRepository {
             );
 
             orders.computeIfAbsent(pair, id -> new CopyOnWriteArrayList<>())
-                    .add(new Opened(current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(), cmd));
+                    .add(new Opened(
+                            currentPairId,
+                            current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
+                            cmd)
+                    );
         });
     }
 
@@ -72,35 +79,70 @@ class TestTradeRepository {
         open.removeAll(closed);
         done.addAll(
                 closed.stream().map(it -> new Closed(
-                        it.getTimestamp(), book.getMeta().getTimestamp(), it.getCommand())
+                        it.getPairId(),
+                        it.getTimestamp(),
+                        book.getMeta().getTimestamp(),
+                        it.getCommand())
                 ).collect(Collectors.toList())
         );
     }
 
     void logStats() {
-        log.info("In period {} to {} opened {} / completed {} orders",
-                min,
-                max,
-                byClientPairOrders.entrySet().stream()
-                        .flatMap(it -> it.getValue().values().stream())
-                        .mapToLong(Collection::size)
-                        .sum(),
-                done.size());
+        long active = byClientPairOrders.entrySet().stream()
+                .flatMap(it -> it.getValue().values().stream())
+                .mapToLong(Collection::size)
+                .sum();
+
+        log.info("In period {} to {} we have active {} / completed {} orders", min, max, active, done.size());
 
         configs.keySet().forEach(this::computeStatsForClient);
     }
 
     private void computeStatsForClient(String client) {
-        Map<TradingCurrency, BigDecimal> doneBalance = new HashMap<>();
+
+        Map<TradingCurrency, BigDecimal> doneBalance = computeClosedBalance(client, done);
+        Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeClosedBalance(client, computePaired(done));
+        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done);
+
+        log.info("--------------------------- Statistics for {} ------------------------", client);
+        log.info("Total done balance");
+        doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
+        log.info("Pairwise done balance");
+        pairwiseDoneBalance.forEach((k, v) -> log.info("{} {}", k, v));
+        log.info("Order closing time statistics");
+        timeToClose.forEach((k, v) -> {
+            log.info("{}:", k ? "SELL" : "BUY");
+            logSeriesStats(v);
+        });
+    }
+
+    private List<Closed> computePaired(List<Closed> closed) {
+        Map<Integer, Long> pairOccurency = closed.stream().map(Closed::getPairId)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        return closed.stream()
+                .filter(it -> pairOccurency.get(it.getPairId()) == 2)
+                .collect(Collectors.toList());
+    }
+
+    private Map<Boolean, List<Long>> computeTimeToClose(List<Closed> closed) {
         Map<Boolean, List<Long>> timeToClose = new HashMap<>();
 
-        for (Closed val : done) {
+        for (Closed val : closed) {
+            timeToClose.computeIfAbsent(isSell(val.getCommand()), id -> new ArrayList<>()).add(
+                    val.getTimestampClose() - val.getTimestampOpen()
+            );
+        }
+
+        return timeToClose;
+    }
+
+    private Map<TradingCurrency, BigDecimal> computeClosedBalance(String client, List<Closed> closed) {
+        Map<TradingCurrency, BigDecimal> doneBalance = new HashMap<>();
+        for (Closed val : closed) {
             BigDecimal from;
             BigDecimal to;
 
-            boolean isSell = val.getCommand().getAmount().compareTo(BigDecimal.ZERO) < 0;
-
-            if (isSell) {
+            if (isSell(val.getCommand())) {
                 from = val.getCommand().getAmount();
                 to = val.getCommand().getAmount().abs().multiply(val.getCommand().getPrice())
                         .multiply(getCharge(client));
@@ -117,19 +159,13 @@ class TestTradeRepository {
                     TradingCurrency.fromCode(val.getCommand().getCurrencyTo()),
                     (id, bal) -> null == bal ? BigDecimal.ZERO : bal.add(to)
             );
-
-            timeToClose.computeIfAbsent(isSell, id -> new ArrayList<>()).add(
-                    val.getTimestampClose() - val.getTimestampOpen()
-            );
         }
 
-        log.info("--------------------------- Statistics for {} ------------------------", client);
-        doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
-        log.info("Order closing time statistics");
-        timeToClose.forEach((k, v) -> {
-            log.info("{}:", k ? "SELL" : "BUY");
-            logSeriesStats(v);
-        });
+        return doneBalance;
+    }
+
+    private static boolean isSell(CreateOrderCommand command) {
+        return command.getAmount().compareTo(BigDecimal.ZERO) < 0;
     }
 
     private void logSeriesStats(List<Long> values) {
@@ -166,6 +202,7 @@ class TestTradeRepository {
     @Data
     private static class Closed {
 
+        private final int pairId;
         private final long timestampOpen;
         private final long timestampClose;
         private final CreateOrderCommand command;
@@ -174,6 +211,7 @@ class TestTradeRepository {
     @Data
     private static class Opened {
 
+        private final int pairId;
         private final long timestamp;
         private final CreateOrderCommand command;
     }
