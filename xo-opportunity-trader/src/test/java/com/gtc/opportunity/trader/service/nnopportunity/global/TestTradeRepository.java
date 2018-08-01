@@ -5,6 +5,7 @@ import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
+import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import lombok.Data;
@@ -30,6 +31,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class TestTradeRepository {
 
+    private static final long MILLIS_IN_10M = 600000;
+
     private final Map<String, Map<CurrencyPair, List<Opened>>> byClientPairOrders =
             new ConcurrentHashMap<>();
 
@@ -49,12 +52,7 @@ class TestTradeRepository {
 
         currentPairId++;
         command.getCommands().forEach(cmd -> {
-            CurrencyPair pair = new CurrencyPair(
-                    TradingCurrency.fromCode(cmd.getCurrencyFrom()),
-                    TradingCurrency.fromCode(cmd.getCurrencyTo())
-            );
-
-            orders.computeIfAbsent(pair, id -> new CopyOnWriteArrayList<>())
+            orders.computeIfAbsent(obtainPair(cmd), id -> new CopyOnWriteArrayList<>())
                     .add(new Opened(
                             currentPairId,
                             pointIndex + networkLagPts,
@@ -86,7 +84,8 @@ class TestTradeRepository {
                         it.getPairId(),
                         it.getTimestamp(),
                         book.getMeta().getTimestamp(),
-                        it.getCommand())
+                        it.getCommand(),
+                        book)
                 ).collect(Collectors.toList())
         );
     }
@@ -106,14 +105,21 @@ class TestTradeRepository {
 
         Map<TradingCurrency, BigDecimal> doneBalance = computeClosedBalance(client, done);
         Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeClosedBalance(client, computePaired(done));
-        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done);
+        Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts =
+                computeClosingAmountsAtBest(computePaired(done));
+        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done, MILLIS_IN_10M);
 
         log.info("--------------------------- Statistics for {} ------------------------", client);
         log.info("Total done balance");
         doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Pairwise done balance");
         pairwiseDoneBalance.forEach((k, v) -> log.info("{} {}", k, v));
-        log.info("Order closing time statistics");
+        log.info("Pairwise amounts at best statistics");
+        pairwiseBestAmounts.forEach((pair, vals) -> vals.forEach((k, v) -> {
+            log.info("{} {}:", pair, k ? "SELL" : "BUY");
+            logSeriesStats(v);
+        }));
+        log.info("Order closing time statistics (having at least 10m wait time)");
         timeToClose.forEach((k, v) -> {
             log.info("{}:", k ? "SELL" : "BUY");
             logSeriesStats(v);
@@ -128,16 +134,48 @@ class TestTradeRepository {
                 .collect(Collectors.toList());
     }
 
-    private Map<Boolean, List<Long>> computeTimeToClose(List<Closed> closed) {
+    private Map<Boolean, List<Long>> computeTimeToClose(List<Closed> closed, long threshold) {
         Map<Boolean, List<Long>> timeToClose = new HashMap<>();
 
         for (Closed val : closed) {
-            timeToClose.computeIfAbsent(isSell(val.getCommand()), id -> new ArrayList<>()).add(
-                    val.getTimestampClose() - val.getTimestampOpen()
-            );
+            long dt = val.getTimestampClose() - val.getTimestampOpen();
+            if (dt < threshold) {
+                continue;
+            }
+
+            timeToClose.computeIfAbsent(isSell(val.getCommand()), id -> new ArrayList<>()).add(dt);
         }
 
         return timeToClose;
+    }
+
+    private Map<CurrencyPair, Map<Boolean, List<Double>>> computeClosingAmountsAtBest(List<Closed> closed) {
+        Map<CurrencyPair, Map<Boolean, List<Double>>> amounts = new HashMap<>();
+
+        for (Closed val : closed) {
+            boolean isSell = isSell(val.getCommand());
+            amounts.computeIfAbsent(obtainPair(val.getCommand()), id -> new HashMap<>())
+                    .computeIfAbsent(isSell, id -> new ArrayList<>())
+                    .add(isSell ? Math.abs(amountAtPos(val.getCloser().getHistogramBuy(), (short) -1)) :
+                            Math.abs(amountAtPos(val.getCloser().getHistogramSell(), (short) 1)));
+        }
+
+        return amounts;
+    }
+
+    private double amountAtPos(AggregatedOrder[] orders, short pos) {
+        return Arrays.stream(orders)
+                .filter(it -> it.getPosId() == pos)
+                .map(AggregatedOrder::getAmount)
+                .findFirst()
+                .orElse(0.0);
+    }
+
+    private CurrencyPair obtainPair(CreateOrderCommand command) {
+        return new CurrencyPair(
+                TradingCurrency.fromCode(command.getCurrencyFrom()),
+                TradingCurrency.fromCode(command.getCurrencyTo())
+        );
     }
 
     private Map<TradingCurrency, BigDecimal> computeClosedBalance(String client, List<Closed> closed) {
@@ -172,11 +210,12 @@ class TestTradeRepository {
         return command.getAmount().compareTo(BigDecimal.ZERO) < 0;
     }
 
-    private void logSeriesStats(List<Long> values) {
+    private <T extends Number> void logSeriesStats(List<T> values) {
         DescriptiveStatistics statistics = new DescriptiveStatistics();
-        values.forEach(statistics::addValue);
+        values.forEach(it -> statistics.addValue(it.doubleValue()));
         log.info("Mean: {}", statistics.getMean());
         log.info("Stdev: {}", statistics.getStandardDeviation());
+        log.info("10percentile: {}", statistics.getPercentile(10.0));
         log.info("25percentile: {}", statistics.getPercentile(25.0));
         log.info("50percentile: {}", statistics.getPercentile(50.0));
         log.info("75percentile: {}", statistics.getPercentile(75.0));
@@ -210,6 +249,7 @@ class TestTradeRepository {
         private final long timestampOpen;
         private final long timestampClose;
         private final CreateOrderCommand command;
+        private final OrderBook closer;
     }
 
     @Data
