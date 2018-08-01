@@ -114,7 +114,7 @@ class TestTradeRepository {
         log.info("Total done balance");
         doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Locked by orders balance");
-        lockedBalance.forEach((k, v) -> log.info("{} {}", k, v));
+        lockedBalance.forEach((k, v) -> log.info("Lock {} {}", k, v));
         log.info("Pairwise done balance");
         pairwiseDoneBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Pairwise amounts at best statistics");
