@@ -103,8 +103,9 @@ class TestTradeRepository {
 
     private void computeStatsForClient(String client) {
 
-        Map<TradingCurrency, BigDecimal> doneBalance = computeClosedBalance(client, done);
-        Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeClosedBalance(client, computePaired(done));
+        Map<TradingCurrency, BigDecimal> doneBalance = computeOrderBalance(client, done);
+        Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeOrderBalance(client, computePaired(done));
+        Map<TradingCurrency, BigDecimal> lockedBalance = computeLockedBalance(client);
         Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts =
                 computeClosingAmountsAtBest(computePaired(done));
         Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done, MILLIS_IN_10M);
@@ -112,6 +113,8 @@ class TestTradeRepository {
         log.info("--------------------------- Statistics for {} ------------------------", client);
         log.info("Total done balance");
         doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
+        log.info("Locked by orders balance");
+        lockedBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Pairwise done balance");
         pairwiseDoneBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Pairwise amounts at best statistics");
@@ -178,7 +181,7 @@ class TestTradeRepository {
         );
     }
 
-    private Map<TradingCurrency, BigDecimal> computeClosedBalance(String client, List<Closed> closed) {
+    private Map<TradingCurrency, BigDecimal> computeOrderBalance(String client, List<Closed> closed) {
         Map<TradingCurrency, BigDecimal> doneBalance = new HashMap<>();
         for (Closed val : closed) {
             BigDecimal from;
@@ -195,15 +198,52 @@ class TestTradeRepository {
 
             doneBalance.compute(
                     TradingCurrency.fromCode(val.getCommand().getCurrencyFrom()),
-                    (id, bal) -> null == bal ? BigDecimal.ZERO : bal.add(from)
+                    (id, bal) -> null == bal ? from : bal.add(from)
             );
             doneBalance.compute(
                     TradingCurrency.fromCode(val.getCommand().getCurrencyTo()),
-                    (id, bal) -> null == bal ? BigDecimal.ZERO : bal.add(to)
+                    (id, bal) -> null == bal ? to : bal.add(to)
             );
         }
 
         return doneBalance;
+    }
+
+    private Map<TradingCurrency, BigDecimal> computeLockedBalance(String client) {
+        Map<TradingCurrency, BigDecimal> lockedBalance = new HashMap<>();
+        List<Opened> open = byClientPairOrders.getOrDefault(client, ImmutableMap.of()).values().stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        for (Opened val : open) {
+            OrderBalance balance = computeWalletLock(val.getCommand());
+
+            lockedBalance.compute(
+                    TradingCurrency.fromCode(val.getCommand().getCurrencyFrom()),
+                    (id, bal) -> null == bal ? balance.getFrom() : bal.add(balance.getFrom())
+            );
+            lockedBalance.compute(
+                    TradingCurrency.fromCode(val.getCommand().getCurrencyTo()),
+                    (id, bal) -> null == bal ? balance.getTo() : bal.add(balance.getTo())
+            );
+        }
+
+        return lockedBalance;
+    }
+
+    private OrderBalance computeWalletLock(CreateOrderCommand command) {
+        BigDecimal from;
+        BigDecimal to;
+
+        if (isSell(command)) {
+            from = command.getAmount();
+            to = BigDecimal.ZERO;
+        } else {
+            from = BigDecimal.ZERO;
+            to = command.getAmount().multiply(command.getPrice()).negate();
+        }
+
+        return new OrderBalance(from, to);
     }
 
     private static boolean isSell(CreateOrderCommand command) {
@@ -259,5 +299,12 @@ class TestTradeRepository {
         private final long minimalIndexThatCanClose;
         private final long timestamp;
         private final CreateOrderCommand command;
+    }
+
+    @Data
+    private static class OrderBalance {
+
+        private final BigDecimal from;
+        private final BigDecimal to;
     }
 }
