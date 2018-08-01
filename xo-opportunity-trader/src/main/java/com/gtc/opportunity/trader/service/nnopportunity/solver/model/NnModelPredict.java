@@ -23,15 +23,14 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import java.util.List;
 
 import static com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper.CAN_PROCEED_POS;
+import static com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper.FEATURE_SIZE;
+import static com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper.LABEL_SIZE;
 
 /**
  * Created by Valentyn Berezin on 29.07.18.
  */
 @Slf4j
 public class NnModelPredict {
-
-    private static final int N_INPUT_FEATURES = 20;
-    private static final int N_CLASSES = 2;
 
     @Getter
     private final long creationTimestamp;
@@ -67,7 +66,7 @@ public class NnModelPredict {
     }
 
     private void assesModel(Splitter splitter) throws TrainingFailed {
-        Evaluation eval = new Evaluation(N_CLASSES);
+        Evaluation eval = new Evaluation(LABEL_SIZE);
         asses(eval, splitter.getNoopTest(), false);
         asses(eval, splitter.getProceedTest(), true);
 
@@ -93,7 +92,7 @@ public class NnModelPredict {
                 .list();
 
         builder.layer(0, new DenseLayer.Builder()
-                .nIn(N_INPUT_FEATURES)
+                .nIn(FEATURE_SIZE)
                 .nOut(cfg.getLayerDim())
                 .activation(Activation.TANH)
                 .build());
@@ -108,7 +107,7 @@ public class NnModelPredict {
 
         builder.layer(cfg.getLayers() + 1, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
                 .nIn(cfg.getLayerDim())
-                .nOut(N_CLASSES)
+                .nOut(LABEL_SIZE)
                 .activation(Activation.SOFTMAX)
                 .build());
 

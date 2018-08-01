@@ -17,8 +17,8 @@ import java.util.List;
 public class FeatureMapper {
 
     public static final int CAN_PROCEED_POS = 0;
-    private static final int FEATURE_SIZE = 20;
-    private static final int LABEL_SIZE = 2;
+    static final int FEATURE_SIZE = 20;
+    static final int LABEL_SIZE = 2;
 
     INDArray extractFeatures(FlatOrderBook book) {
         return new NDArray(new float[][] {features(book)});
