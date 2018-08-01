@@ -51,15 +51,14 @@ class TestTradeRepository {
                 byClientPairOrders.computeIfAbsent(command.getClientName(), id -> new ConcurrentHashMap<>());
 
         currentPairId++;
-        command.getCommands().forEach(cmd -> {
-            orders.computeIfAbsent(obtainPair(cmd), id -> new CopyOnWriteArrayList<>())
-                    .add(new Opened(
-                            currentPairId,
-                            pointIndex + networkLagPts,
-                            current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
-                            cmd)
-                    );
-        });
+        command.getCommands()
+                .forEach(cmd -> orders.computeIfAbsent(obtainPair(cmd), id -> new CopyOnWriteArrayList<>())
+                .add(new Opened(
+                        currentPairId,
+                        pointIndex + networkLagPts,
+                        current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
+                        cmd)
+                ));
     }
 
     void acceptOrderBook(OrderBook book) {
