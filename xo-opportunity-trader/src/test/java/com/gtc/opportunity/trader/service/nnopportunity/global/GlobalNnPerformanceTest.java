@@ -50,6 +50,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     // This one is part of config
     private static final int REBUILD_MODEL_EACH_N = 10000;
 
+    private static final int REQUEST_LAG_N = 20; // imitate network delay ~2s given 100ms data
     private static final int SKIP_PTS_COST_PER_S = 10;
     private static final int LOG_STATS_EACH_N = 10000;
 
@@ -155,7 +156,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         config.setLearningRate(0.006);
         config.setMomentum(0.9);
         config.setL2(0.0001);
-        config.setFuturePriceGainPct(0.3);
+        config.setFuturePriceGainPct(0.2);
     }
 
     private NnCreateTradesService tradesService() {
@@ -222,7 +223,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private void initGatewayOrderCreationHandler() {
         doAnswer(invocation -> {
             MultiOrderCreateCommand trade = (MultiOrderCreateCommand) invocation.getArguments()[0];
-            testTradeRepository.acceptTrade(trade);
+            testTradeRepository.acceptTrade(trade, REQUEST_LAG_N);
             return null;
         }).when(commander).createOrders(any(MultiOrderCreateCommand.class));
     }

@@ -39,10 +39,11 @@ class TestTradeRepository {
     private LocalDateTime max = LocalDateTime.MIN;
     private LocalDateTime current = LocalDateTime.MIN;
     private int currentPairId = 0;
+    private long pointIndex = 0;
 
     private final Map<String, ClientConfig> configs;
 
-    void acceptTrade(MultiOrderCreateCommand command) {
+    void acceptTrade(MultiOrderCreateCommand command, long networkLagPts) {
         Map<CurrencyPair, List<Opened>> orders =
                 byClientPairOrders.computeIfAbsent(command.getClientName(), id -> new ConcurrentHashMap<>());
 
@@ -56,6 +57,7 @@ class TestTradeRepository {
             orders.computeIfAbsent(pair, id -> new CopyOnWriteArrayList<>())
                     .add(new Opened(
                             currentPairId,
+                            pointIndex + networkLagPts,
                             current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
                             cmd)
                     );
@@ -63,11 +65,13 @@ class TestTradeRepository {
     }
 
     void acceptOrderBook(OrderBook book) {
+        pointIndex++;
         computeMinMaxDate(book);
         List<Opened> open = byClientPairOrders
                 .getOrDefault(book.getMeta().getClient(), ImmutableMap.of())
                 .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
         List<Opened> closed = open.stream()
+                .filter(it -> it.getMinimalIndexThatCanClose() <= pointIndex)
                 .filter(it -> canCompleteCommand(it.getCommand(), book))
                 .collect(Collectors.toList());
 
@@ -212,6 +216,7 @@ class TestTradeRepository {
     private static class Opened {
 
         private final int pairId;
+        private final long minimalIndexThatCanClose;
         private final long timestamp;
         private final CreateOrderCommand command;
     }
