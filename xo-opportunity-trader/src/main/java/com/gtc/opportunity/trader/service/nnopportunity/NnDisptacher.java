@@ -28,9 +28,9 @@ public class NnDisptacher {
     }
 
     private boolean validateBook(OrderBook book) {
-        return !Double.isFinite(book.getBestSell())
-                || !Double.isFinite(book.getBestBuy())
-                || 0.0 == book.getBestSell()
-                || 0.0 == book.getBestBuy();
+        return Double.isFinite(book.getBestSell())
+                && Double.isFinite(book.getBestBuy())
+                && 0.0 != book.getBestSell()
+                && 0.0 != book.getBestBuy();
     }
 }
