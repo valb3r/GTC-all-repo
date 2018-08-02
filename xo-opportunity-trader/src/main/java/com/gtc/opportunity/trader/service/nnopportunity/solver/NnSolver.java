@@ -58,7 +58,7 @@ public class NnSolver {
     }
 
     @Trace(dispatcher = true)
-    @Scheduled(fixedDelayString = "#{${app.nn.createModelsEachS} * 1000}")
+    @Scheduled(fixedDelayString = "#{${app.nn.schedule.createModelsEachS} * 1000}")
     public void createModels() {
         try {
             Arrays.stream(Strategy.values()).forEach(strategy ->
