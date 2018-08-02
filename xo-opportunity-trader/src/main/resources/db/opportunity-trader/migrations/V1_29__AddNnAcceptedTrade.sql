@@ -41,3 +41,7 @@ CREATE TABLE accepted_nn_trade_aud
 )
   ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
+
+ALTER TABLE trade ADD COLUMN nn_order_id INT(11);
+ALTER TABLE trade
+  ADD CONSTRAINT accepted_nn_trade_id FOREIGN KEY (nn_order_id) REFERENCES accepted_nn_trade (id);

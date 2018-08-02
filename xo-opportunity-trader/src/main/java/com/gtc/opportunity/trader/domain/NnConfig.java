@@ -1,5 +1,6 @@
 package com.gtc.opportunity.trader.domain;
 
+import com.google.common.base.Objects;
 import lombok.*;
 
 import javax.persistence.*;
@@ -57,4 +58,10 @@ public class NnConfig implements Serializable {
     private BigDecimal futurePriceGainPct;
 
     private boolean enabled;
+
+    public int hashValue() {
+        return Objects.hashCode(futureNwindow, collectNlabeled, noopThreshold, truthThreshold, proceedFalsePositive,
+                averageDtSBetweenLabels, bookTestForOpenPerS, oldThresholdM, nTrainIterations,
+                trainRelativeSize, networkYamlSpec, futurePriceGainPct);
+    }
 }

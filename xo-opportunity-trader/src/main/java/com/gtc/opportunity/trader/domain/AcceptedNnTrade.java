@@ -35,6 +35,7 @@ public class AcceptedNnTrade implements Serializable {
 
     @NotNull
     @ManyToOne
+    @JoinColumn(name = "client")
     private Client client;
 
     @NotNull
@@ -76,6 +77,6 @@ public class AcceptedNnTrade implements Serializable {
     @Audited
     private String lastMessageId;
 
-    @OneToMany
+    @OneToMany(mappedBy = "nnOrder")
     private Collection<Trade> trades;
 }

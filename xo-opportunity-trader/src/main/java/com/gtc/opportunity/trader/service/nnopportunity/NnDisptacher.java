@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NnDisptacher {
 
+    private static final double EPSILON = 1e-16;
+
     private final NnDataRepository repository;
     private final NnAnalyzer analyzer;
     private final ConfigCache cfg;
@@ -30,7 +32,7 @@ public class NnDisptacher {
     private boolean validateBook(OrderBook book) {
         return Double.isFinite(book.getBestSell())
                 && Double.isFinite(book.getBestBuy())
-                && 0.0 != book.getBestSell()
-                && 0.0 != book.getBestBuy();
+                && book.getBestSell() > EPSILON
+                && book.getBestBuy() > EPSILON;
     }
 }
