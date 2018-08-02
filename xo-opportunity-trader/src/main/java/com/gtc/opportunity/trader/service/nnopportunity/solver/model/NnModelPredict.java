@@ -32,6 +32,8 @@ public class NnModelPredict {
     private final FeatureMapper featureMapper;
     private final NnConfig nnConfig;
     private final MultiLayerNetwork model;
+    private final int avgNoopLabelAgeS;
+    private final int avgActLabelAgeS;
 
     NnModelPredict(NnConfig config, Snapshot snapshot, FeatureMapper mapper) throws TrainingFailed {
         this.nnConfig = config;
@@ -42,6 +44,11 @@ public class NnModelPredict {
         Splitter split = new Splitter(config, snapshot);
         trainModel(split);
         assesModel(split);
+        long timestamp = System.currentTimeMillis();
+        avgNoopLabelAgeS = (int) (split.getNoopTrain().stream()
+                .mapToDouble(it -> timestamp - it.getTimestamp()).average().orElse(0.0) / 1000.0);
+        avgActLabelAgeS = (int) (split.getProceedTrain().stream()
+                .mapToDouble(it -> timestamp - it.getTimestamp()).average().orElse(0.0) / 1000.0);
     }
 
     public Optional<StrategyDetails> computeStrategyIfPossible(Strategy strategy, FlatOrderBook book) {
@@ -52,7 +59,13 @@ public class NnModelPredict {
             return Optional.empty();
         }
 
-        return Optional.of(new StrategyDetails(strategy, voteValue));
+        return Optional.of(new StrategyDetails(
+                strategy,
+                voteValue,
+                (int) (System.currentTimeMillis() - creationTimestamp) / 1000,
+                avgNoopLabelAgeS,
+                avgActLabelAgeS
+        ));
     }
 
     @SneakyThrows

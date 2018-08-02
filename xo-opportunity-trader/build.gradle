@@ -29,6 +29,14 @@ repositories {
 // need a fix for https://hibernate.atlassian.net/browse/HHH-11988
 ext['hibernate.version'] = versions.hibernate
 
+
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/itest/java')
+        resources.srcDir file('src/itest/resources')
+    }
+}
+
 dependencies {
     compile project(':shared')
 
@@ -62,6 +70,13 @@ dependencies {
     testCompile "org.mockito:mockito-all:${versions.mockito}"
     testCompile "org.assertj:assertj-core:${versions.assertJ}"
     testCompile "org.apache.commons:commons-csv:${versions.csv}"
+
+    integrationTestCompile "com.h2database:h2:${versions.h2}"
+    integrationTestCompile "org.springframework.boot:spring-boot-starter-test"
+    integrationTestCompile sourceSets.main.output
+    integrationTestCompile configurations.testCompile
+    integrationTestCompile sourceSets.test.output
+    integrationTestRuntime configurations.testRuntime
 }
 
 jar {
@@ -72,4 +87,11 @@ jar {
 
 bootRun {
     systemProperties System.properties
+}
+
+task integrationTest(type: Test, dependsOn: jar) {
+    group 'Verification'
+    description 'Runs the integration tests.'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
 }

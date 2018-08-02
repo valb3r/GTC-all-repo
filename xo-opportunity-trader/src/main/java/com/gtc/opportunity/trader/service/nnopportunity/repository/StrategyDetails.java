@@ -10,4 +10,7 @@ public class StrategyDetails {
 
     private final Strategy strategy;
     private final double confidence;
+    private final int modelAgeS;
+    private final int avgNoopLabelAgeS;
+    private final int avgActLabelAgeS;
 }

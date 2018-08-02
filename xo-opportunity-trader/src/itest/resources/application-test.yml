@@ -1,0 +1,97 @@
+spring:
+    main:
+      web-application-type: none
+    application:
+        name: gtc-opportunity-trader
+    jackson:
+        property-naming-strategy: SNAKE_CASE
+        locale: en_US
+        serialization:
+            fail-on-empty-beans: false
+            write_dates_as_timestamps: false
+    datasource:
+        driverClassName: org.h2.Driver
+        url: jdbc:h2:mem:test;MODE=MySQL;DATABASE_TO_UPPER=false;INIT=CREATE SCHEMA IF NOT EXISTS "public"
+        tomcat:
+            initial-size: 2
+            max-active: 10
+            max-idle: 4
+            min-idle: 1
+            test-while-idle: true
+            test-on-return: true
+            test-on-connect: true
+            validation-query: SELECT 1
+            validation-query-timeout: 5
+    jpa:
+        show-sql: false
+        hibernate:
+            ddl-auto: validate
+            naming:
+                implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
+                physical-strategy: com.gtc.opportunity.trader.config.statemachine.StateMachinePrefixedSpringExplicitNamingStrategy
+            use-new-id-generator-mappings: false
+        properties:
+            hibernate:
+                dialect: com.gtc.opportunity.trader.service.nnopportunity.creation.config.CustomH2Dialect
+                jdbc:
+                    batch_size: 100
+                order_inserts: true
+                order_updates: true
+    flyway:
+        baseline-on-migrate: false
+        validate-on-migrate: false
+        enabled: true
+        locations: classpath:/db/opportunity-trader/migrations
+        placeholders:
+            PART_INDEX_SZ: ""
+    jmx:
+      enabled: false
+server:
+    address: 127.0.0.1
+    servlet:
+        path: /api
+    port: 8083
+    tomcat:
+        max-threads: 4
+app:
+    opportunities:
+        minGain: 1.003
+    updater:
+        maxToCheckStuckPerClient: 3
+        orderTimeoutS: 600
+    ws:
+        market: ws://localhost:8080/api/market
+        gateway: ws://localhost:8084/api/ws
+        disconnectIfInactiveS: 10
+    cache:
+        cfgCache:
+            liveS: 60
+            size: 2048
+        walletIds:
+            liveS: 60
+            size: 2048
+    schedule:
+        reportTradePerformanceS: 60
+        opportunitySearchMs: 100
+        wsReconnectS: 10
+        pushStatsS: 10
+        order:
+            bulkUpdateStatusS: 10
+            stuckUpdateStatusS: 30
+            timedOutCheckS: 100
+        wallet:
+            updateS: 15
+    stats:
+        profitHistogramResolutionPct: 0.2
+    async:
+        pool:
+            core: 10
+            max: 50
+    warmup:
+        xoCalculator:
+            scheduleS: 5
+            considerWarmOnNsuccess: 20
+            solveTimeMs: 75
+    nn:
+        schedule:
+            createModelsEachS: 300

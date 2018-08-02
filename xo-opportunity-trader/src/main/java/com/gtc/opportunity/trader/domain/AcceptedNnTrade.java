@@ -77,6 +77,15 @@ public class AcceptedNnTrade implements Serializable {
     @Audited
     private String lastMessageId;
 
+    @Column(name = "model_age_s")
+    private int modelAgeS;
+
+    @Column(name = "average_noop_label_age_s")
+    private int averageNoopLabelAgeS;
+
+    @Column(name = "average_act_label_age_s")
+    private int averageActLabelAgeS;
+
     @OneToMany(mappedBy = "nnOrder")
     private Collection<Trade> trades;
 }

@@ -43,8 +43,8 @@ public final class Const {
     }
 
     @UtilityClass
-    public static final class NeuralNet {
+    public static final class SpringProfiles {
 
-        public static final String NN_CONF = "nn";
+        public static final String TEST = "test";
     }
 }
