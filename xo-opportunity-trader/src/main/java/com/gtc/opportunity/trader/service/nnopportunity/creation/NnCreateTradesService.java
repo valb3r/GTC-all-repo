@@ -1,6 +1,5 @@
 package com.gtc.opportunity.trader.service.nnopportunity.creation;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
@@ -10,6 +9,7 @@ import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnAcceptStatus;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
+import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
@@ -52,6 +52,7 @@ public class NnCreateTradesService {
     private final TradeCreationService tradeCreationService;
     private final ConfigCache configCache;
     private final AcceptedNnTradeRepository nnTradeRepository;
+    private final TradeRepository tradeRepository;
 
     @Transactional
     public void create(StrategyDetails strategy, OrderBook book) {
@@ -148,9 +149,14 @@ public class NnCreateTradesService {
                 .confidence(details.getConfidence())
                 .strategy(details.getStrategy())
                 .status(NnAcceptStatus.UNCONFIRMED)
-                .trades(ImmutableList.of(buy.getTrade(), sell.getTrade()))
                 .build();
-        nnTradeRepository.save(trade);
+        trade = nnTradeRepository.save(trade);
+
+        // FIXME: this should be dealt via cascading
+        buy.getTrade().setNnOrder(trade);
+        sell.getTrade().setNnOrder(trade);
+        tradeRepository.save(buy.getTrade());
+        tradeRepository.save(sell.getTrade());
     }
 
     private static BigDecimal amount(TradeDto buy, TradeDto sell) {

@@ -5,10 +5,7 @@ import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.provider.ByClientAndCurrency;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.opportunity.trader.domain.Client;
-import com.gtc.opportunity.trader.domain.ClientConfig;
-import com.gtc.opportunity.trader.domain.NnConfig;
-import com.gtc.opportunity.trader.domain.Wallet;
+import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.*;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
@@ -18,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -130,7 +128,14 @@ public class NnCreateTradesServiceIT extends BaseIT {
                     .build()
         );
 
-        assertThat(Lists.newArrayList(nnTradeRepository.findAll()).size()).isEqualTo(1);
-        assertThat(Lists.newArrayList(tradeRepository.findAll()).size()).isEqualTo(2);
+        List<AcceptedNnTrade> nnTrades = Lists.newArrayList(nnTradeRepository.findAll());
+        assertThat(nnTrades.size()).isEqualTo(1);
+
+        AcceptedNnTrade trade = nnTrades.get(0);
+
+        List<Trade> trades = Lists.newArrayList(tradeRepository.findAll());
+        assertThat(trades.size()).isEqualTo(2);
+        assertThat(trades.get(0).getNnOrder()).isEqualTo(trade);
+        assertThat(trades.get(1).getNnOrder()).isEqualTo(trade);
     }
 }

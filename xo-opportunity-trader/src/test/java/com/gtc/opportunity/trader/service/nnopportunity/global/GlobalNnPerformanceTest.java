@@ -14,10 +14,7 @@ import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
-import com.gtc.opportunity.trader.repository.ClientConfigRepository;
-import com.gtc.opportunity.trader.repository.NnConfigRepository;
-import com.gtc.opportunity.trader.repository.XoConfigRepository;
+import com.gtc.opportunity.trader.repository.*;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
@@ -170,7 +167,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         initGatewayOrderCreationHandler();
 
         return new NnCreateTradesService(commander, tradeCreationService, configs,
-                mock(AcceptedNnTradeRepository.class));
+                mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class));
     }
 
     private void initClientConfigCache() {
