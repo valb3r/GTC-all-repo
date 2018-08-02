@@ -25,7 +25,6 @@ public interface NnConfigRepository extends CrudRepository<NnConfig, Integer> {
                                        @Param("currencyTo") TradingCurrency currencyTo);
 
     @Query("SELECT nn FROM NnConfig nn JOIN nn.clientCfg cc " +
-            "WHERE cc.currency = :currencyFrom AND cc.currencyTo = :currencyTo " +
-            "AND cc.client.enabled = TRUE AND cc.enabled = TRUE AND nn.enabled = TRUE")
+            "WHERE cc.client.enabled = TRUE AND cc.enabled = TRUE AND nn.enabled = TRUE")
     List<NnConfig> findAllActive();
 }

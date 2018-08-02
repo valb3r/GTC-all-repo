@@ -12,6 +12,7 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.model.NnModelPred
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
 import com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey;
 import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.newrelic.api.agent.Trace;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,7 @@ public class NnSolver {
         return Optional.empty();
     }
 
+    @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = "#{${app.nn.createModelsEachS} * 1000}")
     public void createModels() {
         try {
