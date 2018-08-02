@@ -3,6 +3,7 @@ package com.gtc.opportunity.trader.service.opportunity.creation;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.gtc.meta.TradingCurrency;
+import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.config.CacheConfig;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnConfig;
@@ -10,6 +11,7 @@ import com.gtc.opportunity.trader.domain.XoConfig;
 import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.NnConfigRepository;
 import com.gtc.opportunity.trader.repository.XoConfigRepository;
+import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +71,29 @@ public class ConfigCache {
                 computeKey(clientName, from ,to),
                 () -> xoCfgRepository.findActiveByKey(clientName, from, to)
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<NnConfig> readConfig(OrderBook book) {
+        return getNnCfg(
+                book.getMeta().getClient(),
+                book.getMeta().getPair().getFrom(),
+                book.getMeta().getPair().getTo()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public NnConfig requireConfig(Snapshot snapshot) {
+        return getNnCfg(
+                snapshot.getKey().getClient(),
+                snapshot.getKey().getPair().getFrom(),
+                snapshot.getKey().getPair().getTo()
+        ).orElseThrow(() -> new IllegalStateException("No config"));
+    }
+
+    @Transactional(readOnly = true)
+    public NnConfig requireConfig(OrderBook book) {
+        return readConfig(book).orElseThrow(() -> new IllegalStateException("No config"));
     }
 
     private static String computeKey(String clientName, TradingCurrency from, TradingCurrency to) {

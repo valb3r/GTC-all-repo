@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.opportunity.trader.config.NnConfig;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
@@ -45,7 +44,6 @@ public class NnCreateTradesService {
     private final WsGatewayCommander commander;
     private final TradeCreationService tradeCreationService;
     private final ConfigCache configCache;
-    private final NnConfig nnConfig;
 
     @Transactional
     public void create(Strategy strategy, OrderBook book) {
@@ -99,7 +97,7 @@ public class NnCreateTradesService {
     private BigDecimal computeGain(ClientConfig cfg) {
         return cfg.getTradeChargeRatePct()
                 .multiply(BigDecimal.valueOf(2)) // we do 2 trades so gain should accomodate both
-                .add(BigDecimal.valueOf(nnConfig.getFuturePriceGainPct()))
+                .add(BigDecimal.valueOf(cfg.getNnConfig().getFuturePriceGainPct().doubleValue()))
                 .movePointLeft(2)
                 .add(BigDecimal.ONE);
     }

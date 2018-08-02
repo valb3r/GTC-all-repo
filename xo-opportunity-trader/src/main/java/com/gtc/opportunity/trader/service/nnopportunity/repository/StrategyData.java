@@ -1,7 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity.repository;
 
 import com.google.common.collect.EvictingQueue;
-import com.gtc.opportunity.trader.config.NnConfig;
+import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ class StrategyData {
 
     StrategyData(Strategy strategy, NnConfig config) {
         this.cfg = config;
-        this.gainNoopThreshold = config.getNoopThreshold();
+        this.gainNoopThreshold = config.getNoopThreshold().floatValue();
 
         noopLabel = EvictingQueue.create(config.getCollectNlabeled());
         actLabel = EvictingQueue.create(config.getCollectNlabeled());
@@ -103,6 +103,6 @@ class StrategyData {
 
     private boolean canStore(FlatOrderBook book) {
         long lastTimestamp = lastBookTimestamp.get();
-        return book.getTimestamp() - lastTimestamp >= cfg.getAverageDtSBetweenLabels() * 1000;
+        return book.getTimestamp() - lastTimestamp >= cfg.getAverageDtSBetweenLabels().doubleValue() * 1000;
     }
 }

@@ -43,10 +43,16 @@ public class NnConfig implements Serializable {
 
     @Column(name = "old_threshold_m")
     private int oldThresholdM;
+
+    @Column(name = "n_train_iterations")
+    private int nTrainIterations;
+
     private BigDecimal trainRelativeSize;
 
     @Lob
     private String networkJsonSpec;
+
+    private BigDecimal futurePriceGainPct;
 
     private boolean enabled;
 }

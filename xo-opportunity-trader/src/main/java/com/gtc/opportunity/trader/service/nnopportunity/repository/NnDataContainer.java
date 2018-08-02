@@ -1,6 +1,6 @@
 package com.gtc.opportunity.trader.service.nnopportunity.repository;
 
-import com.gtc.opportunity.trader.config.NnConfig;
+import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;

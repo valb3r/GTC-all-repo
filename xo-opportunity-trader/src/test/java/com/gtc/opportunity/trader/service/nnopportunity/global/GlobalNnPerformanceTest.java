@@ -9,9 +9,9 @@ import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.BaseMockitoTest;
-import com.gtc.opportunity.trader.config.NnConfig;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.domain.ClientConfig;
+import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
@@ -38,7 +38,7 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.*;
 
 /**
- * Created by Valentyn Berezin on 31.07.18.
+ * Test will only start if it sees property GLOBAL_NN_TEST == true.
  */
 @Slf4j
 public class GlobalNnPerformanceTest extends BaseMockitoTest {
@@ -56,6 +56,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private TestTradeRepository testTradeRepository;
 
+    private ConfigCache configs;
     private NnConfig config;
     private NnDataRepository repository;
     private FeatureMapper mapper;
@@ -67,24 +68,27 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
-    private ConfigCache configCache;
 
     @Before
     public void init() {
         System.setProperty("ND4J_FALLBACK", "true");
         buildConfig();
         testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig(getClientName())));
-        repository = new NnDataRepository(config);
+        repository = new NnDataRepository(configs);
         mapper = new FeatureMapper();
         modelFactory = new ModelFactory(config, mapper);
-        solver = new NnSolver(config, modelFactory, repository);
+        solver = new NnSolver(configs, modelFactory, repository);
         createTradesService = tradesService();
         nnAnalyzer = new NnAnalyzer(solver, createTradesService);
-        disptacher = new NnDisptacher(repository, nnAnalyzer, config);
+        disptacher = new NnDisptacher(repository, nnAnalyzer, configs);
     }
 
     @Test
     public void test() {
+        if (!"true".equals(System.getProperty("GLOBAL_NN_TEST"))) {
+            return;
+        }
+
         long pointIndex = 0;
         try (HistoryBookReader reader = reader()) {
             while (true) {
@@ -140,40 +144,34 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private void buildConfig() {
         config = new NnConfig();
-        config.setEnabledOn(ImmutableList.of("binance=EOS-BTC"));
         config.setFutureNwindow(36000);
         config.setCollectNlabeled(1000);
-        config.setAverageDtSBetweenLabels(0.5);
-        config.setNoopThreshold(1.002f);
-        config.setTruthThreshold(0.7f);
+        config.setAverageDtSBetweenLabels(new BigDecimal("0.5"));
+        config.setNoopThreshold(new BigDecimal("1.002"));
+        config.setTruthThreshold(new BigDecimal("0.7"));
         config.setOldThresholdM(300000000);
-        config.setTrainRelativeSize(0.7);
-        config.setProceedFalsePositive(0.3f);
-        config.setBooksPerS(1.0);
-        config.setLayers(4);
-        config.setLayerDim(10);
-        config.setIterations(100);
-        config.setLearningRate(0.006);
-        config.setMomentum(0.9);
-        config.setL2(0.0001);
-        config.setFuturePriceGainPct(0.2);
+        config.setTrainRelativeSize(new BigDecimal("0.7"));
+        config.setProceedFalsePositive(new BigDecimal("0.3"));
+        config.setBookTestForOpenPerS(new BigDecimal("1.0"));
+        config.setNTrainIterations(100);
+        config.setFuturePriceGainPct(new BigDecimal("0.1"));
     }
 
     private NnCreateTradesService tradesService() {
         commander = mock(WsGatewayCommander.class);
         tradeCreationService = mock(TradeCreationService.class);
-        configCache = mock(ConfigCache.class);
+        configs = mock(ConfigCache.class);
 
         String name = getClientName();
         initClientConfigCache(name);
         initTradeCreationService(name);
         initGatewayOrderCreationHandler();
 
-        return new NnCreateTradesService(commander, tradeCreationService, configCache, config);
+        return new NnCreateTradesService(commander, tradeCreationService, configs);
     }
 
     private void initClientConfigCache(String name) {
-        when(configCache.getClientCfg(name, TradingCurrency.EOS, TradingCurrency.Bitcoin))
+        when(configs.getClientCfg(name, TradingCurrency.EOS, TradingCurrency.Bitcoin))
                 .thenReturn(Optional.of(getConfig(name)));
     }
 

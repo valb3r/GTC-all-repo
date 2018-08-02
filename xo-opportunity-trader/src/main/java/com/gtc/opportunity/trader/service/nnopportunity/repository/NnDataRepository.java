@@ -1,10 +1,10 @@
 package com.gtc.opportunity.trader.service.nnopportunity.repository;
 
 import com.gtc.model.provider.OrderBook;
-import com.gtc.opportunity.trader.config.NnConfig;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,12 +23,13 @@ import static com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey
 public class NnDataRepository {
 
     private final Map<Key, NnDataContainer> dataStream = new ConcurrentHashMap<>();
-
-    private final NnConfig nnConfig;
+    private final ConfigCache cache;
 
     public void addOrderBook(OrderBook orderBook) {
-        dataStream.computeIfAbsent(key(orderBook), id -> new NnDataContainer(id, nnConfig))
-                .add(BookFlattener.simplify(orderBook));
+        cache.readConfig(orderBook).ifPresent(book ->
+            dataStream.computeIfAbsent(key(orderBook), id -> new NnDataContainer(id, book))
+                    .add(BookFlattener.simplify(orderBook))
+        );
     }
 
     public Optional<Snapshot> getDataToAnalyze(Key key, Strategy strategy) {

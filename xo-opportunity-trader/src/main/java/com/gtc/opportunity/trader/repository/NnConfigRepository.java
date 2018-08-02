@@ -7,6 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,4 +23,9 @@ public interface NnConfigRepository extends CrudRepository<NnConfig, Integer> {
     Optional<NnConfig> findActiveByKey(@Param("clientName") String clientName,
                                        @Param("currencyFrom") TradingCurrency currencyFrom,
                                        @Param("currencyTo") TradingCurrency currencyTo);
+
+    @Query("SELECT nn FROM NnConfig nn JOIN nn.clientCfg cc " +
+            "WHERE cc.currency = :currencyFrom AND cc.currencyTo = :currencyTo " +
+            "AND cc.client.enabled = TRUE AND cc.enabled = TRUE AND nn.enabled = TRUE")
+    List<NnConfig> findAllActive();
 }

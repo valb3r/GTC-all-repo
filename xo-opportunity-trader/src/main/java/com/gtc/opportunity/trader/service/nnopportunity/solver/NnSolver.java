@@ -2,7 +2,7 @@ package com.gtc.opportunity.trader.service.nnopportunity.solver;
 
 import com.google.common.util.concurrent.RateLimiter;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.opportunity.trader.config.NnConfig;
+import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
@@ -11,8 +11,10 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactor
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.NnModelPredict;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
 import com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -31,25 +33,19 @@ import static com.gtc.opportunity.trader.service.nnopportunity.repository.Strate
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class NnSolver {
 
     private static final long MILLIS_IN_MINUTE = 60000L;
 
     private final Map<KeyAndStrategy, NnModelPredict> predictors = new ConcurrentHashMap<>();
+    private final Map<String, RateLimiter> limiters = new ConcurrentHashMap<>();
 
-    private final NnConfig nnConfig;
+    private final ConfigCache cfgCache;
     private final ModelFactory factory;
     private final NnDataRepository repository;
-    private final RateLimiter limiter;
 
-    public NnSolver(NnConfig nnConfig, ModelFactory factory, NnDataRepository repository) {
-        this.nnConfig = nnConfig;
-        this.repository = repository;
-        this.factory = factory;
-        this.limiter = RateLimiter.create(nnConfig.getBooksPerS());
-    }
-
-    public Optional<Strategy> findStrategy(OrderBook book) {
+    Optional<Strategy> findStrategy(OrderBook book) {
         if (solveForStrategy(book, BUY_LOW_SELL_HIGH)) {
             return Optional.of(BUY_LOW_SELL_HIGH);
 
@@ -82,7 +78,7 @@ public class NnSolver {
             return false;
         }
 
-        if (oldModel(book, predict) || !limiter.tryAcquire()) {
+        if (oldModel(book, predict) || !getLimiter(book).tryAcquire()) {
             return false;
         }
 
@@ -101,7 +97,7 @@ public class NnSolver {
 
     private boolean oldModel(OrderBook book, NnModelPredict predict) {
         return book.getMeta().getTimestamp() - predict.getCreationTimestamp()
-                >= nnConfig.getOldThresholdM() * MILLIS_IN_MINUTE;
+                >= cfgCache.requireConfig(book).getOldThresholdM() * MILLIS_IN_MINUTE;
     }
 
     private boolean oldData(Snapshot snapshot) {
@@ -111,7 +107,21 @@ public class NnSolver {
                 .orElse(0.0);
 
         return System.currentTimeMillis() - Math.min(actOld, noopOld)
-                >= nnConfig.getOldThresholdM() * MILLIS_IN_MINUTE;
+                >= cfgCache.requireConfig(snapshot).getOldThresholdM() * MILLIS_IN_MINUTE;
+    }
+
+    private RateLimiter getLimiter(OrderBook book) {
+        NnConfig config = cfgCache.requireConfig(book);
+        return limiters.computeIfAbsent(
+                limiterKey(book),
+                id -> RateLimiter.create(config.getBookTestForOpenPerS().doubleValue())
+        );
+    }
+
+    private static String limiterKey(OrderBook book) {
+        return book.getMeta().getClient()
+                + book.getMeta().getPair().getFrom().getCode()
+                + book.getMeta().getPair().getTo().getCode();
     }
 
     private static KeyAndStrategy key(Key key, Strategy strategy) {
