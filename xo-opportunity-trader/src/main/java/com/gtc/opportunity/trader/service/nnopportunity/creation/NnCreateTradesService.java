@@ -108,8 +108,8 @@ public class NnCreateTradesService {
 
     private BigDecimal computeGain(ClientConfig cfg) {
         BigDecimal charge = computeCharge(cfg);
-        return charge.multiply(charge)
-                .add(BigDecimal.ONE.add(cfg.getNnConfig().getFuturePriceGainPct().movePointLeft(2)));
+        return BigDecimal.ONE.add(cfg.getNnConfig().getFuturePriceGainPct().movePointLeft(2))
+                .divide(charge.multiply(charge), MathContext.DECIMAL128);
     }
 
     private BigDecimal calculateAmount(ClientConfig config, double minPrice) {
