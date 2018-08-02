@@ -61,6 +61,8 @@ import static org.mockito.Mockito.*;
  * SCALE_PRICE(7)
  * MIN_ORDER(1)
  * MAX_ORDER(10)
+ * FUTURE_GAIN_PCT (0.2)
+ * NOOP_THRESHOLD (1.002)
  * NN_CONFIG (yaml file location - default_nn.yaml)
  * REBUILD_MODEL_EACH_N (10000) - approx 10000/36000 hour
  */
@@ -206,9 +208,9 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .bookTestForOpenPerS(BigDecimal.ONE)
                 .collectNlabeled(1000)
                 .futureNwindow(36000)
-                .futurePriceGainPct(new BigDecimal("0.2"))
+                .futurePriceGainPct(new BigDecimal(env.getFutureGainPct().doubleValue()))
                 .networkYamlSpec(env.getNnConfig())
-                .noopThreshold(new BigDecimal("1.002"))
+                .noopThreshold(env.getNoopThreshold())
                 .nTrainIterations(100)
                 .oldThresholdM(Integer.MAX_VALUE)
                 .proceedFalsePositive(new BigDecimal("0.3"))
@@ -279,6 +281,9 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         private BigDecimal maxOrder = new BigDecimal(get("MAX_ORDER", "10"));
         private int rebuildModelEachN = Integer.valueOf(get("REBUILD_MODEL_EACH_N", "10000"));
         private String nnConfig = getConfig(get("NN_CONFIG", "nn/default_nn.yaml"));
+
+        private BigDecimal futureGainPct = new BigDecimal(get("FUTURE_GAIN_PCT", "0.2"));
+        private BigDecimal noopThreshold = new BigDecimal(get("NOOP_THRESHOLD", "1.002"));
 
         @SneakyThrows
         private static String getConfig(String resourcePath) {
