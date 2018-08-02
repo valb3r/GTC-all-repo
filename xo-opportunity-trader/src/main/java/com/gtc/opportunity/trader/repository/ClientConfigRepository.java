@@ -17,7 +17,7 @@ public interface ClientConfigRepository extends CrudRepository<ClientConfig, Int
 
     @Query("SELECT cc FROM ClientConfig cc WHERE cc.client.name = :clientName " +
             "AND cc.currency = :currencyFrom AND cc.currencyTo = :currencyTo " +
-            "AND cc.client.enabled = true")
+            "AND cc.client.enabled = TRUE AND cc.enabled = TRUE")
     Optional<ClientConfig> findActiveByKey(@Param("clientName") String clientName,
                                            @Param("currencyFrom") TradingCurrency currencyFrom,
                                            @Param("currencyTo") TradingCurrency currencyTo);

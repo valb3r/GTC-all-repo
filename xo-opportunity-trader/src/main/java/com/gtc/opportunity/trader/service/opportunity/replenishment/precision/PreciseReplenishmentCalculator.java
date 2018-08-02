@@ -46,8 +46,8 @@ public class PreciseReplenishmentCalculator {
         log.info("Solving for {} replenish as {}", sat, fittedXo);
 
         Solver<XoTradeBalance> solver = buildSolver(Math.min(
-                sat.getFrom().getMaxSolveReplenishTimeMs(),
-                sat.getTo().getMaxSolveReplenishTimeMs())
+                sat.getFrom().getXoConfig().getMaxSolveReplenishTimeMs(),
+                sat.getTo().getXoConfig().getMaxSolveReplenishTimeMs())
         );
 
         XoTradeBalance problem = new XoTradeBalance(

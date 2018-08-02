@@ -11,7 +11,7 @@ import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.opportunity.common.TradeCreationService;
-import com.gtc.opportunity.trader.service.opportunity.creation.ClientConfigCache;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,7 @@ public class NnCreateTradesService {
 
     private final WsGatewayCommander commander;
     private final TradeCreationService tradeCreationService;
-    private final ClientConfigCache configCache;
+    private final ConfigCache configCache;
     private final NnConfig nnConfig;
 
     @Transactional
@@ -110,7 +110,7 @@ public class NnCreateTradesService {
                 .setScale(config.getScaleAmount(), RoundingMode.CEILING);
     }
     private ClientConfig getConfig(OrderBook book) {
-        return configCache.getCfg(
+        return configCache.getClientCfg(
                 book.getMeta().getClient(),
                 book.getMeta().getPair().getFrom(),
                 book.getMeta().getPair().getTo()

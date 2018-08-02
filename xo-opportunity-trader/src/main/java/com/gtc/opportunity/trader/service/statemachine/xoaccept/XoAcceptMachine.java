@@ -1,12 +1,12 @@
 package com.gtc.opportunity.trader.service.statemachine.xoaccept;
 
 import com.gtc.opportunity.trader.domain.AcceptedXoTrade;
-import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.XoAcceptEvent;
 import com.gtc.opportunity.trader.domain.XoAcceptStatus;
+import com.gtc.opportunity.trader.domain.XoConfig;
 import com.gtc.opportunity.trader.repository.AcceptedXoTradeRepository;
-import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import com.gtc.opportunity.trader.service.opportunity.replenishment.TradeReplenishmentService;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class XoAcceptMachine {
 
-    private final ClientConfigRepository cfgRepository;
+    private final ConfigCache cfgCache;
     private final TradeRepository tradeRepository;
     private final AcceptedXoTradeRepository xoTradeRepository;
     private final TradeReplenishmentService replenishmentService;
@@ -82,10 +82,10 @@ public class XoAcceptMachine {
     public boolean canReplenish(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
         return acceptAndGet(state).map(xoTrade -> {
             List<Boolean> enabled = tradeRepository.findByXoOrderId(xoTrade.getId()).stream()
-                    .map(it -> cfgRepository
-                            .findActiveByKey(it.getClient().getName(), it.getCurrencyFrom(), it.getCurrencyTo())
+                    .map(it -> cfgCache
+                            .getXoCfg(it.getClient().getName(), it.getCurrencyFrom(), it.getCurrencyTo())
                     ).flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
-                    .map(ClientConfig::isReplenishable)
+                    .map(XoConfig::isReplenishable)
                     .collect(Collectors.toList());
             // currently we replenish both or none
             return !enabled.contains(false) && 2 == enabled.size();

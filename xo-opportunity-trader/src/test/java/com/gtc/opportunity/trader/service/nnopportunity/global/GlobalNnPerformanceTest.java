@@ -23,7 +23,7 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
 import com.gtc.opportunity.trader.service.opportunity.common.TradeCreationService;
-import com.gtc.opportunity.trader.service.opportunity.creation.ClientConfigCache;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,7 +67,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
-    private ClientConfigCache clientConfigCache;
+    private ConfigCache configCache;
 
     @Before
     public void init() {
@@ -162,18 +162,18 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private NnCreateTradesService tradesService() {
         commander = mock(WsGatewayCommander.class);
         tradeCreationService = mock(TradeCreationService.class);
-        clientConfigCache = mock(ClientConfigCache.class);
+        configCache = mock(ConfigCache.class);
 
         String name = getClientName();
         initClientConfigCache(name);
         initTradeCreationService(name);
         initGatewayOrderCreationHandler();
 
-        return new NnCreateTradesService(commander, tradeCreationService, clientConfigCache, config);
+        return new NnCreateTradesService(commander, tradeCreationService, configCache, config);
     }
 
     private void initClientConfigCache(String name) {
-        when(clientConfigCache.getCfg(name, TradingCurrency.EOS, TradingCurrency.Bitcoin))
+        when(configCache.getClientCfg(name, TradingCurrency.EOS, TradingCurrency.Bitcoin))
                 .thenReturn(Optional.of(getConfig(name)));
     }
 
