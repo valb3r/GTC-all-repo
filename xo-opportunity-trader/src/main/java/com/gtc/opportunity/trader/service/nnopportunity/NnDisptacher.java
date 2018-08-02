@@ -19,11 +19,18 @@ public class NnDisptacher {
     private final ConfigCache cfg;
 
     public void acceptOrderBook(OrderBook book) {
-        if (!cfg.readConfig(book).isPresent()) {
+        if (!validateBook(book) || !cfg.readConfig(book).isPresent()) {
             return;
         }
 
         analyzer.analyzeAndCreateTradesIfNecessary(book);
         repository.addOrderBook(book);
+    }
+
+    private boolean validateBook(OrderBook book) {
+        return !Double.isFinite(book.getBestSell())
+                || !Double.isFinite(book.getBestBuy())
+                || 0.0 == book.getBestSell()
+                || 0.0 == book.getBestBuy();
     }
 }
