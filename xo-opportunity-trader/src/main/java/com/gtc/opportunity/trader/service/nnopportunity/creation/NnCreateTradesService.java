@@ -148,6 +148,9 @@ public class NnCreateTradesService {
                 .expectedDeltaTo(profits.getTo())
                 .confidence(details.getConfidence())
                 .strategy(details.getStrategy())
+                .modelAgeS(details.getModelAgeS())
+                .averageNoopLabelAgeS(details.getAvgNoopLabelAgeS())
+                .averageActLabelAgeS(details.getAvgActLabelAgeS())
                 .status(NnAcceptStatus.UNCONFIRMED)
                 .build();
         trade = nnTradeRepository.save(trade);
