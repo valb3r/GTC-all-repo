@@ -15,8 +15,8 @@ import static com.gtc.opportunity.trader.config.Const.Cache.CACHE;
 @ConfigurationProperties(CONF_ROOT_CHILD + CACHE)
 public class CacheConfig {
 
-    private Cfg cfgCache;
-    private Wallet walletIds;
+    private Cfg cfgCache = new Cfg();
+    private Wallet walletIds = new Wallet();
 
     @Data
     public static class Cfg {

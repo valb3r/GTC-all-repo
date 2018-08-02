@@ -13,7 +13,7 @@ CREATE TABLE nn_config
   train_relative_size         NUMERIC(40, 20) NOT NULL DEFAULT 0.7,
   n_train_iterations          INT             NOT NULL,
   future_price_gain_pct       NUMERIC(40, 20) NOT NULL DEFAULT 0.1,
-  network_json_spec           LONGTEXT        NOT NULL,
+  network_yaml_spec           LONGTEXT        NOT NULL,
   enabled                     BIT                      DEFAULT 1,
 
   CHECK (future_n_window > 0),

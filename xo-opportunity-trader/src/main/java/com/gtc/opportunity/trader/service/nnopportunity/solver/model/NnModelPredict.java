@@ -73,7 +73,7 @@ public class NnModelPredict {
     }
 
     private static MultiLayerConfiguration buildModelConfig(NnConfig cfg) {
-        return MultiLayerConfiguration.fromJson(cfg.getNetworkJsonSpec());
+        return MultiLayerConfiguration.fromYaml(cfg.getNetworkYamlSpec());
     }
 
     @Getter

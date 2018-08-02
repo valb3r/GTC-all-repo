@@ -97,7 +97,7 @@ public class NnCreateTradesService {
     private BigDecimal computeGain(ClientConfig cfg) {
         return cfg.getTradeChargeRatePct()
                 .multiply(BigDecimal.valueOf(2)) // we do 2 trades so gain should accomodate both
-                .add(BigDecimal.valueOf(cfg.getNnConfig().getFuturePriceGainPct().doubleValue()))
+                .add(cfg.getNnConfig().getFuturePriceGainPct())
                 .movePointLeft(2)
                 .add(BigDecimal.ONE);
     }

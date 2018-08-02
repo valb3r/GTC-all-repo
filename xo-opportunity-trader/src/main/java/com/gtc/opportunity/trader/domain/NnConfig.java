@@ -13,7 +13,9 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @ToString
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class NnConfig implements Serializable {
 
@@ -50,7 +52,7 @@ public class NnConfig implements Serializable {
     private BigDecimal trainRelativeSize;
 
     @Lob
-    private String networkJsonSpec;
+    private String networkYamlSpec;
 
     private BigDecimal futurePriceGainPct;
 
