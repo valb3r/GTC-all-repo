@@ -7,6 +7,7 @@ import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
+import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.NnModelPredict;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
@@ -21,6 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,15 +48,17 @@ public class NnSolver {
     private final ModelFactory factory;
     private final NnDataRepository repository;
 
-    Optional<Strategy> findStrategy(OrderBook book) {
-        if (solveForStrategy(book, BUY_LOW_SELL_HIGH)) {
-            return Optional.of(BUY_LOW_SELL_HIGH);
+    Optional<StrategyDetails> findStrategy(OrderBook book) {
+        Optional<StrategyDetails> buyLowSellHigh = solveForStrategy(book, BUY_LOW_SELL_HIGH);
+        Optional<StrategyDetails> sellHighBuyLow = solveForStrategy(book, SELL_HIGH_BUY_LOW);
 
-        } else if (solveForStrategy(book, SELL_HIGH_BUY_LOW)) {
-            return Optional.of(SELL_HIGH_BUY_LOW);
-        }
+        Map<Double, StrategyDetails> votes = new HashMap<>();
+        buyLowSellHigh.ifPresent(it -> votes.put(it.getConfidence(), it));
+        sellHighBuyLow.ifPresent(it -> votes.put(it.getConfidence(), it));
 
-        return Optional.empty();
+        return Optional.ofNullable(
+                votes.get(votes.keySet().stream().max(Double::compareTo).orElse(0.0))
+        );
     }
 
     @Trace(dispatcher = true)
@@ -73,18 +77,18 @@ public class NnSolver {
         }
     }
 
-    private boolean solveForStrategy(OrderBook book, Strategy strategy) {
+    private Optional<StrategyDetails> solveForStrategy(OrderBook book, Strategy strategy) {
         NnModelPredict predict = predictors.get(key(OrderBookKey.key(book), strategy));
 
         if (null == predict) {
-            return false;
+            return Optional.empty();
         }
 
         if (oldModel(book, predict) || !getLimiter(book).tryAcquire()) {
-            return false;
+            return Optional.empty();
         }
 
-        return predict.canProceed(BookFlattener.simplify(book));
+        return predict.computeStrategyIfPossible(strategy, BookFlattener.simplify(book));
     }
 
     private void createPredictor(Strategy strategy, Snapshot snapshot) {

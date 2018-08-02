@@ -52,6 +52,9 @@ public class Trade implements Serializable {
     @ManyToOne
     private AcceptedXoTrade xoOrder;
 
+    @ManyToOne
+    private AcceptedNnTrade nnOrder;
+
     @NotNull
     private BigDecimal openingAmount;
 

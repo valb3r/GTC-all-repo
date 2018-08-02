@@ -13,6 +13,8 @@ import com.gtc.opportunity.trader.config.CacheConfig;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnConfig;
+import com.gtc.opportunity.trader.domain.Trade;
+import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
 import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.NnConfigRepository;
 import com.gtc.opportunity.trader.repository.XoConfigRepository;
@@ -165,7 +167,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         initTradeCreationService(name);
         initGatewayOrderCreationHandler();
 
-        return new NnCreateTradesService(commander, tradeCreationService, configs);
+        return new NnCreateTradesService(commander, tradeCreationService, configs,
+                mock(AcceptedNnTradeRepository.class));
     }
 
     private void initClientConfigCache() {
@@ -228,7 +231,10 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
             String id = UuidGenerator.get();
 
             return new TradeDto(
-                    null,
+                    Trade.builder()
+                            .openingPrice(price)
+                            .openingAmount(amount)
+                            .build(),
                     CreateOrderCommand.builder()
                             .clientName(name)
                             .currencyFrom(cfg.getCurrency().getCode())

@@ -3,6 +3,8 @@ package com.gtc.opportunity.trader.service.nnopportunity.solver.model;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
+import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
+import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +15,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper.CAN_PROCEED_POS;
 import static com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper.LABEL_SIZE;
@@ -41,9 +44,15 @@ public class NnModelPredict {
         assesModel(split);
     }
 
-    public boolean canProceed(FlatOrderBook book) {
+    public Optional<StrategyDetails> computeStrategyIfPossible(Strategy strategy, FlatOrderBook book) {
         INDArray results = model.output(featureMapper.extractFeatures(book));
-        return results.getFloat(CAN_PROCEED_POS) > nnConfig.getTruthThreshold().doubleValue();
+        float voteValue = results.getFloat(CAN_PROCEED_POS);
+
+        if (voteValue <= nnConfig.getTruthThreshold().doubleValue()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new StrategyDetails(strategy, voteValue));
     }
 
     @SneakyThrows
