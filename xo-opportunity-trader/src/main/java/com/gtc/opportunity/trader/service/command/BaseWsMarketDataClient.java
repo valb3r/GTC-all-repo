@@ -4,6 +4,7 @@ import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.google.common.base.Joiner;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.SubscribeDto;
 import com.gtc.opportunity.trader.config.WsConfig;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -32,6 +34,8 @@ public abstract class BaseWsMarketDataClient {
     private final Supplier<List<String>> clientNames;
     private final Consumer<OrderBook> handleBook;
 
+    private AtomicInteger lastConnVersion = new AtomicInteger();
+
     BaseWsMarketDataClient(
             WsConfig wsConfig,
             ObjectMapper objectMapper,
@@ -47,7 +51,8 @@ public abstract class BaseWsMarketDataClient {
                 new BaseWebsocketClient.Handlers(
                         this::subscribeOnConnect,
                         this::handleJsonObject,
-                        node -> {}
+                        node -> {
+                        }
                 )
         );
         this.bookReader = objectMapper.readerFor(OrderBook.class);
@@ -57,7 +62,13 @@ public abstract class BaseWsMarketDataClient {
 
     @Scheduled(fixedDelayString = WS_RECONNECT_S)
     public void connectReconnect() {
+
         if (!wsClient.isDisconnected()) {
+
+            if (lastConnVersion.get() != computeConnectionVersion(clientNames.get())) {
+                log.info("Connection version change detected, asking WS to disconnect");
+                wsClient.disconnect();
+            }
             return;
         }
 
@@ -66,10 +77,15 @@ public abstract class BaseWsMarketDataClient {
 
     @Transactional(readOnly = true)
     public void subscribeOnConnect(RxObjectEventConnected conn) {
-        clientNames.get()
-                .forEach(name ->
-                    BaseWebsocketClient.sendIfNotNull(conn, new SubscribeDto(name, SubscribeDto.Mode.BOOK))
-                );
+        List<String> names = clientNames.get();
+        lastConnVersion.set(computeConnectionVersion(names));
+        names.forEach(name ->
+                BaseWebsocketClient.sendIfNotNull(conn, new SubscribeDto(name, SubscribeDto.Mode.BOOK))
+        );
+    }
+
+    private int computeConnectionVersion(List<String> names) {
+        return Joiner.on("").join(names).hashCode();
     }
 
     @SneakyThrows

@@ -17,11 +17,15 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.experimental.Delegate;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.slf4j.Logger;
 import rx.Observable;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.subjects.BehaviorSubject;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +34,7 @@ import java.util.function.Consumer;
 /**
  * Created by Valentyn Berezin on 16.06.18.
  */
+@Slf4j
 @RequiredArgsConstructor
 public class BaseWebsocketClient {
 
@@ -50,12 +55,21 @@ public class BaseWebsocketClient {
     @Getter
     private boolean disconnected = true;
 
+    private BehaviorSubject<Boolean> doDisconnect;
+
     @SneakyThrows
     public void connect(Map<String, String> headers) {
         synchronized (lock) {
             if (!disconnected) {
                 return;
             }
+
+            Action1<Throwable> handleError = err -> {
+                log.info("WS error", err);
+                disconnected = true;
+            };
+
+            Action0 handleDisconnect = () -> disconnected = true;
 
             getLog().info("Connecting");
             Request request = new Request.Builder()
@@ -66,19 +80,32 @@ public class BaseWebsocketClient {
 
             Observable<RxObjectEvent> sharedConnection = getConnection(request);
 
+            doDisconnect = BehaviorSubject.create();
             sharedConnection
                     .compose(MoreObservables.filterAndMap(RxObjectEventConnected.class))
+                    .takeUntil(doDisconnect)
                     .subscribe(onConn -> {
                         NewRelic.incrementCounter(CONNECTS + getName());
                         disconnected = false;
                         getLog().info("Connected");
                         getHandleConnected().accept(onConn);
-                    });
+                    }, handleError, handleDisconnect);
 
             sharedConnection
+                    .takeUntil(doDisconnect)
                     .compose(MoreObservables.filterAndMap(RxObjectEventMessage.class))
                     .compose(RxObjectEventMessage.filterAndMap(JsonNode.class))
-                    .subscribe(this::handleInboundMessage);
+                    .subscribe(this::handleInboundMessage, handleError, handleDisconnect);
+        }
+    }
+
+    public void disconnect() {
+        synchronized (lock) {
+            if (disconnected) {
+                return;
+            }
+
+            doDisconnect.onNext(true);
         }
     }
 
