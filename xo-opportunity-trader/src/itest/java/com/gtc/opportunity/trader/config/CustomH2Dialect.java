@@ -1,4 +1,4 @@
-package com.gtc.opportunity.trader.service.nnopportunity.creation.config;
+package com.gtc.opportunity.trader.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.boot.model.relational.QualifiedSequenceName;

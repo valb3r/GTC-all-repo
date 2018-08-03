@@ -32,7 +32,7 @@ spring:
             use-new-id-generator-mappings: false
         properties:
             hibernate:
-                dialect: com.gtc.opportunity.trader.service.nnopportunity.creation.config.CustomH2Dialect
+                dialect: com.gtc.opportunity.trader.config.CustomH2Dialect
                 jdbc:
                     batch_size: 100
                 order_inserts: true

@@ -1,4 +1,4 @@
-package com.gtc.opportunity.trader.service.nnopportunity.creation;
+package com.gtc.opportunity.trader;
 
 import org.junit.After;
 import org.junit.Before;

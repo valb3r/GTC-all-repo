@@ -1,4 +1,4 @@
-package com.gtc.opportunity.trader.service.nnopportunity.creation;
+package com.gtc.opportunity.trader;
 
 import com.gtc.opportunity.trader.app.AppInitializer;
 import com.gtc.opportunity.trader.config.Const;

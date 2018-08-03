@@ -27,6 +27,7 @@ public final class Const {
     public static final class Common {
 
         public static final String XO_OPPORTUNITY_PREFIX = "XOM-";
+        public static final String NN_OPPORTUNITY_PREFIX = "NNO-";
     }
 
     @UtilityClass

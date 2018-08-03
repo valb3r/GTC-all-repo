@@ -86,6 +86,8 @@ public class AcceptedNnTrade implements Serializable {
     @Column(name = "average_act_label_age_s")
     private int averageActLabelAgeS;
 
+    private LocalDateTime closedOn;
+
     @OneToMany(mappedBy = "nnOrder")
     private Collection<Trade> trades;
 }

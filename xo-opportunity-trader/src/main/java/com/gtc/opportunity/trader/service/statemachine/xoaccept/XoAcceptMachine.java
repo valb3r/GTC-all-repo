@@ -1,7 +1,7 @@
 package com.gtc.opportunity.trader.service.statemachine.xoaccept;
 
 import com.gtc.opportunity.trader.domain.AcceptedXoTrade;
-import com.gtc.opportunity.trader.domain.XoAcceptEvent;
+import com.gtc.opportunity.trader.domain.AcceptEvent;
 import com.gtc.opportunity.trader.domain.XoAcceptStatus;
 import com.gtc.opportunity.trader.domain.XoConfig;
 import com.gtc.opportunity.trader.repository.AcceptedXoTradeRepository;
@@ -21,6 +21,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.MSG_ID;
+import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.ORDER_ID;
+
 /**
  * Created by Valentyn Berezin on 02.03.18.
  */
@@ -35,31 +38,31 @@ public class XoAcceptMachine {
     private final TradeReplenishmentService replenishmentService;
 
     @Transactional
-    public void ack(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void ack(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Confirm evt {}", state);
         acceptAndGet(state);
     }
 
     @Transactional
-    public void done(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void done(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Trade done evt {}", state);
         acceptAndGet(state);
     }
 
     @Transactional
-    public void tradeComplete(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void tradeComplete(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Trade complete evt {}", state);
         acceptAndGet(state);
     }
 
     @Transactional
-    public void replenishmentComplete(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void replenishmentComplete(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Replenisment done evt {}", state);
         acceptAndGet(state);
     }
 
     @Transactional
-    public void tradeError(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void tradeError(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Trade Error evt {}", state);
         acceptAndGet(state);
     }
@@ -67,19 +70,19 @@ public class XoAcceptMachine {
     @Async
     @Trace(dispatcher = true)
     @Transactional
-    public void replenish(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void replenish(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Replenish evt {}", state);
         acceptAndGet(state).ifPresent(replenishmentService::replenish);
     }
 
     @Transactional
-    public void complete(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void complete(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Complete evt {}", state);
         acceptAndGet(state, XoAcceptStatus.DONE);
     }
 
     @Transactional
-    public boolean canReplenish(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public boolean canReplenish(StateContext<XoAcceptStatus, AcceptEvent> state) {
         return acceptAndGet(state).map(xoTrade -> {
             List<Boolean> enabled = tradeRepository.findByXoOrderId(xoTrade.getId()).stream()
                     .map(it -> cfgCache
@@ -93,22 +96,22 @@ public class XoAcceptMachine {
     }
 
     @Transactional
-    public void error(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    public void error(StateContext<XoAcceptStatus, AcceptEvent> state) {
         log.info("Error evt {}", state);
         acceptAndGet(state, XoAcceptStatus.ERROR);
         state.getStateMachine().setStateMachineError(state.getException());
     }
 
-    private Optional<AcceptedXoTrade> acceptAndGet(StateContext<XoAcceptStatus, XoAcceptEvent> state) {
+    private Optional<AcceptedXoTrade> acceptAndGet(StateContext<XoAcceptStatus, AcceptEvent> state) {
         return acceptAndGet(state, null);
     }
 
-    private Optional<AcceptedXoTrade> acceptAndGet(StateContext<XoAcceptStatus, XoAcceptEvent> state,
+    private Optional<AcceptedXoTrade> acceptAndGet(StateContext<XoAcceptStatus, AcceptEvent> state,
                                                    XoAcceptStatus status) {
-        int id = (int) state.getMessage().getHeaders().get(XoAcceptEvent.ORDER_ID);
+        int id = (int) state.getMessage().getHeaders().get(ORDER_ID);
 
         return xoTradeRepository.findById(id).map(trade -> {
-            trade.setLastMessageId((String) state.getMessage().getHeaders().get(XoAcceptEvent.MSG_ID));
+            trade.setLastMessageId((String) state.getMessage().getHeaders().get(MSG_ID));
             trade.setStatus(null != status ? status : state.getTarget().getId());
 
             return xoTradeRepository.save(trade);

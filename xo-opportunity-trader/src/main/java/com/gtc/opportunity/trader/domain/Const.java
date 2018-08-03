@@ -6,7 +6,14 @@ import lombok.experimental.UtilityClass;
  * Created by Valentyn Berezin on 23.02.18.
  */
 @UtilityClass
-public class Const {
+public final class Const {
 
     public static final String CLIENT_NAME = "client_name";
+
+    @UtilityClass
+    public final class InternalMessaging {
+
+        public static final String MSG_ID = "messageId";
+        public static final String ORDER_ID = "orderId";
+    }
 }
