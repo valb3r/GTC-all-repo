@@ -16,7 +16,7 @@ CREATE TABLE accepted_nn_trade
   strategy                 VARCHAR(36)                        NOT NULL,
   status                   VARCHAR(36)                        NOT NULL,
   recorded_on              TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  closed_on                TIMESTAMP,
+  closed_on                TIMESTAMP                          NULL,
   last_message_id          VARCHAR(36)
 )
   ENGINE = InnoDB
