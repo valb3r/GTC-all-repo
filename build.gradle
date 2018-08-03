@@ -25,7 +25,7 @@ buildscript {
                 retry               : "1.2.2.RELEASE",
                 deep4j              : "1.0.0-beta",
                 csv                 : "1.4",
-                h2: "1.4.197"
+                h2                  : "1.4.197"
         ]
     }
     dependencies {
