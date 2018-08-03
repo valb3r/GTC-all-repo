@@ -4,6 +4,7 @@ import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class NnDisptacher {
     private final NnAnalyzer analyzer;
     private final ConfigCache cfg;
 
+    @Trace(dispatcher = true)
     public void acceptOrderBook(OrderBook book) {
         if (!validateBook(book) || !cfg.readConfig(book).isPresent()) {
             return;
