@@ -37,6 +37,7 @@ public abstract class BaseWsMarketDataClient {
     private AtomicInteger lastConnVersion = new AtomicInteger();
 
     BaseWsMarketDataClient(
+            String name,
             WsConfig wsConfig,
             ObjectMapper objectMapper,
             Supplier<List<String>> clientNames,
@@ -44,7 +45,7 @@ public abstract class BaseWsMarketDataClient {
         this.wsClient = new BaseWebsocketClient(
                 new BaseWebsocketClient.Config(
                         wsConfig.getMarket(),
-                        "market",
+                        name,
                         wsConfig.getDisconnectIfInactiveS(),
                         objectMapper, log
                 ),

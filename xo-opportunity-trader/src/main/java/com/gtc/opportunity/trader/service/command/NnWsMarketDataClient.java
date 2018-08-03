@@ -22,6 +22,7 @@ public class NnWsMarketDataClient extends BaseWsMarketDataClient {
             NnConfigRepository configs,
             NnDisptacher disptacher) {
         super(
+                "nnMarket",
                 wsConfig,
                 objectMapper,
                 () -> configs.findAllActive().stream()

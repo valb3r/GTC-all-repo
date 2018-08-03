@@ -25,6 +25,7 @@ public class XoWsMarketDataClient extends BaseWsMarketDataClient {
             ClientRepository clientRepository,
             BookRepository bookRepository) {
         super(
+                "xoMarket",
                 wsConfig,
                 objectMapper,
                 () -> clientRepository.findByEnabledTrue().stream().map(Client::getName).collect(Collectors.toList()),
