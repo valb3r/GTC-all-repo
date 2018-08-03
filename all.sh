@@ -27,7 +27,7 @@ java \
     -javaagent:newrelic/newrelic.jar \
     -Dnewrelic.config.agent_enabled="${ENABLE_NEWRELIC:-false}" \
     -Dnewrelic.config.environment=Prod -Dnewrelic.config.app_name=XoOpportunityTrader \
-    -Xms128m -Xmx384m -Xss256k -XX:+HeapDumpOnOutOfMemoryError \
+    -Xms128m -Xmx512m -Xss256k -XX:+HeapDumpOnOutOfMemoryError \
     -Djava.security.egd=file:/dev/./urandom \
     -Dfile.encoding=UTF8 \
     -jar opportunity-trader.jar &
