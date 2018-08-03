@@ -63,7 +63,7 @@ dependencies {
     compile "org.deeplearning4j:deeplearning4j-core:${versions.deep4j}"
     compile "org.nd4j:nd4j-native-platform:${versions.deep4j}"
     compile "org.datavec:datavec-api:${versions.deep4j}"
-    compile "org.nd4j:nd4j-cuda-9.1-platform:${versions.deep4j}"
+    //compile "org.nd4j:nd4j-cuda-9.1-platform:${versions.deep4j}"
 
 
     testCompile "junit:junit:${versions.junit}"
