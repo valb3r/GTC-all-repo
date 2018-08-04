@@ -16,6 +16,7 @@ import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Rea
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,7 +110,8 @@ public class TradeCreationService {
 
         balanceService.proceed(trade);
         tradeRepository.save(trade);
-        stateMachineService.acquireStateMachine(trade.getId());
+        StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(trade.getId());
+        stateMachineService.releaseStateMachine(machine.getId());
 
         return new TradeDto(trade, comm);
     }

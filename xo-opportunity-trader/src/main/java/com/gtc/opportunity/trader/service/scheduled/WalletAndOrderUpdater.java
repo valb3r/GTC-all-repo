@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -120,7 +121,11 @@ public class WalletAndOrderUpdater {
         LocalDateTime before = currentTimestamp.dbNow().minusSeconds(orderTimeoutS);
         tradeRepository
                 .findByStatusInAndStatusUpdatedBefore(ImmutableSet.of(TradeStatus.UNKNOWN), before, true)
-                .forEach(it -> stateMachineService.acquireStateMachine(it.getId()).sendEvent(TradeEvent.TIMEOUT));
+                .forEach(it -> {
+                    StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(it.getId());
+                    machine.sendEvent(TradeEvent.TIMEOUT);
+                    stateMachineService.releaseStateMachine(machine.getId());
+                });
     }
 
     @Trace(dispatcher = true)
