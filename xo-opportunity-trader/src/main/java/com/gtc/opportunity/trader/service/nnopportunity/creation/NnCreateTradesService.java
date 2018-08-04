@@ -101,6 +101,9 @@ public class NnCreateTradesService {
         TradeDto buy = tradeCreationService.createTradeNoSideValidation(config, weBuyPrice, amount, false);
         TradeDto sell = tradeCreationService.createTradeNoSideValidation(config, weSellPrice, amount, true);
 
+        buy.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
+        sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
+        
         persistNnTrade(config, buy, sell, details);
 
         commander.createOrders(MultiOrderCreateCommand.builder()
