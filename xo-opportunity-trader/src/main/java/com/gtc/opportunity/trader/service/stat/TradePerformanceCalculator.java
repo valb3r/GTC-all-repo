@@ -106,7 +106,7 @@ public class TradePerformanceCalculator {
                 total = total.add(trade.getOpeningAmount().abs()
                         .multiply(trade.getOpeningPrice()).multiply(to.getPriceBtc()).multiply(charge));
             } else {
-                total = total.add(trade.getOpeningAmount().abs().multiply(from.getPriceBtc()).multiply(charge));
+                total = total.add(trade.getOpeningAmount().abs().multiply(charge));
                 total = total.subtract(trade.getOpeningAmount().abs()
                         .multiply(trade.getOpeningPrice()).multiply(to.getPriceBtc()));
             }
