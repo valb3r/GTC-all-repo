@@ -33,6 +33,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-configuration-processor"
     compile 'org.springframework.boot:spring-boot-starter-aop'
     compile "org.springframework.boot:spring-boot-starter-websocket"
+    compile "org.springframework.retry:spring-retry"
     compile "com.google.guava:guava:${versions.guava}"
     compile "io.reactivex.rxjava2:rxjava:${versions.reactivex}"
     compile "com.github.jacek-marchwicki:JavaWebsocketClient:${versions.wsClient}"

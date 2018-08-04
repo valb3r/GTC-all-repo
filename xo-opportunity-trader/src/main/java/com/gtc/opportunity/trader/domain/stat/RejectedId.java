@@ -2,10 +2,10 @@ package com.gtc.opportunity.trader.domain.stat;
 
 import com.gtc.opportunity.trader.domain.LongMessageLimiter;
 import lombok.*;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
+import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 
 /**

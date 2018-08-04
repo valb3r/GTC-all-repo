@@ -3,7 +3,7 @@ package com.gtc.model.gateway.command.manage;
 import com.gtc.model.gateway.BaseMessage;
 import com.gtc.model.gateway.WithOrderId;
 import lombok.*;
-import org.hibernate.validator.constraints.NotBlank;
+import javax.validation.constraints.NotBlank;
 
 /**
  * Created by Valentyn Berezin on 21.02.18.

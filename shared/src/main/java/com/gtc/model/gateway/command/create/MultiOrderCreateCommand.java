@@ -2,8 +2,8 @@ package com.gtc.model.gateway.command.create;
 
 import com.gtc.model.gateway.BaseMessage;
 import lombok.*;
-import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.Set;
 
 /**

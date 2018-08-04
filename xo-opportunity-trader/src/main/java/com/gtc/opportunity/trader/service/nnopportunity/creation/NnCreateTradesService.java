@@ -2,6 +2,7 @@ package com.gtc.opportunity.trader.service.nnopportunity.creation;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.gtc.model.gateway.RetryStrategy;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.AcceptedNnTrade;
@@ -76,6 +77,9 @@ public class NnCreateTradesService {
 
         TradeDto buy = tradeCreationService.createTradeNoSideValidation(config, weBuyPrice, amount, false);
         TradeDto sell = tradeCreationService.createTradeNoSideValidation(config, weSellPrice, amount, true);
+
+        buy.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
+        sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 
         persistNnTrade(config, buy, sell, details);
 

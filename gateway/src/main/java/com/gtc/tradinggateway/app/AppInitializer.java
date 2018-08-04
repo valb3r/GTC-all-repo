@@ -5,7 +5,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.retry.annotation.EnableRetry;
 
+@EnableRetry
 @SpringBootApplication(scanBasePackages = {
         "com.gtc.tradinggateway.aspect",
         "com.gtc.tradinggateway.service",
