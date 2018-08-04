@@ -47,7 +47,7 @@ public class OkexRestService implements CreateOrder, ManageOrders, Withdraw, Acc
     private final OkexConfig cfg;
 
     @Override
-    @RateLimited(ratePerMinute = "${app.okex.createRatePerM}", minSeparationMs = "${app.okex.minRequestSeparationMs}")
+    @RateLimited(ratePerMinute = "${app.okex.createRatePerM}")
     public Optional<OrderCreatedDto> create(String tryToAssignId, TradingCurrency from, TradingCurrency to,
                                             BigDecimal amount, BigDecimal price) {
 
