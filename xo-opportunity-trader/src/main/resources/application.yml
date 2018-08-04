@@ -77,12 +77,13 @@ app:
         opportunitySearchMs: 100
         wsReconnectS: 10
         pushStatsS: 10
+        # using prime numbers to avoid temporal collisions
         order:
-            bulkUpdateStatusS: 10
-            stuckUpdateStatusS: 30
-            timedOutCheckS: 100
+            bulkUpdateStatusS: 17
+            stuckUpdateStatusS: 31
+            timedOutCheckS: 300
         wallet:
-            updateS: 15
+            updateS: 59
     stats:
         profitHistogramResolutionPct: 0.2
     async:
