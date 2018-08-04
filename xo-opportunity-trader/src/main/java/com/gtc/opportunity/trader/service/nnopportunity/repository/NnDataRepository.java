@@ -10,10 +10,12 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey.key;
 
@@ -50,6 +52,13 @@ public class NnDataRepository {
         }
 
         return Optional.of(container.getData().snapshot(strategy));
+    }
+
+    public List<ContainerStatistics> getStatistics(long currentTime) {
+        return dataStream.values().stream()
+                .map(VersionedDataContainer::getData)
+                .map(it -> it.statistics(currentTime))
+                .collect(Collectors.toList());
     }
 
     public Set<Key> getModellable() {

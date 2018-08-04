@@ -36,12 +36,16 @@ class StrategyData {
     private final BiFunction<Float, Float, Float> gainOnFirstSecond;
     private final Function<Stream<Float>, Float> futurePriceDesiredBound;
 
+    @Getter
+    private final int collectNlabels;
+
     StrategyData(Strategy strategy, NnConfig config) {
         this.cfg = config;
         this.gainNoopThreshold = config.getNoopThreshold().floatValue();
 
-        noopLabel = EvictingQueue.create(config.getCollectNlabeled());
-        actLabel = EvictingQueue.create(config.getCollectNlabeled());
+        this.collectNlabels = cfg.getCollectNlabeled();
+        noopLabel = EvictingQueue.create(collectNlabels);
+        actLabel = EvictingQueue.create(collectNlabels);
 
         if (strategy == Strategy.BUY_LOW_SELL_HIGH) {
             getFirstPrice = FlatOrderBook::getBestSell;

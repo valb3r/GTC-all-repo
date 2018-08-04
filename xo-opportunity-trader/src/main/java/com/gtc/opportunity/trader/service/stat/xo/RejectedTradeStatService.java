@@ -1,4 +1,4 @@
-package com.gtc.opportunity.trader.service.stat;
+package com.gtc.opportunity.trader.service.stat.xo;
 
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.domain.stat.MainKey;
@@ -14,6 +14,7 @@ import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatTo
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
+import com.gtc.opportunity.trader.service.stat.KeyExtractor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

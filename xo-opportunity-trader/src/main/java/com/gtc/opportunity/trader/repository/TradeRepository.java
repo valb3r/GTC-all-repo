@@ -73,4 +73,7 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
                                     @Param("currencyFrom") TradingCurrency currencyFrom,
                                     @Param("currencyTo") TradingCurrency currencyTo,
                                     @Param("statuses") Set<TradeStatus> statuses);
+
+    List<Trade> findByXoOrderNotNull();
+    List<Trade> findByNnOrderNotNull();
 }

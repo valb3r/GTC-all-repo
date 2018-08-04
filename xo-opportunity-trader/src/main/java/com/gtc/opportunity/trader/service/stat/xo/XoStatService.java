@@ -1,4 +1,4 @@
-package com.gtc.opportunity.trader.service.stat;
+package com.gtc.opportunity.trader.service.stat.xo;
 
 import com.gtc.opportunity.trader.cqe.domain.CrossMarketOpportunity;
 import com.gtc.opportunity.trader.domain.stat.MainKey;
@@ -11,6 +11,7 @@ import com.gtc.opportunity.trader.repository.stat.general.BaseXoTradeStatReposit
 import com.gtc.opportunity.trader.repository.stat.general.XoTradeStatDailyRepository;
 import com.gtc.opportunity.trader.repository.stat.general.XoTradeStatTotalRepository;
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
+import com.gtc.opportunity.trader.service.stat.KeyExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
