@@ -56,6 +56,7 @@ public class AcceptInteractor {
         Message<AcceptEvent> msg = builder(orderId, state, status).build();
         log.info("Sending request to {} / {}", machineId, msg);
         xoMachineSvc.acquireStateMachine(machineId).sendEvent(msg);
+        xoMachineSvc.releaseStateMachine(machineId);
     }
 
     private void propagateToNnIfNeeded(Trade trade, StateContext<TradeStatus, TradeEvent> state, AcceptEvent status) {
@@ -68,6 +69,7 @@ public class AcceptInteractor {
         Message<AcceptEvent> msg = builder(orderId, state, status).build();
         log.info("Sending request to {} / {}", machineId, msg);
         nnMachineSvc.acquireStateMachine(machineId).sendEvent(msg);
+        nnMachineSvc.releaseStateMachine(machineId);
     }
 
     private <E, S, T> MessageBuilder<E> builder(int orderId, StateContext<S, T> state, E status) {

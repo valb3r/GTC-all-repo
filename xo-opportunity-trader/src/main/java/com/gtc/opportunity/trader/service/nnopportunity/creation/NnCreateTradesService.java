@@ -103,7 +103,7 @@ public class NnCreateTradesService {
 
         buy.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
         sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
-        
+
         persistNnTrade(config, buy, sell, details);
 
         commander.createOrders(MultiOrderCreateCommand.builder()
