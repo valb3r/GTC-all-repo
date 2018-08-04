@@ -74,7 +74,7 @@ public class HuobiRestService implements ManageOrders, Withdraw, Account, Create
     }
 
     @Override
-    @RateLimited(ratePerMinute = "${app.huobi.createRatePerM}", minSeparationMs = "${app.huobi.minRequestSeparationMs}")
+    @RateLimited(ratePerMinute = "${app.huobi.createRatePerM}")
     public Optional<OrderCreatedDto> create(String tryToAssignId, TradingCurrency from, TradingCurrency to,
                                             BigDecimal amount, BigDecimal price) {
         PairSymbol pair = cfg.pairFromCurrencyOrThrow(from, to);
