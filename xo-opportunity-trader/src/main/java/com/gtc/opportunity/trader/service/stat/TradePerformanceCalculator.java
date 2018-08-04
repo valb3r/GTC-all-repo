@@ -33,7 +33,7 @@ public class TradePerformanceCalculator {
     private static final String ERR_LOST_MILLI_BTC = "Custom/<Path>/Error/LossMilliBtc";
     private static final String TOTAL_MILLI_BTC = "Custom/<Path>/Total/AmountMilliBtc";
     private static final String LATEST_TIME_TO_CLOSE = "Custom/<Path>/LatestTimeToCloseS";
-    private static final String AMOUNT_IN_ORDERS_MILLI_BTC = "Custom/Amount/LockedByOrdersMilliBTC";
+    private static final String AMOUNT_IN_ORDERS_MILLI_BTC = "Custom/<Path>/Amount/LockedByOrdersMilliBTC";
 
     private static final Set<TradeStatus> ERRORS = ImmutableSet.of(
             TradeStatus.NEED_RETRY, TradeStatus.CANCELLED, TradeStatus.ERR_OPEN, TradeStatus.GEN_ERR);
