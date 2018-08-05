@@ -340,7 +340,9 @@ public class WsCommandHandler {
         @Override
         public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback,
                                                      Throwable throwable) {
-            log.info("Request failed, will retry if strategy is available", throwable);
+            log.info("Request failed, will retry if strategy is available ({})",
+                    Throwables.getRootCause(throwable).getMessage(),
+                    throwable);
             NewRelic.noticeError(throwable);
         }
     }
