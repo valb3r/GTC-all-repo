@@ -31,6 +31,7 @@ public class TradePerformanceCalculator {
 
     private static final String PATH = "<Path>";
     private static final String CAN_PROFIT_MILLI_BTC = "Custom/<Path>/Open/ExpectedProfitMilliBtc";
+    private static final String CLAIMED_PROFIT_MILLI_BTC = "Custom/<Path>/Open/ClaimedProfitMilliBtc";
     private static final String ERR_LOST_MILLI_BTC = "Custom/<Path>/Error/LossMilliBtc";
     private static final String TOTAL_MILLI_BTC = "Custom/<Path>/Total/AmountMilliBtc";
     private static final String LATEST_TIME_TO_CLOSE = "Custom/<Path>/LatestTimeToCloseS";
@@ -52,6 +53,7 @@ public class TradePerformanceCalculator {
     public <T> Performance calculateOnGroupedByPair(List<Trade> scopedTrades, Function<Trade, T> key) {
         Map<TradingCurrency, CryptoPricing> priceList = pricingRepository.priceList();
         BigDecimal expectedProfitBtc = BigDecimal.ZERO;
+        BigDecimal claimedProfitBtc = BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal inOrders = BigDecimal.ZERO;
         BigDecimal inErrors = BigDecimal.ZERO;
@@ -60,7 +62,15 @@ public class TradePerformanceCalculator {
 
         for (List<Trade> trades : grouped.values()) {
 
-            expectedProfitBtc = expectedProfitBtc.add(computeExpectedProfit(trades, priceList));
+            expectedProfitBtc = expectedProfitBtc.add(computeExpectedProfit(
+                    trades.stream().filter(it -> OPEN.contains(it.getStatus())).collect(Collectors.toList()),
+                    priceList
+            ));
+
+            claimedProfitBtc = claimedProfitBtc.add(computeExpectedProfit(
+                    trades.stream().filter(it -> DONE.contains(it.getStatus())).collect(Collectors.toList()),
+                    priceList
+            ));
 
             inOrders = inOrders.add(
                     computeAmount(
@@ -77,13 +87,16 @@ public class TradePerformanceCalculator {
             total = total.add(computeAmount(trades, priceList));
         }
 
-        return new Performance(expectedProfitBtc, total, inOrders, inErrors, computeLatestTimeToClose(scopedTrades));
+        return new Performance(expectedProfitBtc, claimedProfitBtc, total, inOrders, inErrors,
+                computeLatestTimeToClose(scopedTrades));
     }
 
     public void reportPerformance(String pathPrefix, Performance performance) {
 
         NewRelic.recordMetric(CAN_PROFIT_MILLI_BTC.replace(PATH, pathPrefix),
                 performance.getExpectedProfitBtc().floatValue() * 1000.0f);
+        NewRelic.recordMetric(CLAIMED_PROFIT_MILLI_BTC.replace(PATH, pathPrefix),
+                performance.getClaimedProfitBtc().floatValue() * 1000.0f);
         NewRelic.recordMetric(TOTAL_MILLI_BTC.replace(PATH, pathPrefix),
                 performance.getTotal().floatValue() * 1000.0f);
         NewRelic.recordMetric(AMOUNT_IN_ORDERS_MILLI_BTC.replace(PATH, pathPrefix),
@@ -155,6 +168,7 @@ public class TradePerformanceCalculator {
     public static class Performance {
 
         private final BigDecimal expectedProfitBtc;
+        private final BigDecimal claimedProfitBtc;
         private final BigDecimal total;
         private final BigDecimal inOrders;
         private final BigDecimal inErrors;
