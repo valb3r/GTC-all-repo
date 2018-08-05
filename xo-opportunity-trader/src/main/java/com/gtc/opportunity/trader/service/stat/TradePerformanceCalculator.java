@@ -90,7 +90,7 @@ public class TradePerformanceCalculator {
                 performance.getInOrders().floatValue() * 1000.0f);
         NewRelic.recordMetric(ERR_LOST_MILLI_BTC.replace(PATH, pathPrefix),
                 performance.getInErrors().floatValue() * 1000.0f);
-        NewRelic.recordMetric(LATEST_TIME_TO_CLOSE, performance.getLatestTimeToCloseS());
+        NewRelic.recordMetric(LATEST_TIME_TO_CLOSE.replace(PATH, pathPrefix), performance.getLatestTimeToCloseS());
     }
 
     private BigDecimal computeExpectedProfit(List<Trade> trades, Map<TradingCurrency, CryptoPricing> priceList) {
