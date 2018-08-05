@@ -93,6 +93,7 @@ public class TradePerformanceCalculatorTest extends BaseMockitoTest {
         assertThat(performance.getTotal()).isEqualByComparingTo("2");
         assertThat(performance.getInErrors()).isEqualByComparingTo("0");
         assertThat(performance.getInOrders()).isEqualByComparingTo("0");
+        assertThat(performance.getExpectedProfitBtc()).isEqualByComparingTo("0.25");
         assertThat(performance.getClaimedProfitBtc()).isEqualByComparingTo("0.25");
         assertThat(performance.getLatestTimeToCloseS()).isEqualTo(1);
     }

@@ -62,15 +62,11 @@ public class TradePerformanceCalculator {
 
         for (List<Trade> trades : grouped.values()) {
 
-            expectedProfitBtc = expectedProfitBtc.add(computeExpectedProfit(
-                    trades.stream().filter(it -> OPEN.contains(it.getStatus())).collect(Collectors.toList()),
-                    priceList
-            ));
+            expectedProfitBtc = expectedProfitBtc.add(computeExpectedProfit(trades, priceList));
 
-            claimedProfitBtc = claimedProfitBtc.add(computeExpectedProfit(
-                    trades.stream().filter(it -> DONE.contains(it.getStatus())).collect(Collectors.toList()),
-                    priceList
-            ));
+            if (trades.stream().filter(it -> DONE.contains(it.getStatus())).count() == trades.size()) {
+                claimedProfitBtc = claimedProfitBtc.add(computeExpectedProfit(trades, priceList));
+            }
 
             inOrders = inOrders.add(
                     computeAmount(
