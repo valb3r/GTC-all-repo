@@ -27,8 +27,11 @@ public class NnDisptacher {
             return;
         }
 
-        analyzer.analyzeAndCreateTradesIfNecessary(book);
-        repository.addOrderBook(book);
+        try {
+            analyzer.analyzeAndCreateTradesIfNecessary(book);
+        } finally {
+            repository.addOrderBook(book);
+        }
     }
 
     private boolean validateBook(OrderBook book) {
