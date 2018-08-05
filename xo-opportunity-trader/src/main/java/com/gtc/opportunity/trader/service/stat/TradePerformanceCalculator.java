@@ -9,6 +9,7 @@ import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
 import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import com.newrelic.api.agent.NewRelic;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +49,7 @@ public class TradePerformanceCalculator {
     private final ConfigCache configCache;
 
     @Transactional(readOnly = true)
-    public <T> void reportValueOnGroupedByPair(String pathPrefix, List<Trade> scopedTrades, Function<Trade, T> key) {
+    public <T> Performance calculateOnGroupedByPair(List<Trade> scopedTrades, Function<Trade, T> key) {
         Map<TradingCurrency, CryptoPricing> priceList = pricingRepository.priceList();
         BigDecimal expectedProfitBtc = BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
@@ -76,12 +77,20 @@ public class TradePerformanceCalculator {
             total = total.add(computeAmount(trades, priceList));
         }
 
+        return new Performance(expectedProfitBtc, total, inOrders, inErrors, computeLatestTimeToClose(scopedTrades));
+    }
+
+    public void reportPerformance(String pathPrefix, Performance performance) {
+
         NewRelic.recordMetric(CAN_PROFIT_MILLI_BTC.replace(PATH, pathPrefix),
-                expectedProfitBtc.floatValue() * 1000.0f);
-        NewRelic.recordMetric(TOTAL_MILLI_BTC.replace(PATH, pathPrefix), total.floatValue() * 1000.0f);
-        NewRelic.recordMetric(AMOUNT_IN_ORDERS_MILLI_BTC.replace(PATH, pathPrefix), inOrders.floatValue() * 1000.0f);
-        NewRelic.recordMetric(ERR_LOST_MILLI_BTC.replace(PATH, pathPrefix), inErrors.floatValue() * 1000.0f);
-        reportLatestTimeToClose(grouped.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+                performance.getExpectedProfitBtc().floatValue() * 1000.0f);
+        NewRelic.recordMetric(TOTAL_MILLI_BTC.replace(PATH, pathPrefix),
+                performance.getTotal().floatValue() * 1000.0f);
+        NewRelic.recordMetric(AMOUNT_IN_ORDERS_MILLI_BTC.replace(PATH, pathPrefix),
+                performance.getInOrders().floatValue() * 1000.0f);
+        NewRelic.recordMetric(ERR_LOST_MILLI_BTC.replace(PATH, pathPrefix),
+                performance.getInErrors().floatValue() * 1000.0f);
+        NewRelic.recordMetric(LATEST_TIME_TO_CLOSE, performance.getLatestTimeToCloseS());
     }
 
     private BigDecimal computeExpectedProfit(List<Trade> trades, Map<TradingCurrency, CryptoPricing> priceList) {
@@ -93,7 +102,7 @@ public class TradePerformanceCalculator {
                     trade.getCurrencyFrom(),
                     trade.getCurrencyTo())
                     .map(ClientConfig::getTradeChargeRatePct)
-                    .orElse(DEFAULT_CHARGE_PCT).movePointRight(2).negate().add(BigDecimal.ONE);
+                    .orElse(DEFAULT_CHARGE_PCT).movePointLeft(2).negate().add(BigDecimal.ONE);
 
             CryptoPricing from = priceList.get(trade.getCurrencyFrom());
             CryptoPricing to = priceList.get(trade.getCurrencyTo());
@@ -106,7 +115,7 @@ public class TradePerformanceCalculator {
                 total = total.add(trade.getOpeningAmount().abs()
                         .multiply(trade.getOpeningPrice()).multiply(to.getPriceBtc()).multiply(charge));
             } else {
-                total = total.add(trade.getOpeningAmount().abs().multiply(charge));
+                total = total.add(trade.getOpeningAmount().abs().multiply(from.getPriceBtc()).multiply(charge));
                 total = total.subtract(trade.getOpeningAmount().abs()
                         .multiply(trade.getOpeningPrice()).multiply(to.getPriceBtc()));
             }
@@ -129,19 +138,27 @@ public class TradePerformanceCalculator {
         return total;
     }
 
-    private void reportLatestTimeToClose(List<Trade> trades) {
+    private long computeLatestTimeToClose(List<Trade> trades) {
         Trade last = trades.stream()
                 .filter(it -> DONE.contains(it.getStatus()))
                 .max(Comparator.comparing(Trade::getStatusUpdated))
                 .orElse(null);
 
         if (last == null) {
-            return;
+            return -1;
         }
 
-        NewRelic.recordMetric(
-                LATEST_TIME_TO_CLOSE,
-                ChronoUnit.SECONDS.between(last.getRecordedOn(), last.getStatusUpdated())
-        );
+        return ChronoUnit.SECONDS.between(last.getRecordedOn(), last.getStatusUpdated());
+    }
+
+    @Data
+    public static class Performance {
+
+        private final BigDecimal expectedProfitBtc;
+        private final BigDecimal total;
+        private final BigDecimal inOrders;
+        private final BigDecimal inErrors;
+
+        private final long latestTimeToCloseS;
     }
 }

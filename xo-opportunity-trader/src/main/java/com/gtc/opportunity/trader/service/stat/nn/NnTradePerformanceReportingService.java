@@ -24,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NnTradePerformanceReportingService {
 
-    private static final String MODEL_AGE = "Custom/NN/Model/Max/Age";
+    private static final String MODEL_AGE = "Custom/NN/Model/Max/AgeS";
     private static final String NOOP_AGE = "Custom/NN/Label/Noop/Max/AgeS";
     private static final String ACT_AGE = "Custom/NN/Label/Act/Max/AgeS";
     private static final String CACHE_FULLNESS = "Custom/NN/Cache/Fullness/Min";
@@ -32,7 +32,7 @@ public class NnTradePerformanceReportingService {
 
     private final NnSolver solver;
     private final NnDataRepository dataRepository;
-    private final TradePerformanceCalculator valueCalculator;
+    private final TradePerformanceCalculator performanceCalculator;
     private final TradeRepository tradeRepository;
 
     @Trace(dispatcher = true)
@@ -53,6 +53,8 @@ public class NnTradePerformanceReportingService {
         NewRelic.recordMetric(CACHE_FULLNESS, (float) minCacheFull);
         NewRelic.recordMetric(LABEL_FULLNESS, (float) minLabelFull);
 
-        valueCalculator.reportValueOnGroupedByPair("NN", tradeRepository.findByNnOrderNotNull(), Trade::getNnOrder);
+        TradePerformanceCalculator.Performance performance =
+                performanceCalculator.calculateOnGroupedByPair(tradeRepository.findByNnOrderNotNull(), Trade::getNnOrder);
+        performanceCalculator.reportPerformance("NN", performance);
     }
 }

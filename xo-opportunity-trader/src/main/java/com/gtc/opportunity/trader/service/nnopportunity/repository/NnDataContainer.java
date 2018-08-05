@@ -46,11 +46,11 @@ public class NnDataContainer {
         return data.isReady();
     }
 
-    ContainerStatistics statistics(long currTime) {
+    ContainerStatistics statistics(long currTimeMs) {
         double avgNoopAgeS = strategies.values().stream()
-                .mapToDouble(it -> avgAge(it.getNoopLabel(), currTime)).average().orElse(-1.0);
+                .mapToDouble(it -> avgAge(it.getNoopLabel(), currTimeMs)).average().orElse(-1.0);
         double avgActAgeS = strategies.values().stream()
-                .mapToDouble(it -> avgAge(it.getActLabel(), currTime)).average().orElse(-1.0);
+                .mapToDouble(it -> avgAge(it.getActLabel(), currTimeMs)).average().orElse(-1.0);
 
         double minCacheFullness = (double) uncategorized.size() / capacity;
         double minLabelFullness = strategies.values().stream().mapToDouble(it -> Math.min(

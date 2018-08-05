@@ -78,7 +78,9 @@ public class NnSolver {
     }
 
     public double maxModelAgeS(long currTime) {
-        return predictors.values().stream().mapToDouble(it -> currTime - it.getCreationTimestamp()).max().orElse(-1.0);
+        return predictors.values().stream()
+                .mapToDouble(it -> currTime - it.getCreationTimestamp()).max()
+                .orElse(-1000.0) / 1000.0;
     }
 
     private Optional<StrategyDetails> solveForStrategy(OrderBook book, Strategy strategy) {

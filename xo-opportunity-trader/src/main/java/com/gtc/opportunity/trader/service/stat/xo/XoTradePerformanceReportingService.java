@@ -35,7 +35,7 @@ public class XoTradePerformanceReportingService {
     private static final String ACCEPTED_CLOSED = "Custom/Accepted/Closed";
     private static final String ACCEPTED_OTHER = "Custom/Accepted/Other";
 
-    private final TradePerformanceCalculator valueCalculator;
+    private final TradePerformanceCalculator performanceCalculator;
     private final XoTradeRejectedStatTotalRepository rejectedStatRepository;
     private final TradeRepository tradeRepository;
 
@@ -68,6 +68,8 @@ public class XoTradePerformanceReportingService {
                 ImmutableSet.of(TradeStatus.UNKNOWN, TradeStatus.OPENED, TradeStatus.CLOSED)
         ));
 
-        valueCalculator.reportValueOnGroupedByPair("XO", tradeRepository.findByXoOrderNotNull(), Trade::getXoOrder);
+        TradePerformanceCalculator.Performance performance = performanceCalculator
+                .calculateOnGroupedByPair(tradeRepository.findByXoOrderNotNull(), Trade::getXoOrder);
+        performanceCalculator.reportPerformance("XO", performance);
     }
 }
