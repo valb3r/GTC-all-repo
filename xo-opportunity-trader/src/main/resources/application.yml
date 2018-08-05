@@ -73,6 +73,7 @@ app:
             liveS: 60
             size: 2048
     schedule:
+        poolSize: 5
         reportTradePerformanceS: 60
         opportunitySearchMs: 100
         wsReconnectS: 10
