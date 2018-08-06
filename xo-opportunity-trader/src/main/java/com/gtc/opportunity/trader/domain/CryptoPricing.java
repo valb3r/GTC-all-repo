@@ -1,10 +1,7 @@
 package com.gtc.opportunity.trader.domain;
 
 import com.gtc.meta.TradingCurrency;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -20,7 +17,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(of = "currency")
 public class CryptoPricing {
 

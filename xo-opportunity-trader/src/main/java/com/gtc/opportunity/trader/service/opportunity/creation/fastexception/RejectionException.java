@@ -13,18 +13,21 @@ public class RejectionException extends IllegalStateException {
     private final Double value;
 
     public RejectionException(Reason reason) {
+        super(reason.getMsg());
         this.reason = reason;
         this.threshold = null;
         this.value = null;
     }
 
     public RejectionException(Reason reason, Double value) {
+        super(reason.getMsg());
         this.reason = reason;
         this.value = value;
         this.threshold = null;
     }
 
     public RejectionException(Reason reason, Double value, Double threshold) {
+        super(reason.getMsg());
         this.reason = reason;
         this.threshold = threshold;
         this.value = value;

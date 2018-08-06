@@ -27,6 +27,7 @@ public final class Const {
     public static final class Common {
 
         public static final String XO_OPPORTUNITY_PREFIX = "XOM-";
+        public static final String NN_OPPORTUNITY_PREFIX = "NNO-";
     }
 
     @UtilityClass
@@ -40,5 +41,11 @@ public final class Const {
     public static final class Opportunity {
 
         public static final String OPPORTUNITY_CONF = "opportunities";
+    }
+
+    @UtilityClass
+    public static final class SpringProfiles {
+
+        public static final String TEST = "test";
     }
 }

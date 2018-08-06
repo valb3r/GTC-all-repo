@@ -16,6 +16,7 @@ import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Rea
 import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,28 @@ public class TradeCreationService {
     }
 
     @Transactional
+    public TradeDto createTradeNoSideValidation(ClientConfig cfg, BigDecimal price, BigDecimal amount, boolean isSell) {
+        String id = UuidGenerator.get();
+
+        CreateOrderCommand comm = CreateOrderCommand.builder()
+                .clientName(cfg.getClient().getName())
+                .currencyFrom(cfg.getCurrency().getCode())
+                .currencyTo(cfg.getCurrencyTo().getCode())
+                .price(price)
+                .amount(isSell ? amount.abs().negate() : amount.abs())
+                .id(id)
+                .orderId(id)
+                .build();
+
+        if (!validator.validate(comm).isEmpty() || 0 == comm.getAmount().compareTo(BigDecimal.ZERO)) {
+            log.error("Validation issue {}", comm);
+            throw new RejectionException(Reason.VALIDATION_FAIL);
+        }
+
+        return persistAndProceed(comm, cfg, false);
+    }
+
+    @Transactional
     public TradeDto createTrade(ClientConfig cfg, BigDecimal price, BigDecimal amount, boolean isSell) {
         String id = UuidGenerator.get();
 
@@ -70,23 +93,25 @@ public class TradeCreationService {
             throw new RejectionException(Reason.VALIDATION_FAIL);
         }
 
-        return persistAndProceed(comm, cfg);
+        return persistAndProceed(comm, cfg, true);
     }
 
-    private TradeDto persistAndProceed(CreateOrderCommand comm, ClientConfig cfg) {
+    private TradeDto persistAndProceed(CreateOrderCommand comm, ClientConfig cfg,  boolean validateSingleSide) {
         Trade trade = buildTrade(comm, cfg);
 
         if (!balanceService.canProceed(trade)) {
             throw new RejectionException(Reason.LOW_BAL);
         }
 
-        if (!amountTradeLimiter.canProceed(trade)) {
+        // side limiting rejections can apply only to cross-market trades
+        if (validateSingleSide && !amountTradeLimiter.canProceed(trade)) {
             throw new RejectionException(Reason.SIDE_LIMIT);
         }
 
         balanceService.proceed(trade);
         tradeRepository.save(trade);
-        stateMachineService.acquireStateMachine(trade.getId());
+        StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(trade.getId());
+        stateMachineService.releaseStateMachine(machine.getId());
 
         return new TradeDto(trade, comm);
     }

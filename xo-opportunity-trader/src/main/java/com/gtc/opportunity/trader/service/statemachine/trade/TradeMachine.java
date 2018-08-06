@@ -3,7 +3,7 @@ package com.gtc.opportunity.trader.service.statemachine.trade;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeEvent;
 import com.gtc.opportunity.trader.domain.TradeStatus;
-import com.gtc.opportunity.trader.domain.XoAcceptEvent;
+import com.gtc.opportunity.trader.domain.AcceptEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.TransientDataAccessException;
@@ -28,12 +28,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class TradeMachine {
 
     private final TradeMessageProcessor processor;
-    private final XoInteractor xoInteractor;
+    private final AcceptInteractor acceptInteractor;
 
     @Transactional
     public void ack(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        xoInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, XoAcceptEvent.TRADE_ACK);
+        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_ACK);
     }
 
     @Transactional
@@ -45,7 +45,7 @@ public class TradeMachine {
     @Transactional
     public void done(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        xoInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, XoAcceptEvent.TRADE_DONE);
+        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_DONE);
     }
 
     @Transactional
@@ -70,6 +70,6 @@ public class TradeMachine {
 
     private void error(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, Trade::setLastError);
-        xoInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, XoAcceptEvent.TRADE_ISSUE);
+        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.ISSUE);
     }
 }

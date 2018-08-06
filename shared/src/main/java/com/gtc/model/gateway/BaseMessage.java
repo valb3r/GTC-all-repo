@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.validator.constraints.NotBlank;
+import javax.validation.constraints.NotBlank;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -33,6 +33,8 @@ public class BaseMessage implements Serializable {
     private String id;
 
     private String type;
+
+    private RetryStrategy retryStrategy;
 
     public BaseMessage(String clientName, String id) {
         this.clientName = clientName;

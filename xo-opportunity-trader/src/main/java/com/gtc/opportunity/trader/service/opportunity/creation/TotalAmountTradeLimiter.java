@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class TotalAmountTradeLimiter {
 
-    private final ClientConfigCache cache;
+    private final ConfigCache cache;
     private final TradeRepository tradeRepository;
 
     @Transactional(readOnly = true)
@@ -28,7 +28,7 @@ public class TotalAmountTradeLimiter {
         BigDecimal bal = tradeRepository.tradeBalanceWithSide(trade.getClient(), trade.getCurrencyFrom(),
                 trade.getCurrencyTo(), ImmutableSet.of(TradeStatus.UNKNOWN, TradeStatus.OPENED,
                         TradeStatus.CLOSED, TradeStatus.DONE_MAN));
-        ClientConfig cfg = cache.getCfg(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo())
+        ClientConfig cfg = cache.getClientCfg(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo())
                 .orElseThrow(() -> new RejectionException(Reason.NO_CONFIG));
 
         BigDecimal newBal = bal.add(trade.getAmount());
@@ -37,6 +37,6 @@ public class TotalAmountTradeLimiter {
             return true;
         }
 
-        return cfg.getSingleSideTradeLimit().compareTo(bal.abs()) >= 0;
+        return cfg.getXoConfig().getSingleSideTradeLimit().compareTo(bal.abs()) >= 0;
     }
 }

@@ -14,7 +14,8 @@
         </encoder>
     </appender>
 
-    <logger name="com.gtc" level="DEBUG">
+    <root>
+        <level value="INFO" />
         <appender-ref ref="FILE"/>
-    </logger>
+    </root>
 </configuration>

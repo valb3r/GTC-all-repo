@@ -29,6 +29,14 @@ repositories {
 // need a fix for https://hibernate.atlassian.net/browse/HHH-11988
 ext['hibernate.version'] = versions.hibernate
 
+
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/itest/java')
+        resources.srcDir file('src/itest/resources')
+    }
+}
+
 dependencies {
     compile project(':shared')
 
@@ -52,10 +60,30 @@ dependencies {
     compile "com.googlecode.cqengine:cqengine:${versions.cqengine}"
     compile "org.optaplanner:optaplanner-core:${versions.optaPlanner}"
 
+    compile ("org.deeplearning4j:deeplearning4j-core:${versions.deep4j}") {
+        exclude group: "org.deeplearning4j", module: "deeplearning4j-datasets"
+        exclude group: "org.deeplearning4j", module: "deeplearning4j-modelimport"
+        exclude group: "org.datavec", module: "datavec-data-image"
+    }
+
+    compile "org.datavec:datavec-api:${versions.deep4j}"
+
+    compile "org.nd4j:nd4j-native:${versions.deep4j}"
+    compile "org.nd4j:nd4j-native:${versions.deep4j}:linux-x86_64"
+    compile "org.bytedeco.javacpp-presets:openblas:0.2.20-1.4.1"
+    compile "org.bytedeco.javacpp-presets:openblas:0.2.20-1.4.1:linux-x86_64"
 
     testCompile "junit:junit:${versions.junit}"
     testCompile "org.mockito:mockito-all:${versions.mockito}"
     testCompile "org.assertj:assertj-core:${versions.assertJ}"
+    testCompile "org.apache.commons:commons-csv:${versions.csv}"
+
+    integrationTestCompile "com.h2database:h2:${versions.h2}"
+    integrationTestCompile "org.springframework.boot:spring-boot-starter-test"
+    integrationTestCompile sourceSets.main.output
+    integrationTestCompile configurations.testCompile
+    integrationTestCompile sourceSets.test.output
+    integrationTestRuntime configurations.testRuntime
 }
 
 jar {
@@ -66,4 +94,11 @@ jar {
 
 bootRun {
     systemProperties System.properties
+}
+
+task integrationTest(type: Test, dependsOn: jar) {
+    group 'Verification'
+    description 'Runs the integration tests.'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
 }

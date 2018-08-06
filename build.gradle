@@ -22,7 +22,10 @@ buildscript {
                 optaPlanner         : "7.6.0.Final",
                 cqengine            : "2.12.4",
                 hibernate           : "5.2.16.Final",
-                retry               : "1.2.2.RELEASE"
+                retry               : "1.2.2.RELEASE",
+                deep4j              : "1.0.0-beta",
+                csv                 : "1.4",
+                h2                  : "1.4.197"
         ]
     }
     dependencies {

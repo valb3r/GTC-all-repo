@@ -2,7 +2,7 @@ package com.gtc.model.gateway.response.withdraw;
 
 import com.gtc.model.gateway.BaseMessage;
 import lombok.*;
-import org.hibernate.validator.constraints.NotBlank;
+import javax.validation.constraints.NotBlank;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;

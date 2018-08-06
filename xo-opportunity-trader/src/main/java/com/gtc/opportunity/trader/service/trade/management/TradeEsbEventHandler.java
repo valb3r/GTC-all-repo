@@ -26,25 +26,27 @@ public class TradeEsbEventHandler {
     private final TransactionTemplate template;
 
     public void ackError(Trade.EsbKey key, String source, String error) {
-        findTradeByAssignedId(key).ifPresent(order ->
-            stateMachineService.acquireStateMachine(order.getId())
-                    .sendEvent(MessageBuilder
-                            .withPayload(TradeEvent.ERROR)
-                            .setHeader(TradeEvent.DATA, error)
-                            .setHeader(TradeEvent.MSG_ID, source)
-                            .build())
-        );
+        findTradeByAssignedId(key).ifPresent(order -> {
+            StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
+            machine.sendEvent(MessageBuilder
+                    .withPayload(TradeEvent.ERROR)
+                    .setHeader(TradeEvent.DATA, error)
+                    .setHeader(TradeEvent.MSG_ID, source)
+                    .build());
+            stateMachineService.releaseStateMachine(machine.getId());
+        });
     }
 
     public void ackTransientError(Trade.EsbKey key, String source, String error) {
-        findTradeByAssignedId(key).ifPresent(order ->
-                stateMachineService.acquireStateMachine(order.getId())
-                .sendEvent(MessageBuilder
-                        .withPayload(TradeEvent.TRANSIENT_ERR)
-                        .setHeader(TradeEvent.DATA, error)
-                        .setHeader(TradeEvent.MSG_ID, source)
-                        .build())
-        );
+        findTradeByAssignedId(key).ifPresent(order -> {
+            StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(order.getId());
+            machine.sendEvent(MessageBuilder
+                            .withPayload(TradeEvent.TRANSIENT_ERR)
+                            .setHeader(TradeEvent.DATA, error)
+                            .setHeader(TradeEvent.MSG_ID, source)
+                            .build());
+            stateMachineService.releaseStateMachine(machine.getId());
+        });
     }
 
     public void ackOrder(Trade.EsbKey key, String source, String status, String nativeStatus,
@@ -59,6 +61,7 @@ public class TradeEsbEventHandler {
                     .setHeader(TradeEvent.NATIVE_STATUS, nativeStatus)
                     .setHeader(TradeEvent.MSG_ID, source)
                     .build());
+            stateMachineService.releaseStateMachine(machine.getId());
         });
     }
 
@@ -72,6 +75,7 @@ public class TradeEsbEventHandler {
                     .setHeader(TradeEvent.MSG_ID, source)
                     .setHeader(TradeEvent.AMOUNT, BigDecimal.ZERO)
                     .build());
+            stateMachineService.releaseStateMachine(machine.getId());
         });
     }
 
@@ -84,6 +88,7 @@ public class TradeEsbEventHandler {
                     .setHeader(TradeEvent.NATIVE_STATUS, nativeStatus)
                     .setHeader(TradeEvent.MSG_ID, source)
                     .build());
+            stateMachineService.releaseStateMachine(machine.getId());
         });
     }
 
@@ -97,6 +102,7 @@ public class TradeEsbEventHandler {
                     .setHeader(TradeEvent.MSG_ID, source)
                     .setHeader(TradeEvent.ASSIGNED_ID, key.getAssignedId())
                     .build());
+            stateMachineService.releaseStateMachine(machine.getId());
         });
     }
 
@@ -117,6 +123,7 @@ public class TradeEsbEventHandler {
                     .setHeader(TradeEvent.NATIVE_STATUS, nativeStatus)
                     .setHeader(TradeEvent.MSG_ID, source)
                     .build());
+            stateMachineService.releaseStateMachine(machine.getId());
         });
     }
 

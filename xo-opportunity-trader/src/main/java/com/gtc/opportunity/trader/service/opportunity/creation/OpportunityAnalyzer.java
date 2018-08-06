@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason.LOW_PROFIT_PRE;
@@ -23,37 +22,37 @@ import static com.gtc.opportunity.trader.service.opportunity.creation.fastexcept
 @RequiredArgsConstructor
 public class OpportunityAnalyzer {
 
-    private final ClientConfigCache configCache;
+    private final ConfigCache configCache;
     private final OpportunitySatisfierService satisfierService;
     private final OpportunityMapperFactory mapper;
 
     @Transactional
     public void newOpportunity(FullCrossMarketOpportunity opportunity) {
-        Optional<ClientConfig> fromOpt = configCache.getCfg(
-                opportunity.getClientFrom(),
-                opportunity.getCurrencyFrom(),
-                opportunity.getCurrencyTo()
-        );
-        Optional<ClientConfig> toOpt = configCache.getCfg(
-                opportunity.getClientTo(),
-                opportunity.getCurrencyFrom(),
-                opportunity.getCurrencyTo()
-        );
 
         Supplier<RejectionException> noCfg = () -> new RejectionException(Reason.NO_CONFIG);
 
-        if (!fromOpt.map(it -> it.getClient().isEnabled() && it.isEnabled()).orElseThrow(noCfg)
-                || !toOpt.map(it -> it.getClient().isEnabled() && it.isEnabled()).orElseThrow(noCfg)) {
+        ClientConfig from = configCache.getClientCfg(
+                opportunity.getClientFrom(),
+                opportunity.getCurrencyFrom(),
+                opportunity.getCurrencyTo()
+        ).orElseThrow(noCfg);
+
+        ClientConfig to = configCache.getClientCfg(
+                opportunity.getClientTo(),
+                opportunity.getCurrencyFrom(),
+                opportunity.getCurrencyTo()
+        ).orElseThrow(noCfg);
+
+        if (!from.getXoConfig().isEnabled() || !to.getXoConfig().isEnabled()) {
             throw new RejectionException(Reason.DISABLED);
         }
 
-        ClientConfig from = fromOpt.get();
-        ClientConfig to = toOpt.get();
-
         OpportunityMapperFactory.MappedOpp opp = mapper.map(opportunity, from, to);
 
-        Checker.validateAtLeast(LOW_PROFIT_PRE, opp.profitPct(), from.getMinProfitabilityPct().doubleValue());
-        Checker.validateAtLeast(LOW_PROFIT_PRE, opp.profitPct(), to.getMinProfitabilityPct().doubleValue());
+        Checker.validateAtLeast(LOW_PROFIT_PRE, opp.profitPct(), from.getXoConfig()
+                .getMinProfitabilityPct().doubleValue());
+        Checker.validateAtLeast(LOW_PROFIT_PRE, opp.profitPct(), to.getXoConfig()
+                .getMinProfitabilityPct().doubleValue());
 
         satisfierService.satisfyOpportunity(from, to, opportunity);
     }

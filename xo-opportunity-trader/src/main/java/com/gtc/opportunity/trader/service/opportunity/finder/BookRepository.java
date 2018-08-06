@@ -16,8 +16,8 @@ import com.gtc.opportunity.trader.cqe.domain.CrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.cqe.domain.IndexedOrderBook;
 import com.gtc.opportunity.trader.cqe.domain.Statistic;
-import com.gtc.opportunity.trader.domain.ClientConfig;
-import com.gtc.opportunity.trader.repository.ClientConfigRepository;
+import com.gtc.opportunity.trader.domain.XoConfig;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
@@ -39,14 +39,14 @@ public class BookRepository {
 
     private final HashIndex<CurrencyPair, IndexedOrderBook> currencyPairIndex;
     private final IndexedCollection<IndexedOrderBook> books;
-    private final ClientConfigRepository configRepository;
+    private final ConfigCache cfgCache;
 
     private final Cache<String, Integer> bookExpiryThreshold = CacheBuilder.newBuilder()
             .expireAfterWrite(60, TimeUnit.SECONDS)
             .build();
 
-    public BookRepository(ClientConfigRepository configRepository) {
-        this.configRepository = configRepository;
+    public BookRepository(ConfigCache cfgCache) {
+        this.cfgCache = cfgCache;
         this.books = new TransactionalIndexedCollection<>(IndexedOrderBook.class);
         this.books.addIndex(UniqueIndex.onAttribute((IndexedOrderBook.A_ID)));
         currencyPairIndex = HashIndex.onAttribute(IndexedOrderBook.CURRENCY_PAIR);
@@ -110,11 +110,11 @@ public class BookRepository {
     private boolean checkExpired(IndexedOrderBook orderBook, long timestamp, int defaultExpiry) {
         long ttl = bookExpiryThreshold.get(
                 orderBook.getMeta().getClient(),
-                () -> configRepository.findActiveByKey(
+                () -> cfgCache.getXoCfg(
                         orderBook.getMeta().getClient(),
                         orderBook.getMeta().getPair().getFrom(),
                         orderBook.getMeta().getPair().getTo()
-                ).map(ClientConfig::getStaleBookThresholdMS).orElse(defaultExpiry)
+                ).map(XoConfig::getStaleBookThresholdMS).orElse(defaultExpiry)
         );
         return orderBook.getRecordedOn() < timestamp - ttl;
     }

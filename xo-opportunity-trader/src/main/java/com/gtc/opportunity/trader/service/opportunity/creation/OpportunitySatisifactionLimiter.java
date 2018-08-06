@@ -81,7 +81,9 @@ public class OpportunitySatisifactionLimiter {
         return XoTradeCondition.builder()
                 .key(from.getClient().getName() + to.getClient().getName() + from.getCurrency().getCode() +
                         from.getCurrencyTo().getCode())
-                .permits((double) Math.min(from.getMaxSolveRatePerS(), to.getMaxSolveRatePerS()))
+                .permits((double) Math.min(
+                        from.getXoConfig().getMaxSolveRatePerS(),
+                        to.getXoConfig().getMaxSolveRatePerS()))
                 .sellTo(opp.marketToSellHistogram())
                 .buyFrom(opp.marketFromBuyHistogram())
                 .minToSellAmount(minSellAmount)
@@ -99,7 +101,9 @@ public class OpportunitySatisifactionLimiter {
                 .stepFromAmountPow10(scaleAmount(from))
                 .stepToAmountPow10(scaleAmount(to))
                 .requiredProfitCoef(BigDecimal.ONE.add(BigDecimal.valueOf(requiredProfit).movePointLeft(2)))
-                .maxSolveTimeMs(Math.min(from.getMaxSolveTimeMs(), to.getMaxSolveTimeMs()))
+                .maxSolveTimeMs(Math.min(
+                        from.getXoConfig().getMaxSolveTimeMs(),
+                        to.getXoConfig().getMaxSolveTimeMs()))
                 .build();
     }
 
@@ -128,14 +132,14 @@ public class OpportunitySatisifactionLimiter {
 
     private double calculateSafetyMarginPricePct(ClientConfig from, ClientConfig to) {
         return Stream.of(to, from)
-                .map(it -> it.getSafetyMarginPricePct().doubleValue())
+                .map(it -> it.getXoConfig().getSafetyMarginPricePct().doubleValue())
                 .max(Double::compareTo)
                 .orElseThrow(IllegalStateException::new);
     }
 
     private double calculateRequiredProfitabilityPct(ClientConfig from, ClientConfig to) {
         return Stream.of(to, from)
-                .mapToDouble(it -> it.getRequiredProfitablityPct().doubleValue())
+                .mapToDouble(it -> it.getXoConfig().getRequiredProfitablityPct().doubleValue())
                 .max()
                 .orElseThrow(IllegalStateException::new);
     }
@@ -145,7 +149,7 @@ public class OpportunitySatisifactionLimiter {
             return cfg.getMinOrder().doubleValue();
         }
 
-        return cfg.getMinOrderInToCurrency().doubleValue() / price;
+        return Math.max(cfg.getMinOrderInToCurrency().doubleValue() / price, cfg.getMinOrder().doubleValue());
     }
 
     private BigDecimal lossCoef(ClientConfig config) {
@@ -161,6 +165,6 @@ public class OpportunitySatisifactionLimiter {
     }
 
     private BigDecimal amountSafetyCoef(ClientConfig config) {
-        return BigDecimal.ONE.add(config.getSafetyMarginAmountPct().movePointLeft(2));
+        return BigDecimal.ONE.add(config.getXoConfig().getSafetyMarginAmountPct().movePointLeft(2));
     }
 }

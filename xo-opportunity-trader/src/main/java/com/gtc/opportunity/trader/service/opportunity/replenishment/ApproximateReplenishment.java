@@ -3,9 +3,9 @@ package com.gtc.opportunity.trader.service.opportunity.replenishment;
 import com.gtc.opportunity.trader.domain.AcceptedXoTrade;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.dto.SatisfyReplenishAmountDto;
+import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ public class ApproximateReplenishment {
 
     private static final Supplier<RuntimeException> NO_CNF = () -> new IllegalStateException("No config active");
 
-    private final ClientConfigRepository cfgRepository;
+    private final ConfigCache configCache;
     private final TradeRepository tradeRepository;
 
     @Transactional
@@ -72,14 +72,14 @@ public class ApproximateReplenishment {
     }
 
     private ClientConfig from(AcceptedXoTrade trade) {
-        return cfgRepository.findActiveByKey(trade.getClientFrom().getName(),
+        return configCache.getClientCfg(trade.getClientFrom().getName(),
                 trade.getCurrencyFrom(),
                 trade.getCurrencyTo()
         ).orElseThrow(NO_CNF);
     }
 
     private ClientConfig to(AcceptedXoTrade trade) {
-        return cfgRepository.findActiveByKey(trade.getClientTo().getName(),
+        return configCache.getClientCfg(trade.getClientTo().getName(),
                 trade.getCurrencyFrom(),
                 trade.getCurrencyTo()
         ).orElseThrow(NO_CNF);

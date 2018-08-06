@@ -26,6 +26,13 @@ import com.gtc.tradinggateway.service.dto.OrderCreatedDto;
 import com.newrelic.api.agent.NewRelic;
 import com.newrelic.api.agent.Trace;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.RetryListener;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.NeverRetryPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -226,8 +233,9 @@ public class WsCommandHandler {
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(message.getClientName() + " / " + message.getId());
 
+        RetryTemplate retryTemplate = retryTemplate(message);
         try {
-            BaseMessage result = executor.apply(handler, message);
+            BaseMessage result = retryTemplate.execute(context -> executor.apply(handler, message));
             // result can be null if it was WS based request
             if (null != result) {
                 registry.doSend(session, result);
@@ -246,6 +254,23 @@ public class WsCommandHandler {
         } finally {
             Thread.currentThread().setName(oldName);
         }
+    }
+
+    private <U extends BaseMessage> RetryTemplate retryTemplate(U message) {
+        RetryTemplate template = new RetryTemplate();
+
+        if (null != message.getRetryStrategy()) {
+            template.setRetryPolicy(new SimpleRetryPolicy(message.getRetryStrategy().getMaxRetries()));
+            ExponentialBackOffPolicy backoff = new ExponentialBackOffPolicy();
+            backoff.setInitialInterval(message.getRetryStrategy().getBaseDelayMs());
+            backoff.setMultiplier(message.getRetryStrategy().getBackOffMultiplier());
+            template.setBackOffPolicy(backoff);
+            template.registerListener(new DoRetryListener());
+        } else {
+            template.setRetryPolicy(new NeverRetryPolicy());
+        }
+
+        return template;
     }
 
     private static ErrorResponse buildError(BaseMessage origin, Throwable forExc) {
@@ -295,6 +320,30 @@ public class WsCommandHandler {
 
         NotReadyException(String s) {
             super(s);
+        }
+    }
+
+    @Slf4j
+    private static class DoRetryListener implements RetryListener {
+
+        @Override
+        public <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
+            return true;
+        }
+
+        @Override
+        public <T, E extends Throwable> void close(RetryContext context, RetryCallback<T, E> callback,
+                                                   Throwable throwable) {
+            // NOOP
+        }
+
+        @Override
+        public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback,
+                                                     Throwable throwable) {
+            log.info("Request failed, will retry if strategy is available ({})",
+                    Throwables.getRootCause(throwable).getMessage(),
+                    throwable);
+            NewRelic.noticeError(throwable);
         }
     }
 }

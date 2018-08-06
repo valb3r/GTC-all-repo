@@ -13,10 +13,14 @@ import java.util.Arrays;
  */
 @Aspect
 @Service
-public class XoMachineIdInterceptor {
+public class AcceptMachineIdInterceptor {
 
     @Around("execution(public * *(..)) "
-            + "&& within(com.gtc.opportunity.trader.service.statemachine.xoaccept.XoAcceptMachine)")
+            + "&& ("
+            + "          within(com.gtc.opportunity.trader.service.statemachine.xoaccept.XoAcceptMachine) "
+            + "       || within(com.gtc.opportunity.trader.service.statemachine.nnaccept.NnAcceptMachine)"
+            + "   )"
+    )
     public Object markThreadName(ProceedingJoinPoint joinPoint) throws Throwable {
         String name = Arrays.stream(joinPoint.getArgs())
                 .filter(it -> it instanceof StateContext)

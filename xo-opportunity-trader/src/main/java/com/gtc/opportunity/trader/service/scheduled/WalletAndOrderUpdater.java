@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.scheduled;
 
 import com.google.common.collect.ImmutableSet;
+import com.gtc.model.gateway.RetryStrategy;
 import com.gtc.model.gateway.command.account.GetAllBalancesCommand;
 import com.gtc.model.gateway.command.manage.GetOrderCommand;
 import com.gtc.model.gateway.command.manage.ListOpenCommand;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,11 +101,15 @@ public class WalletAndOrderUpdater {
                     // shuffle so that in case of rate-limiting we get a change to get response
                     Collections.shuffle(orders);
                     orders.stream().limit(maxToCheckStuckPerClient).map(
-                            td -> GetOrderCommand.builder()
-                                    .id(UuidGenerator.get())
-                                    .clientName(td.getClient().getName())
-                                    .orderId(td.getAssignedId())
-                                    .build()
+                            td -> {
+                                GetOrderCommand command = GetOrderCommand.builder()
+                                        .id(UuidGenerator.get())
+                                        .clientName(td.getClient().getName())
+                                        .orderId(td.getAssignedId())
+                                        .build();
+                                command.setRetryStrategy(RetryStrategy.BASIC_RETRY);
+                                return command;
+                            }
                     ).forEach(commander::getOrder);
                 });
     }
@@ -115,7 +121,11 @@ public class WalletAndOrderUpdater {
         LocalDateTime before = currentTimestamp.dbNow().minusSeconds(orderTimeoutS);
         tradeRepository
                 .findByStatusInAndStatusUpdatedBefore(ImmutableSet.of(TradeStatus.UNKNOWN), before, true)
-                .forEach(it -> stateMachineService.acquireStateMachine(it.getId()).sendEvent(TradeEvent.TIMEOUT));
+                .forEach(it -> {
+                    StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(it.getId());
+                    machine.sendEvent(TradeEvent.TIMEOUT);
+                    stateMachineService.releaseStateMachine(machine.getId());
+                });
     }
 
     @Trace(dispatcher = true)

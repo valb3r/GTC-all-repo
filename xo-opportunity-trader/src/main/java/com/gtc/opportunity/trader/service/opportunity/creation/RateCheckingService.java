@@ -21,7 +21,7 @@ public class RateCheckingService {
 
     @Transactional(readOnly = true)
     public boolean ratePass(ClientConfig from, ClientConfig to) {
-        double rate = Math.min(from.getXoRatePerSec(), to.getXoRatePerSec());
+        double rate = Math.min(from.getXoConfig().getXoRatePerSec(), to.getXoConfig().getXoRatePerSec());
         long windowMs = Math.round(1000.0 / rate);
         int cnt = tradeRepository.countByKeyOlderThan(
                 from.getClient().getName(),
