@@ -62,6 +62,10 @@ public class NnDataContainer {
     }
 
     private double avgAge(Queue<FlatOrderBook> data, long currTime) {
+        if (data.isEmpty()) {
+            return -1.0;
+        }
+
         double total = 0.0;
         for (FlatOrderBook book : data) {
             total += (currTime - book.getTimestamp()) / 1000.0;
