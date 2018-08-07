@@ -10,6 +10,7 @@ import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.gateway.response.ErrorResponse;
 import com.gtc.model.gateway.response.account.GetAllBalancesResponse;
 import com.gtc.model.gateway.response.create.CreateOrderResponse;
+import com.gtc.model.gateway.response.manage.CancelOrderResponse;
 import com.gtc.model.gateway.response.manage.GetOrderResponse;
 import com.gtc.model.gateway.response.manage.ListOpenOrdersResponse;
 import com.gtc.opportunity.trader.config.WsConfig;
@@ -66,6 +67,7 @@ public class WsGatewayClient {
                 .put(CreateOrderResponse.TYPE, m -> respListener.createOrder(read(m, CreateOrderResponse.class)))
                 .put(GetOrderResponse.TYPE, m -> respListener.byId(read(m, GetOrderResponse.class)))
                 .put(ListOpenOrdersResponse.TYPE, m -> respListener.opened(read(m, ListOpenOrdersResponse.class)))
+                .put(CancelOrderResponse.TYPE, m -> respListener.cancelled((read(m, CancelOrderResponse.class))))
                 .put(ErrorResponse.TYPE, m -> handleError(read(m, ErrorResponse.class)))
                 .build();
 

@@ -3,6 +3,7 @@ package com.gtc.opportunity.trader.service.command.gateway;
 import com.gtc.model.gateway.command.account.GetAllBalancesCommand;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
+import com.gtc.model.gateway.command.manage.CancelOrderCommand;
 import com.gtc.model.gateway.command.manage.GetOrderCommand;
 import com.gtc.model.gateway.command.manage.ListOpenCommand;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,11 @@ public class WsGatewayCommander {
 
     public void getBalances(@Valid GetAllBalancesCommand command) {
         log.info("Requesting to get balances {}", command);
+        client.sendCommand(command);
+    }
+
+    public void cancel(@Valid CancelOrderCommand command) {
+        log.info("Requesting to cancel {}", command);
         client.sendCommand(command);
     }
 }

@@ -33,7 +33,7 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             "WHERE t.status IN (:statuses) AND t.statusUpdated <= :lastUpdate " +
             "AND t.client.enabled = :clientEnabled " +
             "GROUP BY t.client, t.currencyFrom, t.currencyTo")
-    Set<ByClientAndPair> findSymbolsWithActiveOrders(
+    Set<ByClientAndPair> findSymbols(
             @Param("statuses") Collection<TradeStatus> statuses,
             @Param("lastUpdate") LocalDateTime lastUpdate,
             @Param("clientEnabled") boolean clientEnabled);
@@ -47,6 +47,16 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             @Param("lastUpdate") LocalDateTime lastUpdate,
             @Param("clientEnabled") boolean clientEnabled);
 
+    @Query("SELECT t FROM Trade t WHERE t.status IN (:statuses) " +
+            "AND t.statusUpdated <= :lastUpdate " +
+            "AND t.client.enabled = :clientEnabled " +
+            "AND t.nnOrder IS NOT NULL " +
+            "ORDER BY t.statusUpdated DESC")
+    List<Trade> findNnByStatusInAndStatusUpdatedBefore(
+            @Param("statuses") Collection<TradeStatus> statuses,
+            @Param("lastUpdate") LocalDateTime lastUpdate,
+            @Param("clientEnabled") boolean clientEnabled);
+
     @Query("SELECT t FROM Trade t WHERE t.client = :client " +
             "AND (t.currencyFrom = :currency OR t.currencyTo = :currency) " +
             "AND (t.status IN (:unknownStatuses) " +
@@ -56,11 +66,6 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             @Param("currency") TradingCurrency currency,
             @Param("unknownStatuses") Set<TradeStatus> unknownStatuses,
             @Param("openedStatuses") Set<TradeStatus> openedStatuses);
-
-    @Query("SELECT t FROM Trade t WHERE "
-            + "t.status = :status " +
-            "AND t.statusUpdated = (SELECT MAX(t.statusUpdated) FROM Trade t WHERE t.status = :status)")
-    List<Trade> findLatestByStatus(@Param("status") TradeStatus status);
 
     long countAllByStatusEquals(TradeStatus status);
 

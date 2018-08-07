@@ -1,0 +1,1 @@
+ALTER TABLE nn_config ADD COLUMN expire_open_h INT NOT NULL DEFAULT 30;

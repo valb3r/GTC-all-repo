@@ -57,11 +57,14 @@ public class NnConfig implements Serializable {
 
     private BigDecimal futurePriceGainPct;
 
+    @Column(name = "expire_open_h")
+    private int expireOpenH;
+
     private boolean enabled;
 
     public int hashValue() {
         return Objects.hashCode(futureNwindow, collectNlabeled, noopThreshold, truthThreshold, proceedFalsePositive,
                 averageDtSBetweenLabels, bookTestForOpenPerS, oldThresholdM, nTrainIterations,
-                trainRelativeSize, networkYamlSpec, futurePriceGainPct);
+                trainRelativeSize, networkYamlSpec, futurePriceGainPct, expireOpenH);
     }
 }

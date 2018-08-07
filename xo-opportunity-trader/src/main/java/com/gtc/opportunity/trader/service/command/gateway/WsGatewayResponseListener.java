@@ -6,6 +6,7 @@ import com.gtc.model.gateway.data.OrderDto;
 import com.gtc.model.gateway.data.OrderStatus;
 import com.gtc.model.gateway.response.account.GetAllBalancesResponse;
 import com.gtc.model.gateway.response.create.CreateOrderResponse;
+import com.gtc.model.gateway.response.manage.CancelOrderResponse;
 import com.gtc.model.gateway.response.manage.GetOrderResponse;
 import com.gtc.model.gateway.response.manage.ListOpenOrdersResponse;
 import com.gtc.opportunity.trader.domain.Trade;
@@ -70,6 +71,16 @@ public class WsGatewayResponseListener {
     @Trace(dispatcher = true)
     public void byId(GetOrderResponse response) {
         manageHandlers.get(response.getOrder().getStatus()).accept(response, response.getOrder());
+    }
+
+    @Trace(dispatcher = true)
+    public void cancelled(CancelOrderResponse response) {
+        esbEventHandler.ackCancel(
+                new Trade.EsbKey(response.getOrderId(), response.getClientName()),
+                response.getId(),
+                OrderStatus.CANCELED.toString(),
+                ""
+        );
     }
 
     @Trace(dispatcher = true)

@@ -73,7 +73,7 @@ public class WalletAndOrderUpdater {
     public void bulkUpdateOrderStatus() {
         LocalDateTime before = currentTimestamp.dbNow().minus(bulkUpdateMS, ChronoUnit.MILLIS);
         List<ByClientAndPair> symbols = new ArrayList<>(
-                tradeRepository.findSymbolsWithActiveOrders(UPDATE_ELIGIBLE, before, true)
+                tradeRepository.findSymbols(UPDATE_ELIGIBLE, before, true)
         );
 
         // shuffle so that in case of rate-limiting we get a change to get response
