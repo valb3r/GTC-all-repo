@@ -44,7 +44,7 @@ public class NnOrderCanceller {
         LocalDateTime now = dbTime.dbNow();
         Map<Key, NnConfig> byClient = getActiveConfigs();
 
-        OptionalInt minHours = byClient.values().stream().mapToInt(NnConfig::getExpireOpenH).max();
+        OptionalInt minHours = byClient.values().stream().mapToInt(NnConfig::getExpireOpenH).min();
 
         if (!minHours.isPresent()) {
             return;
