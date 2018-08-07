@@ -2,7 +2,6 @@ package com.gtc.opportunity.trader.service.trade.management;
 
 import com.google.common.collect.ImmutableList;
 import com.gtc.meta.TradingCurrency;
-import com.gtc.model.gateway.RetryStrategy;
 import com.gtc.model.gateway.command.manage.CancelOrderCommand;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.domain.Trade;
@@ -70,14 +69,11 @@ public class NnOrderCanceller {
             toCancel.add(trade);
         }
 
-        toCancel.forEach(it -> {
-            CancelOrderCommand cancel = new CancelOrderCommand(
-                    it.getClient().getName(),
-                    it.getId(),
-                    it.getAssignedId());
-            cancel.setRetryStrategy(RetryStrategy.BASIC_RETRY);
-            commander.cancel(cancel);
-        });
+        toCancel.forEach(it -> commander.cancel(new CancelOrderCommand(
+                it.getClient().getName(),
+                it.getId(),
+                it.getAssignedId()
+        )));
     }
 
     private Map<Key, NnConfig> getActiveConfigs() {

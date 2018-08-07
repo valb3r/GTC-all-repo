@@ -83,7 +83,7 @@ app:
             bulkUpdateStatusS: 17
             stuckUpdateStatusS: 31
             timedOutCheckS: 300
-            cancellerS: 631
+            cancellerS: 61
         wallet:
             updateS: 59
     stats:
