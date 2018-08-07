@@ -24,9 +24,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NnTradePerformanceReportingService {
 
-    private static final String MODEL_AGE_50 = "Custom/NN/Model/Max/Age50percentileS";
-    private static final String MODEL_AGE_75 = "Custom/NN/Model/Max/Age75percentileS";
-    private static final String MODEL_AGE_90 = "Custom/NN/Model/Max/Age90percentileS";
+    private static final String MODEL_AGE_50 = "Custom/NN/Model/Max/AgeFiftyPercentileS";
+    private static final String MODEL_AGE_75 = "Custom/NN/Model/Max/AgeSeventyFivePercentileS";
+    private static final String MODEL_AGE_90 = "Custom/NN/Model/Max/AgeNinetyPercentileS";
     private static final String NOOP_AGE = "Custom/NN/Label/Noop/Max/AgeS";
     private static final String ACT_AGE = "Custom/NN/Label/Act/Max/AgeS";
     private static final String CACHE_FULLNESS = "Custom/NN/Cache/Fullness/Min";
