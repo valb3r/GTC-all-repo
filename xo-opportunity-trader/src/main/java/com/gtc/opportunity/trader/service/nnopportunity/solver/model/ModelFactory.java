@@ -16,6 +16,16 @@ public class ModelFactory {
     private final ConfigCache cache;
 
     public NnModelPredict buildModel(Snapshot snapshot) throws NnModelPredict.TrainingFailed {
-        return new NnModelPredict(cache.requireConfig(snapshot), snapshot, mapper);
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(String.format(
+                "Build model %s-%s->%s",
+                snapshot.getKey().getClient(),
+                snapshot.getKey().getPair().getFrom().getCode(),
+                snapshot.getKey().getPair().getTo().getCode()));
+        try {
+            return new NnModelPredict(cache.requireConfig(snapshot), snapshot, mapper);
+        } finally {
+            Thread.currentThread().setName(oldName);
+        }
     }
 }

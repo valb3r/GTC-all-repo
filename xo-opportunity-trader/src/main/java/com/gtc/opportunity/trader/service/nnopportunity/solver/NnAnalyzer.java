@@ -18,6 +18,16 @@ public class NnAnalyzer {
 
     @Trace(dispatcher = true)
     public void analyzeAndCreateTradesIfNecessary(OrderBook orderBook) {
-        solver.findStrategy(orderBook).ifPresent(strategy -> createTradesService.create(strategy, orderBook));
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(String.format(
+                "Analyze model %s-%s->%s",
+                orderBook.getMeta().getClient(),
+                orderBook.getMeta().getPair().getFrom().getCode(),
+                orderBook.getMeta().getPair().getTo().getCode()));
+        try {
+            solver.findStrategy(orderBook).ifPresent(strategy -> createTradesService.create(strategy, orderBook));
+        } finally {
+            Thread.currentThread().setName(oldName);
+        }
     }
 }
