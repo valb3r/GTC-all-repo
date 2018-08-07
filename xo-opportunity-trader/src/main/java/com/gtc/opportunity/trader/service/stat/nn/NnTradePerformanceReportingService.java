@@ -24,7 +24,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NnTradePerformanceReportingService {
 
-    private static final String MODEL_AGE = "Custom/NN/Model/Max/AgeS";
+    private static final String MODEL_AGE_50 = "Custom/NN/Model/Max/Age50percentileS";
+    private static final String MODEL_AGE_75 = "Custom/NN/Model/Max/Age75percentileS";
+    private static final String MODEL_AGE_90 = "Custom/NN/Model/Max/Age90percentileS";
     private static final String NOOP_AGE = "Custom/NN/Label/Noop/Max/AgeS";
     private static final String ACT_AGE = "Custom/NN/Label/Act/Max/AgeS";
     private static final String CACHE_FULLNESS = "Custom/NN/Cache/Fullness/Min";
@@ -47,7 +49,10 @@ public class NnTradePerformanceReportingService {
         double minCacheFull = stats.stream().mapToDouble(ContainerStatistics::getMinCacheFullness).min().orElse(0.0);
         double minLabelFull = stats.stream().mapToDouble(ContainerStatistics::getMinLabelFullness).min().orElse(0.0);
 
-        NewRelic.recordMetric(MODEL_AGE, (float) solver.maxModelAgeS(currTime));
+        NnSolver.ModelStatistics statistics = solver.ageStats(currTime);
+        NewRelic.recordMetric(MODEL_AGE_50, (float) statistics.getAgePercentile50());
+        NewRelic.recordMetric(MODEL_AGE_75, (float) statistics.getAgePercentile75());
+        NewRelic.recordMetric(MODEL_AGE_90, (float) statistics.getAgePercentile90());
         NewRelic.recordMetric(NOOP_AGE, (float) maxNoopAgeS);
         NewRelic.recordMetric(ACT_AGE, (float) maxActAgeS);
         NewRelic.recordMetric(CACHE_FULLNESS, (float) minCacheFull);

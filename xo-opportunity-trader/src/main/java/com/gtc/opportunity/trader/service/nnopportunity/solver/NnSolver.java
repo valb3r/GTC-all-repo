@@ -18,6 +18,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -77,10 +78,18 @@ public class NnSolver {
         }
     }
 
-    public double maxModelAgeS(long currTime) {
-        return predictors.values().stream()
-                .mapToDouble(it -> currTime - it.getCreationTimestamp()).max()
-                .orElse(-1000.0) / 1000.0;
+    public ModelStatistics ageStats(long currTime) {
+        DescriptiveStatistics statistics = new DescriptiveStatistics();
+        predictors.values().stream()
+                .map(it -> currTime - it.getCreationTimestamp())
+                .map(it -> it / 1000.0)
+                .forEach(statistics::addValue);
+
+        return new ModelStatistics(
+                statistics.getPercentile(50.0),
+                statistics.getPercentile(50.0),
+                statistics.getPercentile(75.0)
+        );
     }
 
     private Optional<StrategyDetails> solveForStrategy(OrderBook book, Strategy strategy) {
@@ -138,6 +147,14 @@ public class NnSolver {
 
     private static KeyAndStrategy key(Key key, Strategy strategy) {
         return new KeyAndStrategy(key, strategy);
+    }
+
+    @Data
+    public static class ModelStatistics {
+
+        private final double agePercentile50;
+        private final double agePercentile75;
+        private final double agePercentile90;
     }
 
     @Data
