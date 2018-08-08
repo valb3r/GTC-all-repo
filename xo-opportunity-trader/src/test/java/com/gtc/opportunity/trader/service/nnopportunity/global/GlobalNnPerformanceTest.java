@@ -224,11 +224,11 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         when(tradeCreationService.createTradeNoSideValidation(any(Trade.class),
                 any(ClientConfig.class), any(BigDecimal.class), any(BigDecimal.class), anyBoolean())
         ).thenAnswer(inv -> {
-            Trade depends = inv.getArgumentAt(0, Trade.class);
-            ClientConfig cfg = inv.getArgumentAt(1, ClientConfig.class);
-            BigDecimal price = inv.getArgumentAt(2, BigDecimal.class);
-            BigDecimal amount = inv.getArgumentAt(3, BigDecimal.class);
-            boolean isSell = inv.getArgumentAt(4, Boolean.class);
+            Trade depends = inv.getArgument(0);
+            ClientConfig cfg = inv.getArgument(1);
+            BigDecimal price = inv.getArgument(2);
+            BigDecimal amount = inv.getArgument(3);
+            boolean isSell = inv.getArgument(4);
 
             String id = UuidGenerator.get();
 
