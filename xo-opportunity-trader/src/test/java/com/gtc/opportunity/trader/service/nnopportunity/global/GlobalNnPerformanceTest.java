@@ -6,7 +6,6 @@ import com.google.common.io.Resources;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
-import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.config.CacheConfig;
@@ -42,9 +41,12 @@ import java.util.Optional;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
+ * Note: orders are created immediately instead of going one-by-one
+ *
  * Test will only start if it sees property GLOBAL_NN_TEST == true.
  * Uses env. vars or (defaults):
  * HISTORY_DIR (/mnt/storage-box/bid/history)
@@ -164,7 +166,6 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
         String name = getClientName();
         initTradeCreationService(name);
-        initGatewayOrderCreationHandler();
 
         return new NnCreateTradesService(commander, tradeCreationService, configs,
                 mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class));
@@ -217,42 +218,41 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .build();
     }
 
+    // Here comes great simplification - we create orders immediately
     private void initTradeCreationService(String name) {
 
-        when(tradeCreationService.createTradeNoSideValidation(
+        when(tradeCreationService.createTradeNoSideValidation(any(Trade.class),
                 any(ClientConfig.class), any(BigDecimal.class), any(BigDecimal.class), anyBoolean())
         ).thenAnswer(inv -> {
-            ClientConfig cfg = inv.getArgumentAt(0, ClientConfig.class);
-            BigDecimal price = inv.getArgumentAt(1, BigDecimal.class);
-            BigDecimal amount = inv.getArgumentAt(2, BigDecimal.class);
-            boolean isSell = inv.getArgumentAt(3, Boolean.class);
+            Trade depends = inv.getArgumentAt(0, Trade.class);
+            ClientConfig cfg = inv.getArgumentAt(1, ClientConfig.class);
+            BigDecimal price = inv.getArgumentAt(2, BigDecimal.class);
+            BigDecimal amount = inv.getArgumentAt(3, BigDecimal.class);
+            boolean isSell = inv.getArgumentAt(4, Boolean.class);
 
             String id = UuidGenerator.get();
 
+            CreateOrderCommand trade = CreateOrderCommand.builder()
+                    .clientName(name)
+                    .currencyFrom(cfg.getCurrency().getCode())
+                    .currencyTo(cfg.getCurrencyTo().getCode())
+                    .price(price)
+                    .amount(isSell ? amount.abs().negate() : amount.abs())
+                    // id is not unique, actually order is paired via id
+                    .id(null != depends ? depends.getId() : id)
+                    .orderId(id)
+                    .build();
+
+            testTradeRepository.acceptTrade(trade, REQUEST_LAG_N);
             return new TradeDto(
                     Trade.builder()
+                            .id(id)
                             .openingPrice(price)
                             .openingAmount(amount)
                             .build(),
-                    CreateOrderCommand.builder()
-                            .clientName(name)
-                            .currencyFrom(cfg.getCurrency().getCode())
-                            .currencyTo(cfg.getCurrencyTo().getCode())
-                            .price(price)
-                            .amount(isSell ? amount.abs().negate() : amount.abs())
-                            .id("1111")
-                            .orderId(id)
-                            .build()
+                    trade
             );
         });
-    }
-
-    private void initGatewayOrderCreationHandler() {
-        doAnswer(invocation -> {
-            MultiOrderCreateCommand trade = (MultiOrderCreateCommand) invocation.getArguments()[0];
-            testTradeRepository.acceptTrade(trade, REQUEST_LAG_N);
-            return null;
-        }).when(commander).createOrders(any(MultiOrderCreateCommand.class));
     }
 
     @Data
