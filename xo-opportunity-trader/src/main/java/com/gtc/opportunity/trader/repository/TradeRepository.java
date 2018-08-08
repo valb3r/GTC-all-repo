@@ -4,6 +4,7 @@ import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
+import com.gtc.opportunity.trader.domain.Wallet;
 import com.gtc.opportunity.trader.repository.dto.ByClientAndPair;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -78,6 +79,10 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
                                     @Param("currencyFrom") TradingCurrency currencyFrom,
                                     @Param("currencyTo") TradingCurrency currencyTo,
                                     @Param("statuses") Set<TradeStatus> statuses);
+
+    @Query("SELECT COALESCE(SUM(-t.openingAmount * t.openingPrice), 0) FROM Trade t WHERE "
+            + "t.wallet = :wallet AND t.status IN (:statuses)")
+    BigDecimal lockedByTradesWithStatus(@Param("wallet") Wallet wallet, @Param("statuses") Set<TradeStatus> statuses);
 
     List<Trade> findByXoOrderNotNull();
     List<Trade> findByNnOrderNotNull();
