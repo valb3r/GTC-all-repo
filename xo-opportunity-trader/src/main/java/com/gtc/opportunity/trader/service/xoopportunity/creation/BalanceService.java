@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by Valentyn Berezin on 25.02.18.
+ * Note that dependent trade ignore other trades in DEPENDS_ON state.
  */
 @Slf4j
 @Service
