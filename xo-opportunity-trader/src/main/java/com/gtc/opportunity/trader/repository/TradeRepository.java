@@ -86,4 +86,6 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
 
     List<Trade> findByXoOrderNotNull();
     List<Trade> findByNnOrderNotNull();
+
+    Optional<Trade> findByDependsOnId(String id);
 }

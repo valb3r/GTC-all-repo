@@ -112,6 +112,10 @@ public class Trade implements Serializable {
 
     private boolean ignoreAsSideLimit;
 
+    @OneToOne
+    @JoinColumn(name = "depends_on")
+    private Trade dependsOn;
+
     public void setLastError(String lastError) {
         this.lastError = LongMessageLimiter.trunc(lastError);
     }

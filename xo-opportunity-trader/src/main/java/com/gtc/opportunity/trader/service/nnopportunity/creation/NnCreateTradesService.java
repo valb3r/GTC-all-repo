@@ -1,9 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity.creation;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.gtc.model.gateway.RetryStrategy;
-import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.AcceptedNnTrade;
 import com.gtc.opportunity.trader.domain.ClientConfig;
@@ -11,15 +9,14 @@ import com.gtc.opportunity.trader.domain.NnAcceptStatus;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
-import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
-import com.gtc.opportunity.trader.service.opportunity.common.TradeCreationService;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
-import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
-import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
+import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.Reason;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.RejectionException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -75,20 +71,16 @@ public class NnCreateTradesService {
 
         BigDecimal amount = calculateAmount(config, weBuyPrice.doubleValue());
 
-        TradeDto buy = tradeCreationService.createTradeNoSideValidation(config, weBuyPrice, amount, false);
-        TradeDto sell = tradeCreationService.createTradeNoSideValidation(config, weSellPrice, amount, true);
+        TradeDto buy = tradeCreationService
+                .createTradeNoSideValidation(null, config, weBuyPrice, amount, false);
+        TradeDto sell = tradeCreationService
+                .createTradeNoSideValidation(buy.getTrade(), config, weSellPrice, amount, true);
 
         buy.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
-        sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 
         persistNnTrade(config, buy, sell, details);
 
-        commander.createOrders(MultiOrderCreateCommand.builder()
-                .clientName(book.getMeta().getClient())
-                .id(UuidGenerator.get())
-                .commands(new HashSet<>(ImmutableSet.of(buy.getCommand(), sell.getCommand())))
-                .build()
-        );
+        commander.createOrder(buy.getCommand());
     }
 
     private void handleSellBuyStrategy(StrategyDetails details, OrderBook book) {
@@ -98,20 +90,17 @@ public class NnCreateTradesService {
                 .divide(computeGain(config), MathContext.DECIMAL128)
                 .setScale(config.getScalePrice(), ROUND_DOWN);
         BigDecimal amount = calculateAmount(config, weBuyPrice.doubleValue());
-        TradeDto buy = tradeCreationService.createTradeNoSideValidation(config, weBuyPrice, amount, false);
-        TradeDto sell = tradeCreationService.createTradeNoSideValidation(config, weSellPrice, amount, true);
 
-        buy.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
+        TradeDto sell = tradeCreationService
+                .createTradeNoSideValidation(null, config, weSellPrice, amount, true);
+        TradeDto buy = tradeCreationService
+                .createTradeNoSideValidation(sell.getTrade(), config, weBuyPrice, amount, false);
+
         sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 
         persistNnTrade(config, buy, sell, details);
 
-        commander.createOrders(MultiOrderCreateCommand.builder()
-                .clientName(book.getMeta().getClient())
-                .id(UuidGenerator.get())
-                .commands(new HashSet<>(ImmutableSet.of(buy.getCommand(), sell.getCommand())))
-                .build()
-        );
+        commander.createOrder(sell.getCommand());
     }
 
     private BigDecimal computeGain(ClientConfig cfg) {
@@ -158,7 +147,7 @@ public class NnCreateTradesService {
                 .modelAgeS(details.getModelAgeS())
                 .averageNoopLabelAgeS(details.getAvgNoopLabelAgeS())
                 .averageActLabelAgeS(details.getAvgActLabelAgeS())
-                .status(NnAcceptStatus.UNCONFIRMED)
+                .status(NnAcceptStatus.MASTER_UNKNOWN)
                 .build();
         trade = nnTradeRepository.save(trade);
 

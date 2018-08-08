@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <solver>
-    <solutionClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoTradeBalance</solutionClass>
-    <entityClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoTrade</entityClass>
+    <solutionClass>com.gtc.opportunity.trader.service.xoopportunity.creation.precision.optaplan.XoTradeBalance</solutionClass>
+    <entityClass>com.gtc.opportunity.trader.service.xoopportunity.creation.precision.optaplan.XoTrade</entityClass>
 
     <scoreDirectorFactory>
-        <easyScoreCalculatorClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoBalanceScore</easyScoreCalculatorClass>
+        <easyScoreCalculatorClass>com.gtc.opportunity.trader.service.xoopportunity.creation.precision.optaplan.XoBalanceScore</easyScoreCalculatorClass>
     </scoreDirectorFactory>
 
     <termination/>
@@ -16,7 +16,7 @@
     <localSearch>
         <cartesianProductMoveSelector>
             <moveIteratorFactory>
-                <moveIteratorFactoryClass>com.gtc.opportunity.trader.service.opportunity.creation.precision.optaplan.XoMoveIteratorFactory</moveIteratorFactoryClass>
+                <moveIteratorFactoryClass>com.gtc.opportunity.trader.service.xoopportunity.creation.precision.optaplan.XoMoveIteratorFactory</moveIteratorFactoryClass>
             </moveIteratorFactory>
             <cacheType>JUST_IN_TIME</cacheType>
             <selectionOrder>RANDOM</selectionOrder>

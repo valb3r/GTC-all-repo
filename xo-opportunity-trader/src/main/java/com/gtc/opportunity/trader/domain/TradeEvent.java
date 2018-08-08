@@ -5,6 +5,7 @@ package com.gtc.opportunity.trader.domain;
  */
 public enum TradeEvent {
 
+    DEPENDENCY_DONE,
     ACK,
     RETRY,
     TIMEOUT,

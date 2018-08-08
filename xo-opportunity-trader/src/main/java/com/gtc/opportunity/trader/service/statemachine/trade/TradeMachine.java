@@ -31,6 +31,11 @@ public class TradeMachine {
     private final AcceptInteractor acceptInteractor;
 
     @Transactional
+    public void doneDependency(StateContext<TradeStatus, TradeEvent> state) {
+        processor.acceptAndGet(state, (trade, value) -> {});
+    }
+
+    @Transactional
     public void ack(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
         acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_ACK);
@@ -39,7 +44,7 @@ public class TradeMachine {
     @Transactional
     public void cancel(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        // FIXME NOP ?
+        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.CANCEL);
     }
 
     @Transactional

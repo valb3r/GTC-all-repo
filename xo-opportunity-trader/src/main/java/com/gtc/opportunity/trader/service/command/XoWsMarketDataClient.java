@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gtc.opportunity.trader.config.WsConfig;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.repository.ClientRepository;
-import com.gtc.opportunity.trader.service.opportunity.finder.BookRepository;
+import com.gtc.opportunity.trader.service.xoopportunity.finder.BookRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;

@@ -6,6 +6,7 @@ package com.gtc.opportunity.trader.domain;
 public enum TradeStatus {
 
     UNKNOWN,
+    DEPENDS_ON,
     ERR_OPEN,
     NEED_RETRY,
     OPENED,

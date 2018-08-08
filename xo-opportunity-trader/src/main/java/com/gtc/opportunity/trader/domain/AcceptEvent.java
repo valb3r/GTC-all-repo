@@ -5,8 +5,8 @@ package com.gtc.opportunity.trader.domain;
  */
 public enum AcceptEvent {
 
+    CANCEL,
     ISSUE,
     TRADE_ACK,
-    TRADE_DONE,
-    GEN_ERR;
+    TRADE_DONE
 }

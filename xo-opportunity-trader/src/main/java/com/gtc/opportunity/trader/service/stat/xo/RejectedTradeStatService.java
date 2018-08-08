@@ -12,8 +12,8 @@ import com.gtc.opportunity.trader.repository.stat.rejected.BaseXoTradeRejectedSt
 import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatDailyRepository;
 import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatTotalRepository;
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
-import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
-import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.RejectionException;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.Reason;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.RejectionException;
 import com.gtc.opportunity.trader.service.stat.KeyExtractor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

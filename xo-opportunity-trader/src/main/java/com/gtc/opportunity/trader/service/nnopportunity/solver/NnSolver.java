@@ -12,7 +12,7 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactor
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.NnModelPredict;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
 import com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.newrelic.api.agent.Trace;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

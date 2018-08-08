@@ -7,7 +7,7 @@ import com.gtc.opportunity.trader.domain.CryptoPricing;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.newrelic.api.agent.NewRelic;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

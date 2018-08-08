@@ -19,6 +19,7 @@ import static com.gtc.opportunity.trader.config.Const.Common.NN_OPPORTUNITY_PREF
 import static com.gtc.opportunity.trader.config.Const.Common.XO_OPPORTUNITY_PREFIX;
 import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.MSG_ID;
 import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.ORDER_ID;
+import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.TRADE_ID;
 
 /**
  * Created by Valentyn Berezin on 03.04.18.
@@ -53,7 +54,7 @@ public class AcceptInteractor {
 
         int orderId = trade.getXoOrder().getId();
         String machineId = XO_OPPORTUNITY_PREFIX + orderId;
-        Message<AcceptEvent> msg = builder(orderId, state, status).build();
+        Message<AcceptEvent> msg = builder(trade, orderId, state, status).build();
         log.info("Sending request to {} / {}", machineId, msg);
         xoMachineSvc.acquireStateMachine(machineId).sendEvent(msg);
         xoMachineSvc.releaseStateMachine(machineId);
@@ -66,16 +67,17 @@ public class AcceptInteractor {
 
         int orderId = trade.getNnOrder().getId();
         String machineId = NN_OPPORTUNITY_PREFIX + orderId;
-        Message<AcceptEvent> msg = builder(orderId, state, status).build();
+        Message<AcceptEvent> msg = builder(trade, orderId, state, status).build();
         log.info("Sending request to {} / {}", machineId, msg);
         nnMachineSvc.acquireStateMachine(machineId).sendEvent(msg);
         nnMachineSvc.releaseStateMachine(machineId);
     }
 
-    private <E, S, T> MessageBuilder<E> builder(int orderId, StateContext<S, T> state, E status) {
+    private <E, S, T> MessageBuilder<E> builder(Trade trade, int orderId, StateContext<S, T> state, E status) {
         return MessageBuilder
                 .withPayload(status)
                 .setHeader(ORDER_ID, orderId)
+                .setHeader(TRADE_ID, trade.getId())
                 .setHeader(MSG_ID, state.getMessageHeaders().get(TradeEvent.MSG_ID));
     }
 }

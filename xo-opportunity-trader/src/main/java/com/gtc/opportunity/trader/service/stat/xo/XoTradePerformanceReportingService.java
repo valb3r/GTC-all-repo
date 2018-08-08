@@ -5,7 +5,7 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.repository.stat.rejected.XoTradeRejectedStatTotalRepository;
-import com.gtc.opportunity.trader.service.opportunity.creation.fastexception.Reason;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.Reason;
 import com.gtc.opportunity.trader.service.stat.TradePerformanceCalculator;
 import com.newrelic.api.agent.NewRelic;
 import com.newrelic.api.agent.Trace;

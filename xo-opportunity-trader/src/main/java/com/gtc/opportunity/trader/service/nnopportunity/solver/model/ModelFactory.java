@@ -1,7 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity.solver.model;
 
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

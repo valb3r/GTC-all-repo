@@ -6,7 +6,7 @@ import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;

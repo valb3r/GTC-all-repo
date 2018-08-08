@@ -5,7 +5,7 @@ import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

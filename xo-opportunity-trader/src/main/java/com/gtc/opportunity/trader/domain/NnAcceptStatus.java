@@ -5,11 +5,13 @@ package com.gtc.opportunity.trader.domain;
  */
 public enum NnAcceptStatus {
 
-    UNCONFIRMED,
-    TRADE_ISSUE,
+    MASTER_UNKNOWN,
+    MASTER_OPENED,
+    MASTER_ISSUE,
+    SLAVE_UNKNOWN,
+    SLAVE_OPENED,
+    SLAVE_ISSUE,
     ERROR,
-    ACK_PART,
-    ACK_BOTH,
-    DONE_PART,
-    DONE;
+    ABORTED,
+    DONE
 }
