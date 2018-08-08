@@ -107,12 +107,23 @@ public class NnSolver {
     }
 
     private void createPredictor(Strategy strategy, Snapshot snapshot) {
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(String.format(
+                "Build model %s-%s->%s",
+                snapshot.getKey().getClient(),
+                snapshot.getKey().getPair().getFrom().getCode(),
+                snapshot.getKey().getPair().getTo().getCode()));
+
         log.info("Create(train) predictor for {}", snapshot.getKey());
         try {
             NnModelPredict predict = factory.buildModel(snapshot);
             predictors.put(key(snapshot.getKey(), strategy), predict);
         } catch (NnModelPredict.TrainingFailed ex) {
             log.warn("Training failed for {}", snapshot.getKey());
+        } catch (Exception ex) {
+            log.warn("Unknown exception {}", ex.getMessage(), ex);
+        } finally {
+            Thread.currentThread().setName(oldName);
         }
     }
 

@@ -109,7 +109,7 @@ public abstract class BaseWsClient {
             }
         } catch (RuntimeException ex) {
             NewRelic.noticeError(ex, ImmutableMap.of("name", name()));
-            log.error("Exception handling {}", node, ex);
+            log.error("Exception handling {} / {}", node, ex.getMessage(), ex);
         }
     }
 

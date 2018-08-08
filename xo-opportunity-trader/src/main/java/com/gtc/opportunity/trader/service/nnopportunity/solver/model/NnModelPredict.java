@@ -84,8 +84,12 @@ public class NnModelPredict {
         asses(eval, splitter.getProceedTest(), true);
 
         if (eval.falsePositiveRate(CAN_PROCEED_POS) > nnConfig.getProceedFalsePositive().doubleValue()) {
+            log.info("Model failed assessment {} > {}",
+                    eval.falsePositiveRate(CAN_PROCEED_POS),
+                    nnConfig.getProceedFalsePositive());
             throw new TrainingFailed();
         }
+        log.info("Model passed assessment");
     }
 
     private void asses(Evaluation eval, List<FlatOrderBook> books, boolean isProceed) {

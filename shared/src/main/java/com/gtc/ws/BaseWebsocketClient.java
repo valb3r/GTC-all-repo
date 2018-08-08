@@ -129,7 +129,7 @@ public class BaseWebsocketClient {
             }
         } catch (RuntimeException ex) {
             NewRelic.noticeError(ex, ImmutableMap.of("name", getName()));
-            getLog().error("Exception handling {}", node, ex);
+            getLog().error("Exception handling {} / {}", node, ex.getMessage(), ex);
         }
     }
 
