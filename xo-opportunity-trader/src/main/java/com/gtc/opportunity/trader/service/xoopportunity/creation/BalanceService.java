@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 public class BalanceService {
 
     private static final String BROKEN_CACHE = "Broken wallet cache";
+    private static final Set<TradeStatus> ALL_RESERVED = ImmutableSet.of(TradeStatus.UNKNOWN, TradeStatus.DEPENDS_ON);
+    private static final Set<TradeStatus> UNKNOWN_ONLY = ImmutableSet.of(TradeStatus.UNKNOWN);
 
     private final EntityManager entityManager;
     private final WalletRepository walletRepository;
@@ -60,7 +63,7 @@ public class BalanceService {
         Wallet wallet = walletRepository.findByClientAndCurrency(trade.getClient(), charged)
                 .orElseThrow(() -> new IllegalStateException(BROKEN_CACHE));
 
-        BigDecimal reserved = walletReservedByTrades(wallet);
+        BigDecimal reserved = walletReservedByTrades(wallet, null == trade.getDependsOn());
 
         if (charged.equals(trade.getCurrencyFrom())) {
             return wallet.getBalance()
@@ -88,12 +91,12 @@ public class BalanceService {
         );
     }
 
-    private BigDecimal walletReservedByTrades(Wallet wallet) {
+    private BigDecimal walletReservedByTrades(Wallet wallet, boolean withDependsOn) {
         // any order after last wallet update should be subtracted from balance:
         Collection<Trade> openTradesNotInBal = tradeRepository.findByWalletKey(
                 wallet.getClient(),
                 wallet.getCurrency(),
-                ImmutableSet.of(TradeStatus.UNKNOWN, TradeStatus.DEPENDS_ON),
+                withDependsOn ? ALL_RESERVED : UNKNOWN_ONLY,
                 Collections.singleton(TradeStatus.OPENED));
 
         return openTradesNotInBal.stream()

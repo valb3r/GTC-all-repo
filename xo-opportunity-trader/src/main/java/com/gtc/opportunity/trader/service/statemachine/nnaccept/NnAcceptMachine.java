@@ -6,6 +6,7 @@ import com.gtc.opportunity.trader.domain.NnAcceptStatus;
 import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
+import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.TransientDataAccessException;
@@ -37,6 +38,7 @@ public class NnAcceptMachine {
     private final CurrentTimestamp timestamp;
     private final AcceptedNnTradeRepository nnTradeRepository;
 
+    @Trace(dispatcher = true) // tracing since it is very important part
     @Transactional
     public void openSlave(StateContext<NnAcceptStatus, AcceptEvent> state) {
         log.info("Proceeding with slave event {}", state);
