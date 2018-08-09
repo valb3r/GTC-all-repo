@@ -222,7 +222,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private void initTradeCreationService(String name) {
 
         when(tradeCreationService.createTradeNoSideValidation(any(Trade.class),
-                any(ClientConfig.class), any(BigDecimal.class), any(BigDecimal.class), anyBoolean())
+                any(ClientConfig.class), any(BigDecimal.class), any(BigDecimal.class), anyBoolean(), anyBoolean())
         ).thenAnswer(inv -> {
             Trade depends = inv.getArgument(0);
             ClientConfig cfg = inv.getArgument(1);

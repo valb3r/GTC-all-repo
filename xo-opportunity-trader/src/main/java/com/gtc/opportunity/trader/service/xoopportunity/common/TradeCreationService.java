@@ -53,13 +53,14 @@ public class TradeCreationService {
 
     @Transactional
     public TradeDto createTradeNoSideValidation(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount,
-                                                boolean isSell) {
-        return persistAndProceed(dependsOn, cfg, price, amount, isSell, false);
+                                                boolean isSell, boolean validateBalance) {
+        return persistAndProceed(dependsOn, cfg, price, amount, isSell, false, validateBalance);
     }
 
     @Transactional
-    public TradeDto createTrade(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount, boolean isSell) {
-        return persistAndProceed(dependsOn, cfg, price, amount, isSell, true);
+    public TradeDto createTrade(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount, boolean isSell,
+                                boolean validateBalance) {
+        return persistAndProceed(dependsOn, cfg, price, amount, isSell, true, validateBalance);
     }
 
     public CreateOrderCommand map(Trade trade) {
@@ -82,11 +83,11 @@ public class TradeCreationService {
     }
 
     private TradeDto persistAndProceed(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount,
-                                       boolean isSell, boolean validateSingleSide) {
+                                       boolean isSell, boolean validateSingleSide, boolean validateBalance) {
         Trade trade = buildTrade(dependsOn, cfg, price, amount, isSell);
         trade.setDependsOn(dependsOn);
 
-        if (!balanceService.canProceed(trade)) {
+        if (validateBalance && !balanceService.canProceed(trade)) {
             throw new RejectionException(Reason.LOW_BAL);
         }
 

@@ -72,9 +72,9 @@ public class NnCreateTradesService {
         BigDecimal amount = calculateAmount(config, weBuyPrice.doubleValue());
 
         TradeDto buy = tradeCreationService
-                .createTradeNoSideValidation(null, config, weBuyPrice, amount, false);
+                .createTradeNoSideValidation(null, config, weBuyPrice, amount, false, true);
         TradeDto sell = tradeCreationService
-                .createTradeNoSideValidation(buy.getTrade(), config, weSellPrice, amount, true);
+                .createTradeNoSideValidation(buy.getTrade(), config, weSellPrice, amount, true, false);
 
         buy.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 
@@ -92,9 +92,9 @@ public class NnCreateTradesService {
         BigDecimal amount = calculateAmount(config, weBuyPrice.doubleValue());
 
         TradeDto sell = tradeCreationService
-                .createTradeNoSideValidation(null, config, weSellPrice, amount, true);
+                .createTradeNoSideValidation(null, config, weSellPrice, amount, true, true);
         TradeDto buy = tradeCreationService
-                .createTradeNoSideValidation(sell.getTrade(), config, weBuyPrice, amount, false);
+                .createTradeNoSideValidation(sell.getTrade(), config, weBuyPrice, amount, false, false);
 
         sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 

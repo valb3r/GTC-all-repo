@@ -40,8 +40,8 @@ public class CreateTradesService {
                              ClientConfig cfgTo) {
         AcceptedXoTrade xoTrade = buildXo(opp, amount, cfgFrom, cfgTo);
 
-        TradeDto from = trades.createTrade(null, cfgFrom, amount.getSellPrice(), amount.getSellAmount(), true);
-        TradeDto to = trades.createTrade(null, cfgTo, amount.getBuyPrice(), amount.getBuyAmount(), false);
+        TradeDto from = trades.createTrade(null, cfgFrom, amount.getSellPrice(), amount.getSellAmount(), true, true);
+        TradeDto to = trades.createTrade(null, cfgTo, amount.getBuyPrice(), amount.getBuyAmount(), false, true);
         log.info("Creating commands for {} as {} to {}", opp, from, to);
         xoTrade = xoTradeRepository.save(xoTrade);
         from.getTrade().setXoOrder(xoTrade);
