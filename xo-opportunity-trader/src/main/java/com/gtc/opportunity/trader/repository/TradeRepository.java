@@ -1,10 +1,7 @@
 package com.gtc.opportunity.trader.repository;
 
 import com.gtc.meta.TradingCurrency;
-import com.gtc.opportunity.trader.domain.Client;
-import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.domain.TradeStatus;
-import com.gtc.opportunity.trader.domain.Wallet;
+import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.dto.ByClientAndPair;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -88,4 +85,10 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
     List<Trade> findByNnOrderNotNull();
 
     Optional<Trade> findByDependsOnId(String id);
+
+    @Query("SELECT t FROM Trade t WHERE "
+            + "t.dependsOn.status IN (:orderStatus) AND t.status IN (:dependentStatus)")
+    List<Trade> findDependantsByMasterStatus(
+            @Param("dependentStatus") Collection<TradeStatus> dependentStatus,
+            @Param("orderStatus") Collection<TradeStatus> orderStatus);
 }

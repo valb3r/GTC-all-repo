@@ -78,6 +78,7 @@ app:
         opportunitySearchMs: 100
         wsReconnectS: 10
         pushStatsS: 10
+        pushSlaveS: 60
         # using prime numbers to avoid temporal collisions
         order:
             bulkUpdateStatusS: 17

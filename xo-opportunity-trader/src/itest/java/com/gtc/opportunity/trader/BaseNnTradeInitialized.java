@@ -82,7 +82,7 @@ public abstract class BaseNnTradeInitialized extends BaseInitializedIT {
                 .isSell(true)
                 .statusUpdated(LocalDateTime.now())
                 .expectedReverseAmount(BigDecimal.ONE)
-                .status(TradeStatus.UNKNOWN)
+                .status(TradeStatus.DEPENDS_ON)
                 .wallet(walletTo)
                 .build());
     }

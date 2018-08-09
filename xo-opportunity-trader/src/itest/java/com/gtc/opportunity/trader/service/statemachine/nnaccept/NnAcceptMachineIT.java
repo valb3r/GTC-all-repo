@@ -11,6 +11,7 @@ import com.gtc.opportunity.trader.domain.TradeEvent;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListener;
+import com.gtc.opportunity.trader.service.scheduled.NnSlaveOrderPusher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +41,9 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
 
     @Autowired
     private StateMachineService<TradeStatus, TradeEvent> tradeMachineSvc;
+
+    @Autowired
+    private NnSlaveOrderPusher pusher;
 
     @MockBean
     private WsGatewayCommander commander;
@@ -73,34 +77,31 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnMachineSvc
-                .acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
+
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.SLAVE_UNKNOWN);
-        assertThat(tradeRepository.findById(TRADE_TWO).get().getStatus()).isEqualTo(TradeStatus.UNKNOWN);
     }
 
     @Test
     public void doneOne() {
         doAck(TRADE_ONE, OrderStatus.FILLED);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnMachineSvc
-                .acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
+
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.SLAVE_UNKNOWN);
-        assertThat(tradeRepository.findById(TRADE_TWO).get().getStatus()).isEqualTo(TradeStatus.UNKNOWN);
     }
 
     @Test
     public void ackDoneOneAckTwo() {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
         doAck(TRADE_TWO, OrderStatus.NEW);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnMachineSvc
-                .acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.SLAVE_OPENED);
@@ -110,11 +111,10 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     public void ackDoneOneAckDoneTwo() {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
         doAck(TRADE_TWO, OrderStatus.NEW);
         doAck(TRADE_TWO, OrderStatus.FILLED);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnMachineSvc
-                .acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.DONE);
@@ -124,13 +124,22 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     public void doneOneDoneTwo() {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
+        pusher.pushOrders();
         doAck(TRADE_TWO, OrderStatus.FILLED);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnMachineSvc
-                .acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.DONE);
+    }
+
+    private StateMachine<NnAcceptStatus, AcceptEvent> sendContinueEvent() {
+
+        return nnMachineSvc.acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
+    }
+
+    private StateMachine<NnAcceptStatus, AcceptEvent> nnStateMachine() {
+        return nnMachineSvc.acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
     }
 
     private void doAck(String orderId, OrderStatus status) {

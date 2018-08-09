@@ -39,7 +39,7 @@ public class AcceptInteractor {
     private final StateMachineService<NnAcceptStatus, AcceptEvent> nnMachineSvc;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void sendToXoIfExists(String tradeId, StateContext<TradeStatus, TradeEvent> state, AcceptEvent status) {
+    public void sendToSuperIfExists(String tradeId, StateContext<TradeStatus, TradeEvent> state, AcceptEvent status) {
         log.info("Attempt to interact with higher level machine for trade {} / {} / {}", tradeId, state, status);
         tradeRepository.findById(tradeId).ifPresent(trade -> {
             propagateToXoIfNeeded(trade, state, status);

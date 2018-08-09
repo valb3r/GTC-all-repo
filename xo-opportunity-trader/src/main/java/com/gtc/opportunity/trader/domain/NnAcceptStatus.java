@@ -8,6 +8,7 @@ public enum NnAcceptStatus {
     MASTER_UNKNOWN,
     MASTER_OPENED,
     MASTER_ISSUE,
+    PENDING_SLAVE,
     SLAVE_UNKNOWN,
     SLAVE_OPENED,
     SLAVE_ISSUE,

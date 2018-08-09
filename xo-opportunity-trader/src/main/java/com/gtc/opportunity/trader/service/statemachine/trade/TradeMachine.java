@@ -38,19 +38,19 @@ public class TradeMachine {
     @Transactional
     public void ack(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_ACK);
+        acceptInteractor.sendToSuperIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_ACK);
     }
 
     @Transactional
     public void cancel(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.CANCEL);
+        acceptInteractor.sendToSuperIfExists(state.getStateMachine().getId(), state, AcceptEvent.CANCEL);
     }
 
     @Transactional
     public void done(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_DONE);
+        acceptInteractor.sendToSuperIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_DONE);
     }
 
     @Transactional
@@ -75,6 +75,6 @@ public class TradeMachine {
 
     private void error(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, Trade::setLastError);
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.ISSUE);
+        acceptInteractor.sendToSuperIfExists(state.getStateMachine().getId(), state, AcceptEvent.ISSUE);
     }
 }

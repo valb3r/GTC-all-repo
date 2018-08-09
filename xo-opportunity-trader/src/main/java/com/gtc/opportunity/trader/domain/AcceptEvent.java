@@ -8,5 +8,6 @@ public enum AcceptEvent {
     CANCEL,
     ISSUE,
     TRADE_ACK,
-    TRADE_DONE
+    TRADE_DONE,
+    CONTINUE
 }
