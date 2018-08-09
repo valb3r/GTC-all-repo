@@ -5,10 +5,7 @@ import com.gtc.model.gateway.data.OrderDto;
 import com.gtc.model.gateway.data.OrderStatus;
 import com.gtc.model.gateway.response.manage.GetOrderResponse;
 import com.gtc.opportunity.trader.BaseNnTradeInitialized;
-import com.gtc.opportunity.trader.domain.AcceptEvent;
-import com.gtc.opportunity.trader.domain.NnAcceptStatus;
-import com.gtc.opportunity.trader.domain.TradeEvent;
-import com.gtc.opportunity.trader.domain.TradeStatus;
+import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListener;
 import com.gtc.opportunity.trader.service.scheduled.NnSlaveOrderPusher;
@@ -21,16 +18,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
 import static com.gtc.opportunity.trader.config.Const.Common.NN_OPPORTUNITY_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
  * Created by Valentyn Berezin on 03.08.18.
  */
+@Transactional(propagation = Propagation.NEVER)
 public class NnAcceptMachineIT extends BaseNnTradeInitialized {
 
     @Autowired
@@ -67,9 +69,12 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     public void ackOne() {
         doAck(TRADE_ONE, OrderStatus.NEW);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnMachineSvc
-                .acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.MASTER_OPENED);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.MASTER_OPENED);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.OPENED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.DEPENDS_ON);
     }
 
     @Test
@@ -77,47 +82,63 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
 
-        verify(commander).createOrder(captor.capture());
-        assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
-        assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.SLAVE_UNKNOWN);
+        verify(commander, never()).createOrder(any(CreateOrderCommand.class));
+        assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.PENDING_SLAVE);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.PENDING_SLAVE);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.DEPENDS_ON);
     }
 
     @Test
     public void doneOne() {
         doAck(TRADE_ONE, OrderStatus.FILLED);
 
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
 
-        verify(commander).createOrder(captor.capture());
-        assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
-        assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.SLAVE_UNKNOWN);
+        verify(commander, never()).createOrder(any(CreateOrderCommand.class));
+        assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.PENDING_SLAVE);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.PENDING_SLAVE);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.DEPENDS_ON);
     }
 
     @Test
     public void ackDoneOneAckTwo() {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
+        pusher.pushOrders();
         doAck(TRADE_TWO, OrderStatus.NEW);
 
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.SLAVE_OPENED);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.SLAVE_OPENED);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.OPENED);
     }
 
     @Test
     public void ackDoneOneAckDoneTwo() {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
-        StateMachine<NnAcceptStatus, AcceptEvent> machine = sendContinueEvent();
+        pusher.pushOrders();
         doAck(TRADE_TWO, OrderStatus.NEW);
         doAck(TRADE_TWO, OrderStatus.FILLED);
 
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.DONE);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.DONE);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
     }
 
     @Test
@@ -131,11 +152,10 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
         verify(commander).createOrder(captor.capture());
         assertThat(captor.getValue().getId()).isEqualTo(TRADE_TWO);
         assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.DONE);
-    }
-
-    private StateMachine<NnAcceptStatus, AcceptEvent> sendContinueEvent() {
-
-        return nnMachineSvc.acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.DONE);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
     }
 
     private StateMachine<NnAcceptStatus, AcceptEvent> nnStateMachine() {
