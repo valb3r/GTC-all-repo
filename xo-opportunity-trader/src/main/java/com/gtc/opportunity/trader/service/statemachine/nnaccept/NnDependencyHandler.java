@@ -6,6 +6,8 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.BalanceService;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.Reason;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.RejectionException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,9 @@ public class NnDependencyHandler {
     private final NnDependencyPropagator dependencyPropagator;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void dependencyDone(Trade dependent) {
+    public void publishDependentOrder(Trade dependent) {
         if (!balanceService.canProceed(dependent)) {
-            log.warn("Can't proceed with dependent due to low balace");
-            return;
+            throw new RejectionException(Reason.LOW_BAL);
         }
 
         dependencyPropagator.ackDependencyDone(dependent.getId());

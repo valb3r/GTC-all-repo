@@ -79,7 +79,7 @@ public class NnAcceptedStateMachineConfig extends StateMachineConfigurerAdapter<
                 .and().withExternal()
                 .event(ISSUE).source(MASTER_UNKNOWN).target(MASTER_ISSUE).action(machine::tradeError, machine::error)
                 .and().withExternal()
-                .event(CONTINUE).source(PENDING_SLAVE).target(SLAVE_UNKNOWN).action(machine::openSlave, machine::error)
+                .event(CONTINUE).source(PENDING_SLAVE).target(SLAVE_UNKNOWN).action(machine::pushedSlave, machine::error)
                 .and().withExternal()
                 .event(TRADE_ACK).source(SLAVE_UNKNOWN).target(SLAVE_OPENED).action(machine::ack, machine::error)
                 .and().withExternal()

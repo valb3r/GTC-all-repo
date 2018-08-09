@@ -4,9 +4,7 @@ import com.gtc.opportunity.trader.domain.AcceptEvent;
 import com.gtc.opportunity.trader.domain.AcceptedNnTrade;
 import com.gtc.opportunity.trader.domain.NnAcceptStatus;
 import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
-import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
-import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.TransientDataAccessException;
@@ -18,7 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.*;
+import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.MSG_ID;
+import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.ORDER_ID;
 
 /**
  * Created by Valentyn Berezin on 02.03.18.
@@ -33,16 +32,13 @@ import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.*;
 @RequiredArgsConstructor
 public class NnAcceptMachine {
 
-    private final TradeRepository tradeRepository;
-    private final NnDependencyHandler handler;
     private final CurrentTimestamp timestamp;
     private final AcceptedNnTradeRepository nnTradeRepository;
 
-    @Trace(dispatcher = true) // tracing since it is very important part
     @Transactional
-    public void openSlave(StateContext<NnAcceptStatus, AcceptEvent> state) {
+    public void pushedSlave(StateContext<NnAcceptStatus, AcceptEvent> state) {
         log.info("Proceeding with slave event {}", state);
-        acceptAndGet(state).ifPresent(nn -> askToProceedSlaveTrade(state));
+        acceptAndGet(state);
     }
 
     @Transactional
@@ -94,10 +90,5 @@ public class NnAcceptMachine {
 
             return nnTradeRepository.save(trade);
         });
-    }
-
-    private void askToProceedSlaveTrade(StateContext<NnAcceptStatus, AcceptEvent> state) {
-        String id = (String) state.getMessage().getHeaders().get(TRADE_ID);
-        tradeRepository.findByDependsOnId(id).ifPresent(handler::dependencyDone);
     }
 }
