@@ -26,14 +26,15 @@ public class NnDependencyHandler {
     private final NnDependencyPropagator dependencyPropagator;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void publishDependentOrderIfPossible(Trade dependent) {
+    public boolean publishDependentOrderIfPossible(Trade dependent) {
         if (!balanceService.canProceed(dependent)) {
-            return;
+            return false;
         }
 
         dependencyPropagator.ackDependencyDone(dependent.getId());
         CreateOrderCommand command = creationService.map(dependent);
         command.setRetryStrategy(RetryStrategy.BASIC_RETRY);
         commander.createOrder(command);
+        return true;
     }
 }

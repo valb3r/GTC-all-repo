@@ -45,7 +45,9 @@ public class NnSlaveOrderPusher {
 
     private void ackAndCreateOrders(Trade trade) {
         try {
-            handler.publishDependentOrderIfPossible(trade);
+            if (!handler.publishDependentOrderIfPossible(trade)) {
+                return;
+            }
 
             String machineId = NN_OPPORTUNITY_PREFIX + trade.getNnOrder().getId();
             nnMachineSvc.acquireStateMachine(machineId).sendEvent(MessageBuilder
