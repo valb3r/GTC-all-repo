@@ -72,6 +72,8 @@ public class TradeStateMachineConfig extends StateMachineConfigurerAdapter<Trade
                 .withExternal()
                 .event(TradeEvent.DEPENDENCY_DONE).source(DEPENDS_ON).target(UNKNOWN).action(machine::doneDependency)
                 .and().withExternal()
+                .event(TradeEvent.CANCELLED).source(DEPENDS_ON).target(CANCELLED).action(machine::cancel)
+                .and().withExternal()
                 .event(TradeEvent.ACK).source(UNKNOWN).target(OPENED).action(machine::ack)
                 .and().withExternal()
                 .event(TradeEvent.DONE).source(OPENED).target(CLOSED).action(machine::done)

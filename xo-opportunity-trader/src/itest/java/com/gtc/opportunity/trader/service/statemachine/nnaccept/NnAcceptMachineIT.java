@@ -158,6 +158,25 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
     }
 
+    @Test
+    public void ackDoneOneAckTwoWhenExpired() {
+        doAck(TRADE_ONE, OrderStatus.NEW);
+        doAck(TRADE_ONE, OrderStatus.FILLED);
+        Trade trade = tradeRepository.findById(TRADE_TWO).get();
+        trade.setRecordedOn(trade.getRecordedOn().minusMinutes(createdNnConfig.getMaxSlaveDelayM() + 1L));
+        tradeRepository.save(trade);
+        pusher.pushOrders();
+        doAck(TRADE_TWO, OrderStatus.NEW);
+
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
+        verify(commander, never()).createOrder(captor.capture());
+        assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.ABORTED);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.ABORTED);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
+    }
+
     private StateMachine<NnAcceptStatus, AcceptEvent> nnStateMachine() {
         return nnMachineSvc.acquireStateMachine(NN_OPPORTUNITY_PREFIX + createdNnTrade.getId(), false);
     }

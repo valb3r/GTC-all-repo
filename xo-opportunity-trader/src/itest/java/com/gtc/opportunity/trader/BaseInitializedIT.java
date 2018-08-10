@@ -76,6 +76,7 @@ public abstract class BaseInitializedIT extends BaseIT {
                 .networkYamlSpec("")
                 .collectNlabeled(1000)
                 .futureNwindow(36000)
+                .maxSlaveDelayM(600)
                 .bookTestForOpenPerS(BigDecimal.ONE)
                 .averageDtSBetweenLabels(BigDecimal.ONE)
                 .build();

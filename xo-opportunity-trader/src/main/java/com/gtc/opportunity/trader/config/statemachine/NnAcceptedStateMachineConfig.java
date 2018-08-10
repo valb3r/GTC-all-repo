@@ -63,6 +63,7 @@ public class NnAcceptedStateMachineConfig extends StateMachineConfigurerAdapter<
                 .state(PENDING_SLAVE)
                 .state(SLAVE_UNKNOWN)
                 .state(SLAVE_OPENED)
+                .state(ABORTED)
                 .state(ERROR)
                 .end(DONE);
     }
@@ -92,6 +93,8 @@ public class NnAcceptedStateMachineConfig extends StateMachineConfigurerAdapter<
                 .event(CANCEL).source(MASTER_UNKNOWN).target(ABORTED).action(machine::abort, machine::error)
                 .and().withExternal()
                 .event(CANCEL).source(MASTER_OPENED).target(ABORTED).action(machine::abort, machine::error)
+                .and().withExternal()
+                .event(CANCEL).source(PENDING_SLAVE).target(ABORTED).action(machine::abort, machine::error)
                 .and().withExternal()
                 .event(CANCEL).source(SLAVE_UNKNOWN).target(ABORTED).action(machine::abort, machine::error)
                 .and().withExternal()
