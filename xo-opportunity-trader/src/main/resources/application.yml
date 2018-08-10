@@ -59,7 +59,7 @@ app:
     opportunities:
         minGain: 1.003
     updater:
-        maxToCheckStuckPerClient: 3
+        maxToCheckStuckPerClient: 30
         orderTimeoutS: 600
     ws:
         market: ws://localhost:8080/api/market
