@@ -68,8 +68,8 @@ public class TradeCreationService {
                 .clientName(trade.getClient().getName())
                 .currencyFrom(trade.getCurrencyFrom().getCode())
                 .currencyTo(trade.getCurrencyTo().getCode())
-                .price(trade.getOpeningPrice())
-                .amount(trade.getOpeningAmount())
+                .price(trade.getOpeningPrice().stripTrailingZeros()) // db does not preserve precision
+                .amount(trade.getOpeningAmount().stripTrailingZeros()) // db does not preserve precision
                 .id(trade.getId())
                 .orderId(trade.getId())
                 .build();
