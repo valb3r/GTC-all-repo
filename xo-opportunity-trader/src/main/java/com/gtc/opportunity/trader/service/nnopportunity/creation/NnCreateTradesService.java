@@ -98,7 +98,7 @@ public class NnCreateTradesService {
 
         sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 
-        persistNnTrade(config, buy, sell, details);
+        persistNnTrade(config, sell, buy, details);
 
         commander.createOrder(sell.getCommand());
     }
@@ -130,16 +130,16 @@ public class NnCreateTradesService {
         return Math.max(cfg.getMinOrderInToCurrency().doubleValue() / price, cfg.getMinOrder().doubleValue());
     }
 
-    private void persistNnTrade(ClientConfig config, TradeDto buy, TradeDto sell, StrategyDetails details) {
-        BigDecimal amount = amount(buy, sell);
-        Profits profits = profitInFromCurrency(config, buy, sell);
+    private void persistNnTrade(ClientConfig config, TradeDto first, TradeDto second, StrategyDetails details) {
+        BigDecimal amount = amount(first, second);
+        Profits profits = profitInFromCurrency(config, first, second);
         AcceptedNnTrade trade = AcceptedNnTrade.builder()
                 .client(config.getClient())
                 .currencyFrom(config.getCurrency())
                 .currencyTo(config.getCurrencyTo())
                 .amount(amount)
-                .priceFromBuy(buy.getTrade().getOpeningPrice())
-                .priceToSell(sell.getTrade().getOpeningPrice())
+                .priceFromBuy(first.getTrade().getOpeningPrice())
+                .priceToSell(second.getTrade().getOpeningPrice())
                 .expectedDeltaFrom(profits.getFrom())
                 .expectedDeltaTo(profits.getTo())
                 .confidence(details.getConfidence())
@@ -152,10 +152,10 @@ public class NnCreateTradesService {
         trade = nnTradeRepository.save(trade);
 
         // FIXME: this should be dealt via cascading
-        buy.getTrade().setNnOrder(trade);
-        sell.getTrade().setNnOrder(trade);
-        tradeRepository.save(buy.getTrade());
-        tradeRepository.save(sell.getTrade());
+        first.getTrade().setNnOrder(trade);
+        second.getTrade().setNnOrder(trade);
+        tradeRepository.save(first.getTrade());
+        tradeRepository.save(second.getTrade());
     }
 
     private static BigDecimal amount(TradeDto buy, TradeDto sell) {
