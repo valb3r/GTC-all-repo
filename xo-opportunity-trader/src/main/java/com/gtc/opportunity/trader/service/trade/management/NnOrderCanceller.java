@@ -59,9 +59,9 @@ public class NnOrderCanceller {
         List<Trade> toCancel = new ArrayList<>();
         for (Trade trade : expired) {
             Key key = new Key(
-                    trade.getNnOrder().getClient().getName(),
-                    trade.getNnOrder().getCurrencyFrom(),
-                    trade.getNnOrder().getCurrencyTo()
+                    trade.getClient().getName(),
+                    trade.getCurrencyFrom(),
+                    trade.getCurrencyTo()
             );
 
             NnConfig config = byClient.get(key);
