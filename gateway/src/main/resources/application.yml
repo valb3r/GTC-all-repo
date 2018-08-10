@@ -143,8 +143,8 @@ app:
             DASH-LTC=DSHLTC
         customResponseCurrencyMapping:
             dsh=DASH
-        ratePerM: 5
-        createRatePerM: 5
+        ratePerM: 60
+        createRatePerM: 10
     okex:
         restBase: "https://www.okex.com/api/v1"
         wsBase: "wss://real.okex.com:10441/websocket"
