@@ -107,7 +107,7 @@ public class WalletAndOrderUpdater {
                                         .clientName(td.getClient().getName())
                                         .orderId(td.getAssignedId())
                                         .build();
-                                command.setRetryStrategy(RetryStrategy.BASIC_RETRY);
+                                command.setRetryStrategy(RetryStrategy.SHORT_RETRY);
                                 return command;
                             }
                     ).forEach(commander::getOrder);
