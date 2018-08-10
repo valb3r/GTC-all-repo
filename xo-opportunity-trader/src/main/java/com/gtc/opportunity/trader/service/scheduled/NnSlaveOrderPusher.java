@@ -6,7 +6,6 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.statemachine.nnaccept.NnDependencyHandler;
-import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.RejectionException;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +43,8 @@ public class NnSlaveOrderPusher {
     }
 
     private void ackAndCreateOrders(Trade trade) {
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName("Push dependent " + trade.getId());
         try {
             if (!handler.publishDependentOrderIfPossible(trade)) {
                 return;
@@ -56,8 +57,10 @@ public class NnSlaveOrderPusher {
                     .build()
             );
             nnMachineSvc.releaseStateMachine(machineId);
-        } catch (RejectionException ex) {
-            log.warn("Low balance", ex);
+        } catch (RuntimeException ex) {
+            log.warn("Exception trying propagate order id {}", trade.getId(), ex);
+        } finally {
+            Thread.currentThread().setName(oldName);
         }
     }
 }

@@ -151,7 +151,7 @@ public class Trade implements Serializable {
         if (isSell && walletFrom) {
             return Optional.of(amount);
         } else if (!isSell && walletTo) {
-            return Optional.of(expectedReverseAmount);
+            return Optional.of(amount.multiply(price));
         }
 
         return Optional.of(BigDecimal.ZERO);

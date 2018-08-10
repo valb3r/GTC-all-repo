@@ -28,9 +28,11 @@ public class NnDependencyHandler {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public boolean publishDependentOrderIfPossible(Trade dependent) {
         if (!balanceService.canProceed(dependent)) {
+            log.info("Cant proceed with dependent order id {} - low balance", dependent.getId());
             return false;
         }
 
+        log.info("Propagating dependent order id {}", dependent.getId());
         dependencyPropagator.ackDependencyDone(dependent.getId());
         CreateOrderCommand command = creationService.map(dependent);
         command.setRetryStrategy(RetryStrategy.BASIC_RETRY);
