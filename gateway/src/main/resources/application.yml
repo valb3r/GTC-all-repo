@@ -92,7 +92,7 @@ app:
             NANO-BTC=NANOBTC
         customResponseCurrencyMapping:
             USD=USDT
-        ratePerM: 10
+        ratePerM: 60
         minRequestSeparationMs: 30
     wex:
         restBase: "https://wex.nz/tapi"
