@@ -1,5 +1,6 @@
 package com.gtc.tradinggateway.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
@@ -15,8 +16,11 @@ import java.util.concurrent.Executors;
 @EnableScheduling
 public class ScheduledConfig {
 
+    @Value("${app.schedule.poolSize}")
+    private int poolSize;
+
     @Bean
     public TaskScheduler taskScheduler() {
-        return new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
+        return new ConcurrentTaskScheduler(Executors.newScheduledThreadPool(poolSize));
     }
 }
