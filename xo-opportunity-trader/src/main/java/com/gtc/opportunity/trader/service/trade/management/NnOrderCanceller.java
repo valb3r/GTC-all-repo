@@ -12,6 +12,7 @@ import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.newrelic.api.agent.Trace;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import static com.gtc.opportunity.trader.domain.TradeStatus.OPENED;
 /**
  * Created by Valentyn Berezin on 07.08.18.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NnOrderCanceller {
@@ -69,6 +71,7 @@ public class NnOrderCanceller {
             toCancel.add(trade);
         }
 
+        log.info("Cancelling {} orders", toCancel.size());
         toCancel.forEach(it -> commander.cancel(new CancelOrderCommand(
                 it.getClient().getName(),
                 it.getId(),
