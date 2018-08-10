@@ -78,17 +78,15 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
                                     @Param("statuses") Set<TradeStatus> statuses);
 
     @Query("SELECT COALESCE(SUM(t.openingAmount * t.openingPrice), 0) FROM Trade t WHERE "
-            + "t.wallet = :wallet AND t.status IN (:statuses) AND t.isSell")
+            + "t.wallet = :wallet AND t.status IN (:statuses) AND t.openingAmount > 0")
     BigDecimal lockedByBuyTradesWithStatus(@Param("wallet") Wallet wallet, @Param("statuses") Set<TradeStatus> statuses);
 
     @Query("SELECT COALESCE(SUM(-t.openingAmount), 0) FROM Trade t WHERE "
-            + "t.wallet = :wallet AND t.status IN (:statuses) AND NOT t.isSell")
+            + "t.wallet = :wallet AND t.status IN (:statuses) AND t.openingAmount < 0")
     BigDecimal lockedBySellTradesWithStatus(@Param("wallet") Wallet wallet, @Param("statuses") Set<TradeStatus> statuses);
 
     List<Trade> findByXoOrderNotNull();
     List<Trade> findByNnOrderNotNull();
-
-    Optional<Trade> findByDependsOnId(String id);
 
     @Query("SELECT t FROM Trade t WHERE "
             + "t.dependsOn.status IN (:orderStatus) AND t.status IN (:dependentStatus)")
