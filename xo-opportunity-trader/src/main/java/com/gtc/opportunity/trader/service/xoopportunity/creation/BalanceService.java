@@ -54,8 +54,11 @@ public class BalanceService {
 
         BigDecimal tradeAmount = tradeAmount(trade, charged);
         BigDecimal reserved = wallet.getReservedBalance();
+
+        // FIXME issue 41: it is completely insufficient check since we ignore 'UNKNOWN' here
         if (null != trade.getDependsOn()) {
-            reserved = reserved.subtract(tradeAmount);
+            // for dependent just check it has enough balance right now
+            return wallet.getBalance().compareTo(tradeAmount) >= 0;
         }
 
         return wallet.getBalance().subtract(reserved).compareTo(tradeAmount) >= 0;
