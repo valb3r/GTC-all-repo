@@ -66,9 +66,9 @@ public class BalanceService {
 
     private static BigDecimal tradeAmount(Trade trade, TradingCurrency charged) {
         if (charged.equals(trade.getCurrencyFrom())) {
-            return trade.getAmount().abs();
+            return trade.getOpeningAmount().abs();
         }
-        return trade.getAmount().abs().multiply(trade.getPrice());
+        return trade.getOpeningAmount().abs().multiply(trade.getPrice());
     }
 
     @Transactional(readOnly = true)
