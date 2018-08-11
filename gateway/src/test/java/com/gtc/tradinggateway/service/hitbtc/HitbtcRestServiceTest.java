@@ -8,8 +8,8 @@ import com.gtc.tradinggateway.config.HitbtcConfig;
 import com.gtc.tradinggateway.meta.TradingCurrency;
 import com.gtc.tradinggateway.service.hitbtc.dto.HitbtcBalanceItemDto;
 import com.gtc.tradinggateway.service.hitbtc.dto.HitbtcOrderGetDto;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -67,7 +67,7 @@ public class HitbtcRestServiceTest extends BaseMockitoTest {
     @InjectMocks
     private HitbtcRestService hitbtcRestService;
 
-    @Before
+    @BeforeEach
     public void init() {
         when(cfg.getRestTemplate()).thenReturn(restTemplate);
         when(cfg.getRestBase()).thenReturn(BASE);

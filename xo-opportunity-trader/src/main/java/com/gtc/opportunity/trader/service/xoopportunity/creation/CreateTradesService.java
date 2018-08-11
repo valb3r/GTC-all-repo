@@ -12,7 +12,7 @@ import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.PreciseXoAmountDto;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
-import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
+import com.gtc.opportunity.trader.service.TradeCreationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

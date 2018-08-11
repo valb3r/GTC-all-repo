@@ -3,8 +3,8 @@ package com.gtc.opportunity.trader.service.xoopportunity.creation.precision;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.dto.IntegratedHistogram;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,7 +19,7 @@ public class HistogramIntegratorTest extends BaseMockitoTest  {
 
     private HistogramIntegrator integrator = new HistogramIntegrator();
 
-    @Before
+    @BeforeEach
     public void init() {
         sell = new FullCrossMarketOpportunity.Histogram[] {
                 new FullCrossMarketOpportunity.Histogram(25, 30, 8),

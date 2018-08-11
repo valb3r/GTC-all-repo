@@ -93,4 +93,6 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
     List<Trade> findDependantsByMasterStatus(
             @Param("dependentStatus") Collection<TradeStatus> dependentStatus,
             @Param("orderStatus") Collection<TradeStatus> orderStatus);
+
+    Optional<Trade> findByDependsOn(Trade master);
 }

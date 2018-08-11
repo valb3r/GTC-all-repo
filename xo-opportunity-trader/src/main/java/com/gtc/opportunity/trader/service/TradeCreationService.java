@@ -1,4 +1,4 @@
-package com.gtc.opportunity.trader.service.xoopportunity.common;
+package com.gtc.opportunity.trader.service;
 
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.opportunity.trader.domain.ClientConfig;
@@ -6,8 +6,7 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeEvent;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.TradeRepository;
-import com.gtc.opportunity.trader.service.CurrentTimestamp;
-import com.gtc.opportunity.trader.service.UuidGenerator;
+import com.gtc.opportunity.trader.repository.WalletRepository;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.BalanceService;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.TotalAmountTradeLimiter;
@@ -32,6 +31,7 @@ import static com.gtc.opportunity.trader.config.statemachine.TradeStateMachineCo
 @Service
 public class TradeCreationService {
 
+    private final WalletRepository walletRepository;
     private final StateMachineService<TradeStatus, TradeEvent> stateMachineService;
     private final CurrentTimestamp currentTimestamp;
     private final TradeRepository tradeRepository;
@@ -42,13 +42,15 @@ public class TradeCreationService {
     public TradeCreationService(
             @Qualifier(TRADE_MACHINE_SERVICE) StateMachineService<TradeStatus, TradeEvent> stateMachineService,
             CurrentTimestamp currentTimestamp, TradeRepository tradeRepository,
-            Validator validator, BalanceService balanceService, TotalAmountTradeLimiter amountTradeLimiter) {
+            Validator validator, BalanceService balanceService, TotalAmountTradeLimiter amountTradeLimiter,
+            WalletRepository walletRepository) {
         this.stateMachineService = stateMachineService;
         this.currentTimestamp = currentTimestamp;
         this.tradeRepository = tradeRepository;
         this.balanceService = balanceService;
         this.amountTradeLimiter = amountTradeLimiter;
         this.validator = validator;
+        this.walletRepository = walletRepository;
     }
 
     @Transactional
@@ -97,7 +99,9 @@ public class TradeCreationService {
         }
 
         balanceService.proceed(trade);
-        tradeRepository.save(trade);
+        trade = tradeRepository.save(trade);
+        reserveBalance(trade);
+
         StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(trade.getId());
 
         if (null == dependsOn) {
@@ -107,6 +111,13 @@ public class TradeCreationService {
         stateMachineService.releaseStateMachine(machine.getId());
 
         return new TradeDto(trade, map(trade));
+    }
+
+    private void reserveBalance(Trade trade) {
+        BigDecimal reserve = trade.amountReservedOnWallet(trade.getWallet())
+                .orElseThrow(() -> new IllegalStateException("Wrong trade state - no wallet"));
+        trade.getWallet().setReservedBalance(trade.getWallet().getReservedBalance().add(reserve));
+        walletRepository.save(trade.getWallet());
     }
 
     private Trade buildTrade(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount, boolean isSell) {

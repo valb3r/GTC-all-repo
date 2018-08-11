@@ -8,7 +8,7 @@ buildscript {
                 wsClient            : "master-SNAPSHOT",
                 newRelicAPI         : "3.4.1",
                 commonsCodec        : "1.9",
-                junit               : "4.12",
+                junit               : "5.1.0",
                 mockito             : "1.10.19",
                 assertJ             : "3.9.0",
                 aspectjOAP          : "1.8.12",

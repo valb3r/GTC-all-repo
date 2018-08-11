@@ -4,7 +4,7 @@ import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.opportunity.trader.domain.AcceptedXoTrade;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
-import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
+import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.xoopportunity.replenishment.dto.Replenish;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -9,9 +9,9 @@ import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListener;
 import com.gtc.opportunity.trader.service.scheduled.NnSlaveOrderPusher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,12 +53,12 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     @Captor
     private ArgumentCaptor<CreateOrderCommand> captor;
 
-    @Before
+    @BeforeEach
     public void initialize() {
         tradeMachineSvc.acquireStateMachine(TRADE_ONE).sendEvent(TradeEvent.DEPENDENCY_DONE);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         tradeMachineSvc.releaseStateMachine(TRADE_ONE, true);
         tradeMachineSvc.releaseStateMachine(TRADE_TWO, true);

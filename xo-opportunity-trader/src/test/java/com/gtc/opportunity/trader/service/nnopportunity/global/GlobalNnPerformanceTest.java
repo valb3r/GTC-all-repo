@@ -14,6 +14,7 @@ import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.repository.*;
+import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
@@ -24,13 +25,12 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
-import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -87,7 +87,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
 
-    @Before
+    @BeforeEach
     public void init() {
         System.setProperty("ND4J_FALLBACK", "true");
         initClientConfigCache();

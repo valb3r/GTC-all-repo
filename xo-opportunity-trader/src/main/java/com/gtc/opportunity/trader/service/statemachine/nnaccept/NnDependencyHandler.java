@@ -4,7 +4,7 @@ import com.gtc.model.gateway.RetryStrategy;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
-import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
+import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.BalanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

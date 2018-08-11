@@ -7,8 +7,8 @@ import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -41,7 +41,7 @@ public class TradePerformanceCalculatorTest extends BaseMockitoTest {
     @InjectMocks
     private TradePerformanceCalculator calculator;
 
-    @Before
+    @BeforeEach
     public void init() {
         when(pricingRepository.priceList()).thenReturn(
                 ImmutableMap.of(

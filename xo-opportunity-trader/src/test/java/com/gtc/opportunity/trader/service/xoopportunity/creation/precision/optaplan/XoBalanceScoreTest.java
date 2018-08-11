@@ -5,8 +5,8 @@ import com.gtc.opportunity.trader.cqe.domain.FullCrossMarketOpportunity;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.HistogramIntegrator;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.dto.AsFixed;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.dto.XoClientTradeConditionAsLong;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.optaplanner.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 
 import java.math.BigDecimal;
@@ -32,7 +32,7 @@ public class XoBalanceScoreTest extends BaseMockitoTest {
             new FullCrossMarketOpportunity.Histogram(6700, 6800, 0.0)
     };
 
-    @Before
+    @BeforeEach
     public void init() {
         XoClientTradeConditionAsLong condition = XoClientTradeConditionAsLong.builder()
                 .minToBuyAmount(new AsFixed(new BigDecimal("0.082894")))

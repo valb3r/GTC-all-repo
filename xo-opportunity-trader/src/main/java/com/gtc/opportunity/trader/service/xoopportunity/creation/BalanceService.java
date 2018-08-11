@@ -6,9 +6,7 @@ import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.config.CacheConfig;
 import com.gtc.opportunity.trader.domain.Client;
 import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.domain.Wallet;
-import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.repository.WalletRepository;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -33,16 +29,13 @@ public class BalanceService {
 
     private final EntityManager entityManager;
     private final WalletRepository walletRepository;
-    private final TradeRepository tradeRepository;
 
     // cache just to check that wallet exists (wallet can exist if it has some balance or was created before_
     private final Cache<String, Optional<Integer>> walletIds;
 
-    public BalanceService(EntityManager entityManager, WalletRepository walletRepository,
-                          TradeRepository tradeRepository, CacheConfig config) {
+    public BalanceService(EntityManager entityManager, WalletRepository walletRepository, CacheConfig config) {
         this.entityManager = entityManager;
         this.walletRepository = walletRepository;
-        this.tradeRepository = tradeRepository;
         walletIds = CacheBuilder.newBuilder()
                 .maximumSize(config.getWalletIds().getSize())
                 .expireAfterWrite(config.getWalletIds().getLiveS(), TimeUnit.SECONDS)
@@ -59,7 +52,7 @@ public class BalanceService {
         Wallet wallet = walletRepository.findByClientAndCurrency(trade.getClient(), charged)
                 .orElseThrow(() -> new IllegalStateException(BROKEN_CACHE));
 
-        BigDecimal reserved = walletReservedByTrades(wallet);
+        BigDecimal reserved = wallet.getReservedBalance();
 
         if (charged.equals(trade.getCurrencyFrom())) {
             return wallet.getBalance()
@@ -85,21 +78,6 @@ public class BalanceService {
                 () -> walletRepository.findByClientAndCurrency(client, currency)
                         .map(Wallet::getId)
         );
-    }
-
-    private BigDecimal walletReservedByTrades(Wallet wallet) {
-        // any order after last wallet update should be subtracted from balance:
-        Collection<Trade> openTradesNotInBal = tradeRepository.findByWalletKey(
-                wallet.getClient(),
-                wallet.getCurrency(),
-                Collections.singleton(TradeStatus.UNKNOWN),
-                Collections.singleton(TradeStatus.OPENED));
-
-        return openTradesNotInBal.stream()
-                .map(it -> it.amountReservedOnWallet(wallet)
-                        .orElseThrow(() -> new IllegalStateException("Wrong query result")))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .abs();
     }
 
     private static String walletKey(Client client, TradingCurrency currency) {

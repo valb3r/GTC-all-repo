@@ -10,8 +10,8 @@ import com.gtc.tradinggateway.service.dto.OrderCreatedDto;
 import com.gtc.tradinggateway.service.hitbtc.dto.HitbtcCreateRequestDto;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -56,7 +56,7 @@ public class HitbtcWsServiceTest extends BaseMockitoTest {
     @Captor
     private ArgumentCaptor<HitbtcCreateRequestDto> messageCaptor;
 
-    @Before
+    @BeforeEach
     @SneakyThrows
     public void init() {
         hitbtcWsService.setRxConnected(rx);

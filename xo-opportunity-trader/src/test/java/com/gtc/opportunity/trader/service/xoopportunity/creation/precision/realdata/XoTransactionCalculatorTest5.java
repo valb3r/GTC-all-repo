@@ -10,8 +10,8 @@ import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.Warmu
 import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.XoTransactionCalculator;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.precision.dto.XoTradeCondition;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
@@ -27,7 +27,7 @@ public class XoTransactionCalculatorTest5 extends BaseMockitoTest {
 
     private XoTradeCondition condition;
 
-    @Before
+    @BeforeEach
     public void init() {
         condition = new XoTradeCondition(
                 "K1", 1000.0,

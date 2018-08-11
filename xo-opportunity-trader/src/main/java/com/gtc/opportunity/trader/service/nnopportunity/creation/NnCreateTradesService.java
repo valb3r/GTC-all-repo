@@ -13,7 +13,7 @@ import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
-import com.gtc.opportunity.trader.service.xoopportunity.common.TradeCreationService;
+import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.Reason;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.RejectionException;

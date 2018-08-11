@@ -39,7 +39,7 @@ dependencies {
     compile "ws.wamp.jawampa:jawampa-netty:${versions.rxWamp}"
     compile "com.newrelic.agent.java:newrelic-api:${versions.newRelicAPI}"
 
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
 }
 
 jar {

@@ -23,6 +23,8 @@ public class Wallet extends ByClientAndCurrency {
     @Audited
     private BigDecimal balance;
 
+    private BigDecimal reservedBalance = BigDecimal.ZERO;
+
     private LocalDateTime statusUpdated;
 
     @Version

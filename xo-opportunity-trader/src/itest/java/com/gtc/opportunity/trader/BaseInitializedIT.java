@@ -30,6 +30,7 @@ public abstract class BaseInitializedIT extends BaseIT {
     protected static final int SCALE_AMOUNT = 2;
     protected static final BigDecimal MIN_ORDER = BigDecimal.ONE;
     protected static final BigDecimal MAX_ORDER = BigDecimal.TEN;
+    protected static final BigDecimal WALLET_BAL = BigDecimal.TEN;
 
     @Autowired
     protected ClientRepository clientRepository;
@@ -89,13 +90,13 @@ public abstract class BaseInitializedIT extends BaseIT {
         walletFrom = walletRepository.save(Wallet.builder()
                 .client(createdClient)
                 .currency(FROM)
-                .balance(BigDecimal.TEN)
+                .balance(WALLET_BAL)
                 .build());
 
         walletTo = walletRepository.save(Wallet.builder()
                 .client(createdClient)
                 .currency(TO)
-                .balance(BigDecimal.TEN)
+                .balance(WALLET_BAL)
                 .build());
     }
 }
