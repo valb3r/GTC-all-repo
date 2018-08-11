@@ -59,3 +59,9 @@ idea {
         downloadSources = true
     }
 }
+
+subprojects {
+    tasks.withType(Test) {
+        useJUnitPlatform()
+    }
+}
