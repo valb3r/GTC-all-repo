@@ -98,7 +98,7 @@ public class NnCreateTradesService {
 
         sell.getCommand().setRetryStrategy(RetryStrategy.BASIC_RETRY);
 
-        persistNnTrade(config, sell, buy, details);
+        persistNnTrade(config, buy, sell, details);
 
         commander.createOrder(sell.getCommand());
     }
@@ -133,7 +133,7 @@ public class NnCreateTradesService {
     private void persistNnTrade(ClientConfig config, TradeDto first, TradeDto second, StrategyDetails details) {
         BigDecimal amount = amount(first, second);
         Profits profits = profitInFromCurrency(config, first, second);
-        AcceptedNnTrade trade = AcceptedNnTrade.builder()
+        AcceptedNnTrade nnTrade = AcceptedNnTrade.builder()
                 .client(config.getClient())
                 .currencyFrom(config.getCurrency())
                 .currencyTo(config.getCurrencyTo())
@@ -149,13 +149,24 @@ public class NnCreateTradesService {
                 .averageActLabelAgeS(details.getAvgActLabelAgeS())
                 .status(NnAcceptStatus.MASTER_UNKNOWN)
                 .build();
-        trade = nnTradeRepository.save(trade);
+        nnTrade = nnTradeRepository.save(nnTrade);
+        Trade firstTrade = first.getTrade();
+        Trade secondTrade = second.getTrade();
 
-        // FIXME: this should be dealt via cascading
-        first.getTrade().setNnOrder(trade);
-        second.getTrade().setNnOrder(trade);
+        firstTrade.setNnOrder(nnTrade);
+        secondTrade.setNnOrder(nnTrade);
+
+        saveDependant(firstTrade);
+        saveDependant(secondTrade);
+
         tradeRepository.save(first.getTrade());
         tradeRepository.save(second.getTrade());
+    }
+
+    private void saveDependant(Trade trade) {
+        if (null != trade.getDependsOn()) {
+            trade.setDependsOn(tradeRepository.save(trade.getDependsOn()));
+        }
     }
 
     private static BigDecimal amount(TradeDto buy, TradeDto sell) {
