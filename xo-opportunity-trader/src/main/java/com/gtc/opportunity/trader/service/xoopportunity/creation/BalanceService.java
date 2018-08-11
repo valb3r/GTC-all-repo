@@ -52,16 +52,20 @@ public class BalanceService {
         Wallet wallet = walletRepository.findByClientAndCurrency(trade.getClient(), charged)
                 .orElseThrow(() -> new IllegalStateException(BROKEN_CACHE));
 
+        BigDecimal tradeAmount = tradeAmount(trade, charged);
         BigDecimal reserved = wallet.getReservedBalance();
-
-        if (charged.equals(trade.getCurrencyFrom())) {
-            return wallet.getBalance()
-                    .subtract(reserved)
-                    .compareTo(trade.getAmount().abs()) >= 0;
+        if (null != trade.getDependsOn()) {
+            reserved = reserved.subtract(tradeAmount);
         }
 
-        return wallet.getBalance().subtract(reserved)
-                .compareTo(trade.getAmount().abs().multiply(trade.getPrice())) >= 0;
+        return wallet.getBalance().subtract(reserved).compareTo(tradeAmount) >= 0;
+    }
+
+    private static BigDecimal tradeAmount(Trade trade, TradingCurrency charged) {
+        if (charged.equals(trade.getCurrencyFrom())) {
+            return trade.getAmount().abs();
+        }
+        return trade.getAmount().abs().multiply(trade.getPrice());
     }
 
     @Transactional(readOnly = true)
