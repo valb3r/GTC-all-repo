@@ -1,6 +1,5 @@
 package com.gtc.opportunity.trader.service.nnopportunity.solver;
 
-import com.google.common.util.concurrent.RateLimiter;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
@@ -10,6 +9,8 @@ import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.NnModelPredict;
+import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
+import com.gtc.opportunity.trader.service.nnopportunity.solver.time.RateLimiter;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
 import com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
@@ -22,6 +23,8 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +48,7 @@ public class NnSolver {
     private final Map<KeyAndStrategy, NnModelPredict> predictors = new ConcurrentHashMap<>();
     private final Map<String, RateLimiter> limiters = new ConcurrentHashMap<>();
 
+    private final LocalTime localTime;
     private final ConfigCache cfgCache;
     private final ModelFactory factory;
     private final NnDataRepository repository;
@@ -138,7 +142,7 @@ public class NnSolver {
         long noopOld = (long) snapshot.getNoopLabel().stream().mapToLong(FlatOrderBook::getTimestamp).average()
                 .orElse(0.0);
 
-        return System.currentTimeMillis() - Math.min(actOld, noopOld)
+        return localTime.timestampMs() - Math.min(actOld, noopOld)
                 >= cfgCache.requireConfig(snapshot).getOldThresholdM() * MILLIS_IN_MINUTE;
     }
 
@@ -146,7 +150,10 @@ public class NnSolver {
         NnConfig config = cfgCache.requireConfig(book);
         return limiters.computeIfAbsent(
                 limiterKey(book),
-                id -> RateLimiter.create(config.getBookTestForOpenPerS().doubleValue())
+                id -> new RateLimiter(
+                        BigDecimal.ONE.divide(config.getBookTestForOpenPerS(), MathContext.DECIMAL128)
+                                .movePointRight(3).longValue(),
+                        localTime)
         );
     }
 

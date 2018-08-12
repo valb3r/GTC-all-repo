@@ -5,6 +5,7 @@ import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
+import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -29,22 +30,24 @@ public class NnModelPredict {
     @Getter
     private final long creationTimestamp;
 
+    private final LocalTime localTime;
     private final FeatureMapper featureMapper;
     private final NnConfig nnConfig;
     private final MultiLayerNetwork model;
     private final int avgNoopLabelAgeS;
     private final int avgActLabelAgeS;
 
-    NnModelPredict(NnConfig config, Snapshot snapshot, FeatureMapper mapper) throws TrainingFailed {
+    NnModelPredict(LocalTime localTime, NnConfig config, Snapshot snapshot, FeatureMapper mapper) throws TrainingFailed {
+        this.localTime = localTime;
         this.nnConfig = config;
         this.model = new MultiLayerNetwork(buildModelConfig(config));
         this.model.init();
         this.featureMapper = mapper;
-        this.creationTimestamp = System.currentTimeMillis();
+        this.creationTimestamp = localTime.timestampMs();
         Splitter split = new Splitter(config, snapshot);
         trainModel(split);
         assesModel(split);
-        long timestamp = System.currentTimeMillis();
+        long timestamp = localTime.timestampMs();
         avgNoopLabelAgeS = (int) (split.getNoopTrain().stream()
                 .mapToDouble(it -> timestamp - it.getTimestamp()).average().orElse(0.0) / 1000.0);
         avgActLabelAgeS = (int) (split.getProceedTrain().stream()
@@ -62,7 +65,7 @@ public class NnModelPredict {
         return Optional.of(new StrategyDetails(
                 strategy,
                 voteValue,
-                (int) (System.currentTimeMillis() - creationTimestamp) / 1000,
+                (int) (localTime.timestampMs() - creationTimestamp) / 1000,
                 avgNoopLabelAgeS,
                 avgActLabelAgeS
         ));
