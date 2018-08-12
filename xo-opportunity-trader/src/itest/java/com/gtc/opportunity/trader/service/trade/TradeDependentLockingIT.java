@@ -15,7 +15,7 @@ import org.springframework.statemachine.service.StateMachineService;
  * then ack/done master and 4th trade passes and 5th fails (master amount released).
  * then cancels master and 4th trade passes and 5th passes (both amounts are released).
  */
-public class TradeDependentLockingIT extends BaseLocking {
+public class TradeDependentLockingIT extends BaseLockingIT {
 
     @Autowired
     private StateMachineService<TradeStatus, TradeEvent> stateMachineService;

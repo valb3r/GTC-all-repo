@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * 3rd trade which passes, try to create 4th trade and it fails
  */
 @Transactional(propagation = Propagation.NEVER)
-public class TradeBalanceLockingIT extends BaseLocking {
+public class TradeBalanceLockingIT extends BaseLockingIT {
 
     @Autowired
     private WsGatewayResponseListener listener;

@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Created by Valentyn Berezin on 11.08.18.
  */
-public abstract class BaseLocking extends BaseInitializedIT {
+public abstract class BaseLockingIT extends BaseInitializedIT {
 
     @Autowired
     protected TradeCreationService creationService;
