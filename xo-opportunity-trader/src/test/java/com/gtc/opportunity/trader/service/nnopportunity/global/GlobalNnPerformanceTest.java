@@ -212,9 +212,9 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         return NnConfig.builder()
                 .clientCfg(cfg)
                 .averageDtSBetweenLabels(new BigDecimal("0.5"))
-                .bookTestForOpenPerS(new BigDecimal("0.1"))
-                .collectNlabeled(1000)
-                .futureNwindow(36000)
+                .bookTestForOpenPerS(env.getBookTestForOpenPerS())
+                .collectNlabeled(env.getCollectNlabellled())
+                .futureNwindow(env.getFutureNwindow())
                 .futurePriceGainPct(new BigDecimal(env.getFutureGainPct().doubleValue()))
                 .networkYamlSpec(env.getNnConfig())
                 .noopThreshold(env.getNoopThreshold())
@@ -293,8 +293,11 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         private BigDecimal minOrder = new BigDecimal(get("MIN_ORDER", "1"));
         private BigDecimal maxOrder = new BigDecimal(get("MAX_ORDER", "10"));
         private int rebuildModelEachN = Integer.valueOf(get("REBUILD_MODEL_EACH_N", "10000"));
+        private int collectNlabellled = Integer.valueOf(get("COLLECT_N_LABELED", "1000"));
+        private int futureNwindow = Integer.valueOf(get("FUTURE_N_WINDOW", "36000"));
         private String nnConfig = getConfig(get("NN_CONFIG", "nn/default_nn.yaml"));
 
+        private BigDecimal bookTestForOpenPerS = new BigDecimal(get("BOOK_TEST_FOR_OPEN_S", "0.01"));
         private BigDecimal futureGainPct = new BigDecimal(get("FUTURE_GAIN_PCT", "0.2"));
         private BigDecimal noopThreshold = new BigDecimal(get("NOOP_THRESHOLD", "1.002"));
 
