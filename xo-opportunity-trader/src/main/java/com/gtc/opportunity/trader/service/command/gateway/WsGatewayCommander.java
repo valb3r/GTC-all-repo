@@ -1,5 +1,6 @@
 package com.gtc.opportunity.trader.service.command.gateway;
 
+import com.gtc.model.gateway.BaseMessage;
 import com.gtc.model.gateway.command.account.GetAllBalancesCommand;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
@@ -24,11 +25,13 @@ public class WsGatewayCommander {
 
     public void createOrder(@Valid CreateOrderCommand command) {
         log.info("Requesting to create order {}", command);
+        command.setPriority(BaseMessage.HIGH_PRIO);
         client.sendCommand(command);
     }
 
     public void createOrders(@Valid MultiOrderCreateCommand command) {
         log.info("Requesting to create composite order {}", command);
+        command.setPriority(BaseMessage.HIGH_PRIO);
         client.sendCommand(command);
     }
 

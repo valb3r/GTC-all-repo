@@ -32,11 +32,6 @@ import java.util.function.BiConsumer;
 @Service
 public class MessageRateEqualizer {
 
-    private static final int HIGH_PRIO = 0;
-    private static final int LOW_PRIO = 10;
-
-    private static final Map<String, Integer> PRIORITIES = ImmutableMap.of(CreateOrderCommand.TYPE, HIGH_PRIO);
-
     private final Map<String, Queue<MessageAndSession>> messagesByClient = new ConcurrentHashMap<>();
 
     private final RateEqualizerConf equalizerConf;
@@ -65,16 +60,15 @@ public class MessageRateEqualizer {
             throw new IllegalStateException("No handler");
         }
 
-        String key = key(subs);
         messagesByClient
                 .computeIfAbsent(
-                        key,
+                        key(subs),
                         id -> MinMaxPriorityQueue
                                 .orderedBy(Comparator.comparingInt(MessageAndSession::getPriority))
                                 .maximumSize(equalizerConf.getQueueCapacity())
                                 .create()
                 )
-                .add(new MessageAndSession(priority(key), session, message, handler));
+                .add(new MessageAndSession(subs.getPriority(), session, message, handler));
     }
 
     @Scheduled(fixedDelayString = "#{${app.rate-equalizer.requestsPerSec} * 1000}")
@@ -98,10 +92,6 @@ public class MessageRateEqualizer {
 
     private static String key(BaseMessage baseMessage) {
         return baseMessage.getClientName();
-    }
-
-    private int priority(String key) {
-        return PRIORITIES.getOrDefault(key, LOW_PRIO);
     }
 
     @Data
