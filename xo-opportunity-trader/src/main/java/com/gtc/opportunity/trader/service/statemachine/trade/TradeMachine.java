@@ -44,17 +44,17 @@ public class TradeMachine {
     }
 
     @Transactional
-    public void cancel(StateContext<TradeStatus, TradeEvent> state) {
-        processor.acceptAndGet(state, (trade, value) -> {});
-        acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.CANCEL);
-        releaser.release(id(state), true);
-    }
-
-    @Transactional
     public void done(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
         acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.TRADE_DONE);
         releaser.release(id(state));
+    }
+    
+    @Transactional
+    public void cancel(StateContext<TradeStatus, TradeEvent> state) {
+        processor.acceptAndGet(state, (trade, value) -> {});
+        acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.CANCEL);
+        releaser.release(id(state), true);
     }
 
     @Transactional
@@ -80,7 +80,7 @@ public class TradeMachine {
     private void error(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, Trade::setLastError);
         acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.ISSUE);
-        releaser.release(id(state));
+        releaser.release(id(state), true);
     }
 
     private static String id(StateContext<TradeStatus, TradeEvent> state) {
