@@ -210,7 +210,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         return NnConfig.builder()
                 .clientCfg(cfg)
                 .averageDtSBetweenLabels(new BigDecimal("0.5"))
-                .bookTestForOpenPerS(BigDecimal.ONE)
+                .bookTestForOpenPerS(new BigDecimal("0.1"))
                 .collectNlabeled(1000)
                 .futureNwindow(36000)
                 .futurePriceGainPct(new BigDecimal(env.getFutureGainPct().doubleValue()))
