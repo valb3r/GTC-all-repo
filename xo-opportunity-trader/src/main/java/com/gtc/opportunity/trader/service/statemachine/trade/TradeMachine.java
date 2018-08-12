@@ -49,7 +49,7 @@ public class TradeMachine {
         acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.TRADE_DONE);
         releaser.release(id(state));
     }
-    
+
     @Transactional
     public void cancel(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
