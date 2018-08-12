@@ -222,7 +222,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .oldThresholdM(Integer.MAX_VALUE)
                 .proceedFalsePositive(new BigDecimal("0.3"))
                 .trainRelativeSize(new BigDecimal("0.7"))
-                .truthThreshold(new BigDecimal("0.7"))
+                .truthThreshold(env.getTruthThreshold())
                 .enabled(true)
                 .build();
     }
@@ -297,6 +297,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         private int futureNwindow = Integer.valueOf(get("FUTURE_N_WINDOW", "36000"));
         private String nnConfig = getConfig(get("NN_CONFIG", "nn/default_nn.yaml"));
 
+        private BigDecimal truthThreshold = new BigDecimal(get("TRUTH_THRESHOLD", "0.7"));
         private BigDecimal bookTestForOpenPerS = new BigDecimal(get("BOOK_TEST_FOR_OPEN_S", "0.01"));
         private BigDecimal futureGainPct = new BigDecimal(get("FUTURE_GAIN_PCT", "0.2"));
         private BigDecimal noopThreshold = new BigDecimal(get("NOOP_THRESHOLD", "1.002"));
