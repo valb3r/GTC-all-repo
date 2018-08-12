@@ -65,9 +65,9 @@ public class NnConfig implements Serializable {
     @Column(name = "max_slave_delay_m")
     private int maxSlaveDelayM;
 
-    public int hashValue() {
-        return Objects.hashCode(futureNwindow, collectNlabeled, noopThreshold, truthThreshold, proceedFalsePositive,
-                averageDtSBetweenLabels, bookTestForOpenPerS, oldThresholdM, nTrainIterations,
-                trainRelativeSize, networkYamlSpec, futurePriceGainPct, expireOpenH, maxSlaveDelayM);
+    public int modelHashValue() {
+        return Objects.hashCode(futureNwindow, collectNlabeled, noopThreshold, truthThreshold,
+                proceedFalsePositive, averageDtSBetweenLabels, nTrainIterations,
+                trainRelativeSize, networkYamlSpec, futurePriceGainPct);
     }
 }

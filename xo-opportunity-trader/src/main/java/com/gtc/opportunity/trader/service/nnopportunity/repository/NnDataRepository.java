@@ -39,8 +39,8 @@ public class NnDataRepository {
         dataStream.compute(
                 key(orderBook),
                 (id, value) ->
-                        (null == value || value.getHashVer() != cfg.get().hashValue()) ?
-                                new VersionedDataContainer(cfg.get().hashValue(), new NnDataContainer(id, cfg.get()))
+                        (null == value || value.getHashVer() != cfg.get().modelHashValue()) ?
+                                new VersionedDataContainer(cfg.get().modelHashValue(), new NnDataContainer(id, cfg.get()))
                                 : value
         ).getData().add(BookFlattener.simplify(orderBook));
     }
