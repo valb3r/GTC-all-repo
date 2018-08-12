@@ -95,11 +95,11 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     public void init() {
         System.setProperty("ND4J_FALLBACK", "true");
         initClientConfigCache();
+        initLocalTime();
         testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig()));
         repository = new NnDataRepository(configs);
         mapper = new FeatureMapper();
-        modelFactory = new ModelFactory(mapper, configs);
-        when(localTime.timestampMs()).thenAnswer(invocation -> lastBookTimestamp.get());
+        modelFactory = new ModelFactory(localTime, mapper, configs);
         solver = new NnSolver(localTime, configs, modelFactory, repository);
         createTradesService = tradesService();
         nnAnalyzer = new NnAnalyzer(solver, createTradesService);
@@ -259,6 +259,11 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                     trade
             );
         });
+    }
+
+    private void initLocalTime() {
+        localTime = mock(LocalTime.class);
+        when(localTime.timestampMs()).thenAnswer(invocation -> lastBookTimestamp.get());
     }
 
     @Data
