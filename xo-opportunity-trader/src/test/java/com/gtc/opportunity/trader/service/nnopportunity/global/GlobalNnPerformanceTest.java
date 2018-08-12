@@ -25,6 +25,7 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
+import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -38,6 +39,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -74,6 +76,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private EnvContainer env = new EnvContainer();
 
+    private AtomicLong lastBookTimestamp = new AtomicLong();
+    private LocalTime localTime;
     private TestTradeRepository testTradeRepository;
     private ConfigCache configs;
     private NnDataRepository repository;
@@ -95,7 +99,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         repository = new NnDataRepository(configs);
         mapper = new FeatureMapper();
         modelFactory = new ModelFactory(mapper, configs);
-        solver = new NnSolver(configs, modelFactory, repository);
+        when(localTime.timestampMs()).thenAnswer(invocation -> lastBookTimestamp.get());
+        solver = new NnSolver(localTime, configs, modelFactory, repository);
         createTradesService = tradesService();
         nnAnalyzer = new NnAnalyzer(solver, createTradesService);
         disptacher = new NnDisptacher(repository, nnAnalyzer, configs);
@@ -111,6 +116,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         try (HistoryBookReader reader = reader()) {
             while (true) {
                 OrderBook book = reader.read();
+                lastBookTimestamp.set(book.getMeta().getTimestamp());
                 testTradeRepository.acceptOrderBook(book);
                 pointIndex++;
                 disptacher.acceptOrderBook(book);
