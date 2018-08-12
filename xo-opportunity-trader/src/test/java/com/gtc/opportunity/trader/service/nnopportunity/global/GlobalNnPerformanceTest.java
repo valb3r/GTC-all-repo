@@ -41,8 +41,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -227,8 +228,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     // Here comes great simplification - we create orders immediately
     private void initTradeCreationService(String name) {
 
-        when(tradeCreationService.createTradeNoSideValidation(any(Trade.class),
-                any(ClientConfig.class), any(BigDecimal.class), any(BigDecimal.class), anyBoolean(), anyBoolean())
+        when(tradeCreationService.createTradeNoSideValidation(nullable(Trade.class),
+                isA(ClientConfig.class), isA(BigDecimal.class), isA(BigDecimal.class), anyBoolean(), anyBoolean())
         ).thenAnswer(inv -> {
             Trade depends = inv.getArgument(0);
             ClientConfig cfg = inv.getArgument(1);
