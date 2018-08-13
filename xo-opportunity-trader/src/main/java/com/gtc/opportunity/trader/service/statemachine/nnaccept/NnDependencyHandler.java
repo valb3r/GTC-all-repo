@@ -27,7 +27,7 @@ public class NnDependencyHandler {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public boolean publishDependentOrderIfPossible(Trade dependent) {
-        if (!balanceService.canProceed(dependent)) {
+        if (!balanceService.canProceed(dependent, true)) {
             log.info("Can't proceed with dependent order id {} - low balance", dependent.getId());
             return false;
         }

@@ -7,6 +7,7 @@ import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.config.CacheConfig;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnConfig;
+import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.XoConfig;
 import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.NnConfigRepository;
@@ -52,6 +53,19 @@ public class ConfigCache {
         return cfgCache.get(
                 computeKey(clientName, from ,to),
                 () -> clientCfgRepository.findActiveByKey(clientName, from, to)
+        );
+    }
+
+    @SneakyThrows
+    @Transactional(readOnly = true)
+    public Optional<ClientConfig> getClientCfg(Trade trade) {
+        return cfgCache.get(
+                computeKey(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo()),
+                () -> clientCfgRepository.findActiveByKey(
+                        trade.getClient().getName(),
+                        trade.getCurrencyFrom(),
+                        trade.getCurrencyTo()
+                )
         );
     }
 

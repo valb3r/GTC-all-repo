@@ -87,4 +87,12 @@ public class TradeDependentLockingIT extends BaseLockingIT {
         tryCreateAndShouldCreate();
         tryCreateAndShouldCreate(null, true);
     }
+
+    @Test
+    public void testDependentLocked() {
+        Trade base = tryCreateAndShouldCreate();
+        tryCreateAndShouldCreate(base, true); // 10 + 10 / 0.999 * 0.999 - 10 = ~ 10
+        tryCreateAndShouldCreate(base, true); // 10 - 10 = 0
+        tryCreateAndShouldNotCreate(base, true); // 0 - 10 < 0
+    }
 }

@@ -27,7 +27,7 @@ public class ReplenishTradeCreationService {
     public CreateOrderCommand createTrade(Replenish replenish, AcceptedXoTrade xoTrade) {
         log.info("Creating trade for replenishing {}", replenish);
         TradeDto trade = creationService
-                .createTrade(null, replenish.getCfg(), replenish.getPrice(), replenish.getAmount(), replenish.isSell(), true);
+                .createTrade(null, replenish.getCfg(), replenish.getPrice(), replenish.getAmount(), replenish.isSell());
         trade.getTrade().setXoOrder(xoTrade);
         tradeRepository.save(trade.getTrade());
         return trade.getCommand();

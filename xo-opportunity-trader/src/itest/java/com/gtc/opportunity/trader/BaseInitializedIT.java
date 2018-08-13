@@ -24,13 +24,13 @@ public abstract class BaseInitializedIT extends BaseIT {
     protected static final String CLIENT = "binance";
     protected static final TradingCurrency FROM = TradingCurrency.EOS;
     protected static final TradingCurrency TO = TradingCurrency.Bitcoin;
-    protected static final BigDecimal TRADE_CHARGE_RATE_PCT = new BigDecimal("0.1");
+    protected static final BigDecimal TRADE_CHARGE_RATE_PCT = new BigDecimal("0.2");
     protected static final BigDecimal FUTURE_GAIN = new BigDecimal("0.2");
     protected static final int SCALE_PRICE = 7;
     protected static final int SCALE_AMOUNT = 2;
     protected static final BigDecimal MIN_ORDER = BigDecimal.ONE;
     protected static final BigDecimal MAX_ORDER = BigDecimal.TEN;
-    protected static final BigDecimal WALLET_BAL = BigDecimal.TEN;
+    protected static final BigDecimal WALLET_BAL = new BigDecimal("10.1");
 
     @Autowired
     protected ClientRepository clientRepository;

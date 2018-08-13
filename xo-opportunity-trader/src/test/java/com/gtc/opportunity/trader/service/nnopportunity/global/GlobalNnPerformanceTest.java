@@ -231,7 +231,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private void initTradeCreationService(String name) {
 
         when(tradeCreationService.createTradeNoSideValidation(nullable(Trade.class),
-                isA(ClientConfig.class), isA(BigDecimal.class), isA(BigDecimal.class), anyBoolean(), anyBoolean())
+                isA(ClientConfig.class), isA(BigDecimal.class), isA(BigDecimal.class), anyBoolean())
         ).thenAnswer(inv -> {
             log.info("Creating trade at {}", Instant.ofEpochMilli(lastBookTimestamp.get())
                     .atZone(ZoneId.systemDefault()).toLocalDateTime());

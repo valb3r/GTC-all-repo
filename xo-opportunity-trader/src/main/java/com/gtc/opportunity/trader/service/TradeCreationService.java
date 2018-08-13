@@ -55,14 +55,14 @@ public class TradeCreationService {
 
     @Transactional
     public TradeDto createTradeNoSideValidation(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount,
-                                                boolean isSell, boolean validateBalance) {
-        return persistAndProceed(dependsOn, cfg, price, amount, isSell, false, validateBalance);
+                                                boolean isSell) {
+        return persistAndProceed(dependsOn, cfg, price, amount, isSell, false);
     }
 
     @Transactional
-    public TradeDto createTrade(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount, boolean isSell,
-                                boolean validateBalance) {
-        return persistAndProceed(dependsOn, cfg, price, amount, isSell, true, validateBalance);
+    public TradeDto createTrade(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount,
+                                boolean isSell) {
+        return persistAndProceed(dependsOn, cfg, price, amount, isSell, true);
     }
 
     public CreateOrderCommand map(Trade trade) {
@@ -85,11 +85,14 @@ public class TradeCreationService {
     }
 
     private TradeDto persistAndProceed(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount,
-                                       boolean isSell, boolean validateSingleSide, boolean validateBalance) {
+                                       boolean isSell, boolean validateSingleSide) {
         Trade trade = buildTrade(dependsOn, cfg, price, amount, isSell);
         trade.setDependsOn(dependsOn);
 
-        if (validateBalance && !balanceService.canProceed(trade)) {
+        // reserving balance but it is not yet committed
+        balanceService.assignWallet(trade);
+        reserveBalance(trade);
+        if (!balanceService.canProceed(trade, false)) {
             throw new RejectionException(Reason.LOW_BAL);
         }
 
@@ -98,10 +101,7 @@ public class TradeCreationService {
             throw new RejectionException(Reason.SIDE_LIMIT);
         }
 
-        balanceService.proceed(trade);
         trade = tradeRepository.save(trade);
-        reserveBalance(trade);
-
         StateMachine<TradeStatus, TradeEvent> machine = stateMachineService.acquireStateMachine(trade.getId());
 
         if (null == dependsOn) {

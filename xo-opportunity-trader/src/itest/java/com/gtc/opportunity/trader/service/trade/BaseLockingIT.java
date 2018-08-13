@@ -10,6 +10,7 @@ import com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.R
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 import static com.gtc.opportunity.trader.service.xoopportunity.creation.fastexception.Reason.LOW_BAL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,7 +44,11 @@ public abstract class BaseLockingIT extends BaseInitializedIT {
     }
 
     protected void tryCreateAndShouldNotCreate(boolean isSell) {
-        assertThrows(RejectionException.class, () -> create(null, isSell), LOW_BAL.getMsg());
+        tryCreateAndShouldNotCreate(null, isSell);
+    }
+
+    protected void tryCreateAndShouldNotCreate(Trade dependsOn, boolean isSell) {
+        assertThrows(RejectionException.class, () -> create(dependsOn, isSell), LOW_BAL.getMsg());
     }
 
     protected Trade create() {
@@ -55,9 +60,13 @@ public abstract class BaseLockingIT extends BaseInitializedIT {
                 dependsOn,
                 createdConfig,
                 BigDecimal.ONE,
-                BigDecimal.TEN,
-                isSell,
-                null == dependsOn
+                null == dependsOn ?
+                        BigDecimal.TEN
+                        .divide(
+                                BigDecimal.ONE.subtract(TRADE_CHARGE_RATE_PCT.movePointLeft(2)),
+                                MathContext.DECIMAL128) :
+                        BigDecimal.TEN,
+                isSell
         ).getTrade();
     }
 }
