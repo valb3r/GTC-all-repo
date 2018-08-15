@@ -70,8 +70,8 @@ public class TradeCreationService {
                 .clientName(trade.getClient().getName())
                 .currencyFrom(trade.getCurrencyFrom().getCode())
                 .currencyTo(trade.getCurrencyTo().getCode())
-                .price(trade.getOpeningPrice().stripTrailingZeros()) // db does not preserve precision
-                .amount(trade.getOpeningAmount().stripTrailingZeros()) // db does not preserve precision
+                .price(cleanBigDecimal(trade.getOpeningPrice())) // db does not preserve precision
+                .amount(cleanBigDecimal(trade.getOpeningAmount())) // db does not preserve precision
                 .id(trade.getId())
                 .orderId(trade.getId())
                 .build();
@@ -82,6 +82,10 @@ public class TradeCreationService {
         }
 
         return comm;
+    }
+
+    private static BigDecimal cleanBigDecimal(BigDecimal value) {
+        return new BigDecimal(value.stripTrailingZeros().toPlainString());
     }
 
     private TradeDto persistAndProceed(Trade dependsOn, ClientConfig cfg, BigDecimal price, BigDecimal amount,
