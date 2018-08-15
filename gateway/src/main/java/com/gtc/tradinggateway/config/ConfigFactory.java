@@ -105,13 +105,13 @@ public class ConfigFactory {
 
     public static class BigDecimalSerializer extends StdSerializer<BigDecimal> {
 
-        public BigDecimalSerializer() {
+        BigDecimalSerializer() {
             super(BigDecimal.class);
         }
 
         @Override
         public void serialize(BigDecimal value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-            gen.writeString(value.toPlainString());
+            gen.writeNumber(value.toPlainString());
         }
     }
 }
