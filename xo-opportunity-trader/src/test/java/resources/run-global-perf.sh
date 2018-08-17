@@ -18,7 +18,7 @@ mkdir -p logs
 
 for gain in $(seq 1 $max_gain);
 do
-	for level in $(seq 1 $(( max_gain * 2)));
+	for level in $(seq 1 $(( gain * 2)));
 	do
 		export FUTURE_GAIN_PCT="0.$gain"
 		export NOOP_THRESHOLD="1.00$level"
