@@ -1,6 +1,8 @@
 #!/bin/bash
 
-max_gain=5
+if [ -z "$MAX_GAIN" ]; then
+    MAX_GAIN=5
+fi
 
 export CLIENT_NAME="binance"
 export FROM="EOS"
@@ -16,9 +18,9 @@ fi
 
 mkdir -p logs
 
-for gain in $(seq 1 $max_gain);
+for gain in $(seq 1 $MAX_GAIN);
 do
-	for level in $(seq 1 $(( gain * 2)));
+	for level in $(seq 1 $(( MAX_GAIN * 2)));
 	do
 		export FUTURE_GAIN_PCT="0.$gain"
 		export NOOP_THRESHOLD="1.00$level"
