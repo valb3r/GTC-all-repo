@@ -37,12 +37,12 @@ fi
 
 if [ -z "$START_DATE" ]; then
     read -p "START_DATE (iso i.e. 2018-08-01T00:00:00): " START_DATE
-    export START_DATE=$START_DATE
+    export START=$START_DATE
 fi
 
 if [ -z "$END_DATE" ]; then
     read -p "END_DATE (iso i.e. 2018-08-01T00:00:00): " END_DATE
-    export END_DATE=$END_DATE
+    export END=$END_DATE
 fi
 
 if [ -z "$MAX_GAIN" ]; then
