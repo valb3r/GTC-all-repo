@@ -103,3 +103,8 @@ task integrationTest(type: Test, dependsOn: jar) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 }
+
+test {
+    println "" + Boolean.valueOf("$System.env.SHOW_STREAMS")
+    testLogging.showStandardStreams = Boolean.valueOf("$System.env.SHOW_STREAMS")
+}

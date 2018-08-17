@@ -99,7 +99,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         System.setProperty("ND4J_FALLBACK", "true");
         initClientConfigCache();
         initLocalTime();
-        testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig()));
+        testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig()), env);
         repository = new NnDataRepository(configs);
         mapper = new FeatureMapper();
         modelFactory = new ModelFactory(localTime, mapper, configs);
@@ -272,7 +272,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     }
 
     @Data
-    private static class EnvContainer {
+    static class EnvContainer {
         // Are set via env:
         private String historyDir = get("HISTORY_DIR", "/mnt/storage-box/bid/history");
         private String clientName = get("CLIENT_NAME", "binance");

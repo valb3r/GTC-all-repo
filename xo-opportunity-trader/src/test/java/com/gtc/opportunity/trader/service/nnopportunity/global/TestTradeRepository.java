@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,13 +36,17 @@ import java.util.stream.Collectors;
 class TestTradeRepository {
 
     private static final long MILLIS_IN_10M = 600000;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Map<String, Map<CurrencyPair, List<Opened>>> byClientPairOrders =
             new ConcurrentHashMap<>();
 
     private final Map<TradingCurrency, BigDecimal> lockedBalance = new ConcurrentHashMap<>();
     private final List<Closed> done = new CopyOnWriteArrayList<>();
+
     private final Map<String, ClientConfig> configs;
+    private final GlobalNnPerformanceTest.EnvContainer envContainer;
+
     private LocalDateTime min = LocalDateTime.MAX;
     private LocalDateTime max = LocalDateTime.MIN;
     private LocalDateTime current = LocalDateTime.MIN;
@@ -113,12 +118,13 @@ class TestTradeRepository {
         Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done, MILLIS_IN_10M);
 
         log.info("--------------------------- Statistics for {} ------------------------", client);
-        reportJsonStats(doneBalance, pairwiseDoneBalance, pairwiseBestAmounts, timeToClose);
+        reportJsonStats(client, doneBalance, pairwiseDoneBalance, pairwiseBestAmounts, timeToClose);
     }
 
     @SneakyThrows
     @SuppressWarnings("unchecked")
     private void reportJsonStats(
+            String client,
             Map<TradingCurrency, BigDecimal> doneBalance,
             Map<TradingCurrency, BigDecimal> pairwiseDoneBalance,
             Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts,
@@ -129,6 +135,12 @@ class TestTradeRepository {
         Function<String, Map<String, Object>> reportKey = root ->
                 (Map<String, Object>) report.computeIfAbsent(root, id -> new LinkedHashMap<String, Object>());
 
+        report.put("client", client);
+        report.put("gain", envContainer.getFutureGainPct());
+        report.put("threshold", envContainer.getNoopThreshold());
+        report.put("chargeRatePct", envContainer.getChargeRatePct());
+        report.put("start", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(min));
+        report.put("end", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(max));
         doneBalance.forEach((k, v) -> reportKey.apply("totalDone").put(k.getCode(), v));
         lockedBalance.forEach((k, v) -> reportKey.apply("lockMaxOnStat").put(k.getCode(), v));
         pairwiseDoneBalance.forEach((k, v) -> reportKey.apply("balanceChangeByDone").put(k.getCode(), v));
@@ -138,9 +150,9 @@ class TestTradeRepository {
         timeToClose.forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
         );
-        String reported = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(report);
-        log.info("Porcelain `{}`", report);
-        log.info("{}", reported);
+
+        log.info("Porcelain `{}`", MAPPER.writer().writeValueAsString(report));
+        log.info("{}", MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(report));
     }
 
     private List<Closed> computePaired(List<Closed> closed) {
