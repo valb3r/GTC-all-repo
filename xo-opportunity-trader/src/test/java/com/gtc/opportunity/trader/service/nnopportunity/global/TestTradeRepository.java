@@ -1,5 +1,6 @@
 package com.gtc.opportunity.trader.service.nnopportunity.global;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.gtc.meta.CurrencyPair;
@@ -10,6 +11,7 @@ import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.ClientConfig;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
@@ -22,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -110,22 +113,34 @@ class TestTradeRepository {
         Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done, MILLIS_IN_10M);
 
         log.info("--------------------------- Statistics for {} ------------------------", client);
-        log.info("Total done balance");
-        doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
-        log.info("Locked by orders balance");
-        lockedBalance.forEach((k, v) -> log.info("Lock (max as seen on stat) {} {}", k, v));
-        log.info("Pairwise done balance");
-        pairwiseDoneBalance.forEach((k, v) -> log.info("{} {}", k, v));
-        log.info("Pairwise amounts at best statistics");
-        pairwiseBestAmounts.forEach((pair, vals) -> vals.forEach((k, v) -> {
-            log.info("{} {}:", pair, k ? "SELL" : "BUY");
-            logSeriesStats(v);
-        }));
-        log.info("Order closing time statistics (having at least 10m wait time)");
-        timeToClose.forEach((k, v) -> {
-            log.info("{}:", k ? "SELL" : "BUY");
-            logSeriesStats(v);
-        });
+        reportJsonStats(doneBalance, pairwiseDoneBalance, pairwiseBestAmounts, timeToClose);
+    }
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    private void reportJsonStats(
+            Map<TradingCurrency, BigDecimal> doneBalance,
+            Map<TradingCurrency, BigDecimal> pairwiseDoneBalance,
+            Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts,
+            Map<Boolean, List<Long>> timeToClose) {
+
+        Supplier<Map<String, Object>> newMap = LinkedHashMap::new;
+        Map<String, Object> report = newMap.get();
+        Function<String, Map<String, Object>> reportKey = root ->
+                (Map<String, Object>) report.computeIfAbsent(root, id -> new LinkedHashMap<String, Object>());
+
+        doneBalance.forEach((k, v) -> reportKey.apply("totalDone").put(k.getCode(), v));
+        lockedBalance.forEach((k, v) -> reportKey.apply("lockMaxOnStat").put(k.getCode(), v));
+        pairwiseDoneBalance.forEach((k, v) -> reportKey.apply("balanceChangeByDone").put(k.getCode(), v));
+        pairwiseBestAmounts.forEach((pair, vals) -> vals.forEach((k, v) ->
+            logSeriesStats(v, reportKey.apply("whenClosingBest" + (k ? "Sell" : "Buy") + "Amount"))
+        ));
+        timeToClose.forEach((k, v) ->
+                logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
+        );
+        String reported = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(report);
+        log.info("Porcelain `{}`", report);
+        log.info("{}", reported);
     }
 
     private List<Closed> computePaired(List<Closed> closed) {
@@ -181,7 +196,7 @@ class TestTradeRepository {
     }
 
     private Map<TradingCurrency, BigDecimal> computeOrderBalance(String client, List<Closed> closed) {
-        Map<TradingCurrency, BigDecimal> doneBalance = new HashMap<>();
+        Map<TradingCurrency, BigDecimal> doneBalance = new EnumMap<>(TradingCurrency.class);
         for (Closed val : closed) {
             BigDecimal from;
             BigDecimal to;
@@ -209,7 +224,7 @@ class TestTradeRepository {
     }
 
     private void computeLockedBalance(String client) {
-        Map<TradingCurrency, BigDecimal> currentLocked = new HashMap<>();
+        Map<TradingCurrency, BigDecimal> currentLocked = new EnumMap<>(TradingCurrency.class);
         List<Opened> open = byClientPairOrders.getOrDefault(client, ImmutableMap.of()).values().stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -250,16 +265,16 @@ class TestTradeRepository {
         return new OrderBalance(from, to);
     }
 
-    private <T extends Number> void logSeriesStats(List<T> values) {
+    private <T extends Number> void logSeriesStats(List<T> values, Map<String, Object> target) {
         DescriptiveStatistics statistics = new DescriptiveStatistics();
         values.forEach(it -> statistics.addValue(it.doubleValue()));
-        log.info("Mean: {}", statistics.getMean());
-        log.info("Stdev: {}", statistics.getStandardDeviation());
-        log.info("10percentile: {}", statistics.getPercentile(10.0));
-        log.info("25percentile: {}", statistics.getPercentile(25.0));
-        log.info("50percentile: {}", statistics.getPercentile(50.0));
-        log.info("75percentile: {}", statistics.getPercentile(75.0));
-        log.info("90percentile: {}", statistics.getPercentile(90.0));
+        target.put("mean", statistics.getMean());
+        target.put("stdev", statistics.getStandardDeviation());
+        target.put("percentile10", statistics.getPercentile(10.0));
+        target.put("percentile25", statistics.getPercentile(25.0));
+        target.put("percentile50", statistics.getPercentile(50.0));
+        target.put("percentile75", statistics.getPercentile(75.0));
+        target.put("percentile90", statistics.getPercentile(90.0));
     }
 
     private BigDecimal getCharge(String client) {
