@@ -35,14 +35,14 @@ if [ -z "$SCALE_AMOUNT" ]; then
     export SCALE_AMOUNT=$SCALE_AMOUNT
 fi
 
-if [ -z "$START_DATE" ]; then
-    read -p "START_DATE (iso i.e. 2018-08-01T00:00:00): " START_DATE
-    export START=$START_DATE
+if [ -z "$START" ]; then
+    read -p "START_DATE (iso i.e. 2018-08-01T00:00:00): " START
+    export START=$START
 fi
 
-if [ -z "$END_DATE" ]; then
-    read -p "END_DATE (iso i.e. 2018-08-01T00:00:00): " END_DATE
-    export END=$END_DATE
+if [ -z "$END" ]; then
+    read -p "END_DATE (iso i.e. 2018-08-01T00:00:00): " END
+    export END=$END
 fi
 
 if [ -z "$MAX_GAIN" ]; then
