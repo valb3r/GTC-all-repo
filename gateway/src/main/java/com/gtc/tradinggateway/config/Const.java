@@ -39,5 +39,11 @@ public class Const {
         public static final String WS_API = "ws";
     }
 
+    @UtilityClass
+    public class RateEqualizer {
+
+        public static final String RATE_EQUALIZER = "rate-equalizer";
+    }
+
     public static final String STATISTICS = "statistics";
 }

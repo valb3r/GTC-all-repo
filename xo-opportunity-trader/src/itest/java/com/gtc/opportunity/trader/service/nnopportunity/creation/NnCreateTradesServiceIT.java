@@ -11,7 +11,7 @@ import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;

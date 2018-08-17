@@ -7,7 +7,7 @@ import com.gtc.opportunity.trader.domain.CryptoPricing;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.newrelic.api.agent.NewRelic;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +32,7 @@ public class TradePerformanceCalculator {
     private static final String PATH = "<Path>";
     private static final String CAN_PROFIT_MILLI_BTC = "Custom/<Path>/Open/ExpectedProfitMilliBtc";
     private static final String CLAIMED_PROFIT_MILLI_BTC = "Custom/<Path>/Open/ClaimedProfitMilliBtc";
+    private static final String CLAIMED_LOSS_MILLI_BTC = "Custom/<Path>/Open/ClaimedLossMilliBtc";
     private static final String ERR_LOST_MILLI_BTC = "Custom/<Path>/Error/LossMilliBtc";
     private static final String TOTAL_MILLI_BTC = "Custom/<Path>/Total/AmountMilliBtc";
     private static final String LATEST_TIME_TO_CLOSE = "Custom/<Path>/LatestTimeToCloseS";
@@ -54,18 +55,25 @@ public class TradePerformanceCalculator {
         Map<TradingCurrency, CryptoPricing> priceList = pricingRepository.priceList();
         BigDecimal expectedProfitBtc = BigDecimal.ZERO;
         BigDecimal claimedProfitBtc = BigDecimal.ZERO;
+        BigDecimal claimedLossBtc = BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal inOrders = BigDecimal.ZERO;
         BigDecimal inErrors = BigDecimal.ZERO;
 
         Map<T, List<Trade>> grouped = scopedTrades.stream().collect(Collectors.groupingBy(key));
 
+        Function<TradeStatus, Boolean> onlyDone = DONE::contains;
+
         for (List<Trade> trades : grouped.values()) {
 
-            expectedProfitBtc = expectedProfitBtc.add(computeExpectedProfit(trades, priceList));
+            expectedProfitBtc = expectedProfitBtc.add(computeExpectedBalanceChange(trades, priceList, status -> true));
 
-            if (trades.stream().filter(it -> DONE.contains(it.getStatus())).count() == trades.size()) {
-                claimedProfitBtc = claimedProfitBtc.add(computeExpectedProfit(trades, priceList));
+            if (ChainStatus.DONE == status(trades)) {
+                claimedProfitBtc = claimedProfitBtc.add(computeExpectedBalanceChange(trades, priceList, onlyDone));
+            }
+
+            if (ChainStatus.LOSS == status(trades)) {
+                claimedLossBtc = claimedLossBtc.add(computeExpectedBalanceChange(trades, priceList, onlyDone).abs());
             }
 
             inOrders = inOrders.add(
@@ -83,7 +91,7 @@ public class TradePerformanceCalculator {
             total = total.add(computeAmount(trades, priceList));
         }
 
-        return new Performance(expectedProfitBtc, claimedProfitBtc, total, inOrders, inErrors,
+        return new Performance(expectedProfitBtc, claimedProfitBtc, claimedLossBtc, total, inOrders, inErrors,
                 computeLatestTimeToClose(scopedTrades));
     }
 
@@ -93,6 +101,8 @@ public class TradePerformanceCalculator {
                 performance.getExpectedProfitBtc().floatValue() * 1000.0f);
         NewRelic.recordMetric(CLAIMED_PROFIT_MILLI_BTC.replace(PATH, pathPrefix),
                 performance.getClaimedProfitBtc().floatValue() * 1000.0f);
+        NewRelic.recordMetric(CLAIMED_LOSS_MILLI_BTC.replace(PATH, pathPrefix),
+                performance.getClaimedLossBtc().floatValue() * 1000.0f);
         NewRelic.recordMetric(TOTAL_MILLI_BTC.replace(PATH, pathPrefix),
                 performance.getTotal().floatValue() * 1000.0f);
         NewRelic.recordMetric(AMOUNT_IN_ORDERS_MILLI_BTC.replace(PATH, pathPrefix),
@@ -102,7 +112,8 @@ public class TradePerformanceCalculator {
         NewRelic.recordMetric(LATEST_TIME_TO_CLOSE.replace(PATH, pathPrefix), performance.getLatestTimeToCloseS());
     }
 
-    private BigDecimal computeExpectedProfit(List<Trade> trades, Map<TradingCurrency, CryptoPricing> priceList) {
+    private BigDecimal computeExpectedBalanceChange(List<Trade> trades, Map<TradingCurrency, CryptoPricing> priceList,
+                                                    Function<TradeStatus, Boolean> filter) {
         BigDecimal total = BigDecimal.ZERO;
 
         for (Trade trade : trades) {
@@ -115,7 +126,7 @@ public class TradePerformanceCalculator {
 
             CryptoPricing from = priceList.get(trade.getCurrencyFrom());
             CryptoPricing to = priceList.get(trade.getCurrencyTo());
-            if (null == from || null == to) {
+            if (null == from || null == to || !filter.apply(trade.getStatus())) {
                 continue;
             }
 
@@ -160,15 +171,40 @@ public class TradePerformanceCalculator {
         return ChronoUnit.SECONDS.between(last.getRecordedOn(), last.getStatusUpdated());
     }
 
+    private static ChainStatus status(List<Trade> trades) {
+        if (trades.stream().filter(it -> DONE.contains(it.getStatus())).count() == trades.size()) {
+            return ChainStatus.DONE;
+        }
+
+        if (trades.stream().anyMatch(it -> OPEN.contains(it.getStatus()))) {
+            return ChainStatus.OPEN;
+        }
+
+        if (trades.stream().anyMatch(it -> null == it.getDependsOn() && DONE.contains(it.getStatus()))) {
+            return ChainStatus.LOSS;
+        }
+
+        return ChainStatus.ERROR;
+    }
+
     @Data
     public static class Performance {
 
         private final BigDecimal expectedProfitBtc;
         private final BigDecimal claimedProfitBtc;
+        private final BigDecimal claimedLossBtc;
         private final BigDecimal total;
         private final BigDecimal inOrders;
         private final BigDecimal inErrors;
 
         private final long latestTimeToCloseS;
+    }
+
+    private enum ChainStatus {
+
+        DONE,
+        OPEN,
+        ERROR,
+        LOSS
     }
 }

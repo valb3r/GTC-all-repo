@@ -3,12 +3,8 @@ package com.gtc.opportunity.trader.config.statemachine;
 import com.gtc.opportunity.trader.domain.TradeEvent;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.service.statemachine.trade.TradeMachine;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -60,7 +56,8 @@ public class TradeStateMachineConfig extends StateMachineConfigurerAdapter<Trade
     @Override
     public void configure(StateMachineStateConfigurer<TradeStatus, TradeEvent> states) throws Exception {
         states.withStates()
-                .initial(UNKNOWN)
+                .initial(DEPENDS_ON)
+                .state(UNKNOWN)
                 .state(ERR_OPEN)
                 .state(NEED_RETRY)
                 .state(OPENED)
@@ -73,6 +70,10 @@ public class TradeStateMachineConfig extends StateMachineConfigurerAdapter<Trade
     public void configure(StateMachineTransitionConfigurer<TradeStatus, TradeEvent> transitions) throws Exception {
         transitions
                 .withExternal()
+                .event(TradeEvent.DEPENDENCY_DONE).source(DEPENDS_ON).target(UNKNOWN).action(machine::doneDependency)
+                .and().withExternal()
+                .event(TradeEvent.CANCELLED).source(DEPENDS_ON).target(CANCELLED).action(machine::cancel)
+                .and().withExternal()
                 .event(TradeEvent.ACK).source(UNKNOWN).target(OPENED).action(machine::ack)
                 .and().withExternal()
                 .event(TradeEvent.DONE).source(OPENED).target(CLOSED).action(machine::done)

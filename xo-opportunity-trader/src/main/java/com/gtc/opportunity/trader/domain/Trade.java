@@ -112,6 +112,12 @@ public class Trade implements Serializable {
 
     private boolean ignoreAsSideLimit;
 
+    private boolean balanceReleased;
+
+    @OneToOne
+    @JoinColumn(name = "depends_on")
+    private Trade dependsOn;
+
     public void setLastError(String lastError) {
         this.lastError = LongMessageLimiter.trunc(lastError);
     }
@@ -145,9 +151,9 @@ public class Trade implements Serializable {
         }
 
         if (isSell && walletFrom) {
-            return Optional.of(amount);
+            return Optional.of(openingAmount.abs());
         } else if (!isSell && walletTo) {
-            return Optional.of(expectedReverseAmount);
+            return Optional.of(openingAmount.multiply(openingPrice));
         }
 
         return Optional.of(BigDecimal.ZERO);

@@ -46,7 +46,7 @@ dependencies {
     compile "io.springfox:springfox-swagger2:${versions.swagger}"
     compile "io.springfox:springfox-swagger-ui:${versions.swagger}"
 
-    testCompile "junit:junit:${versions.junit}"
+    testCompile "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
     testCompile "org.mockito:mockito-all:${versions.mockito}"
     testCompile "org.assertj:assertj-core:${versions.assertJ}"
     testCompileOnly "org.projectlombok:lombok:"

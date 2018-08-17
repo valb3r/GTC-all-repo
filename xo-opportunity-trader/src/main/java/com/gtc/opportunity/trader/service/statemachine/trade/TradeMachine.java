@@ -1,9 +1,9 @@
 package com.gtc.opportunity.trader.service.statemachine.trade;
 
+import com.gtc.opportunity.trader.domain.AcceptEvent;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeEvent;
 import com.gtc.opportunity.trader.domain.TradeStatus;
-import com.gtc.opportunity.trader.domain.AcceptEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.TransientDataAccessException;
@@ -27,25 +27,34 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TradeMachine {
 
+    private final BalanceReleaser releaser;
     private final TradeMessageProcessor processor;
     private final AcceptInteractor acceptInteractor;
 
     @Transactional
-    public void ack(StateContext<TradeStatus, TradeEvent> state) {
+    public void doneDependency(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_ACK);
     }
 
     @Transactional
-    public void cancel(StateContext<TradeStatus, TradeEvent> state) {
+    public void ack(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        // FIXME NOP ?
+        acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.TRADE_ACK);
+        releaser.release(id(state));
     }
 
     @Transactional
     public void done(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, (trade, value) -> {});
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.TRADE_DONE);
+        acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.TRADE_DONE);
+        releaser.release(id(state));
+    }
+
+    @Transactional
+    public void cancel(StateContext<TradeStatus, TradeEvent> state) {
+        processor.acceptAndGet(state, (trade, value) -> {});
+        acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.CANCEL);
+        releaser.release(id(state), true);
     }
 
     @Transactional
@@ -70,6 +79,11 @@ public class TradeMachine {
 
     private void error(StateContext<TradeStatus, TradeEvent> state) {
         processor.acceptAndGet(state, Trade::setLastError);
-        acceptInteractor.sendToXoIfExists(state.getStateMachine().getId(), state, AcceptEvent.ISSUE);
+        acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.ISSUE);
+        releaser.release(id(state), true);
+    }
+
+    private static String id(StateContext<TradeStatus, TradeEvent> state) {
+        return state.getStateMachine().getId();
     }
 }

@@ -3,7 +3,7 @@ package com.gtc.opportunity.trader.service.nnopportunity;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

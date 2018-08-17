@@ -1,7 +1,7 @@
 package com.gtc.tradinggateway;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.MockitoAnnotations;
 
 import static org.mockito.Mockito.validateMockitoUsage;
@@ -11,12 +11,12 @@ import static org.mockito.Mockito.validateMockitoUsage;
  */
 public class BaseMockitoTest {
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
     }
 
-    @After
+    @AfterEach
     public void validate() {
         validateMockitoUsage();
     }

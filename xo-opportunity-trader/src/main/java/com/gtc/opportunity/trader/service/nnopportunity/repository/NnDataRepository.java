@@ -5,7 +5,7 @@ import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;
 import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -39,8 +39,8 @@ public class NnDataRepository {
         dataStream.compute(
                 key(orderBook),
                 (id, value) ->
-                        (null == value || value.getHashVer() != cfg.get().hashValue()) ?
-                                new VersionedDataContainer(cfg.get().hashValue(), new NnDataContainer(id, cfg.get()))
+                        (null == value || value.getHashVer() != cfg.get().modelHashValue()) ?
+                                new VersionedDataContainer(cfg.get().modelHashValue(), new NnDataContainer(id, cfg.get()))
                                 : value
         ).getData().add(BookFlattener.simplify(orderBook));
     }

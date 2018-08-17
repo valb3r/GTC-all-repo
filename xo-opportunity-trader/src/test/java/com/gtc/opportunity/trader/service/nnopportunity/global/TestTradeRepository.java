@@ -1,10 +1,10 @@
 package com.gtc.opportunity.trader.service.nnopportunity.global;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
-import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.ClientConfig;
@@ -36,29 +36,29 @@ class TestTradeRepository {
     private final Map<String, Map<CurrencyPair, List<Opened>>> byClientPairOrders =
             new ConcurrentHashMap<>();
 
+    private final Map<TradingCurrency, BigDecimal> lockedBalance = new ConcurrentHashMap<>();
     private final List<Closed> done = new CopyOnWriteArrayList<>();
-
+    private final Map<String, ClientConfig> configs;
     private LocalDateTime min = LocalDateTime.MAX;
     private LocalDateTime max = LocalDateTime.MIN;
     private LocalDateTime current = LocalDateTime.MIN;
-    private int currentPairId = 0;
     private long pointIndex = 0;
 
-    private final Map<String, ClientConfig> configs;
+    private static boolean isSell(CreateOrderCommand command) {
+        return command.getAmount().compareTo(BigDecimal.ZERO) < 0;
+    }
 
-    void acceptTrade(MultiOrderCreateCommand command, long networkLagPts) {
+    void acceptTrade(CreateOrderCommand command, long networkLagPts) {
         Map<CurrencyPair, List<Opened>> orders =
                 byClientPairOrders.computeIfAbsent(command.getClientName(), id -> new ConcurrentHashMap<>());
 
-        currentPairId++;
-        command.getCommands()
-                .forEach(cmd -> orders.computeIfAbsent(obtainPair(cmd), id -> new CopyOnWriteArrayList<>())
+        orders.computeIfAbsent(obtainPair(command), id -> new CopyOnWriteArrayList<>())
                 .add(new Opened(
-                        currentPairId,
+                        command.getId(),
                         pointIndex + networkLagPts,
                         current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
-                        cmd)
-                ));
+                        command)
+                );
     }
 
     void acceptOrderBook(OrderBook book) {
@@ -87,6 +87,7 @@ class TestTradeRepository {
                         book)
                 ).collect(Collectors.toList())
         );
+        computeLockedBalance(book.getMeta().getClient());
     }
 
     void logStats() {
@@ -104,7 +105,6 @@ class TestTradeRepository {
 
         Map<TradingCurrency, BigDecimal> doneBalance = computeOrderBalance(client, done);
         Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeOrderBalance(client, computePaired(done));
-        Map<TradingCurrency, BigDecimal> lockedBalance = computeLockedBalance(client);
         Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts =
                 computeClosingAmountsAtBest(computePaired(done));
         Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done, MILLIS_IN_10M);
@@ -113,7 +113,7 @@ class TestTradeRepository {
         log.info("Total done balance");
         doneBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Locked by orders balance");
-        lockedBalance.forEach((k, v) -> log.info("Lock {} {}", k, v));
+        lockedBalance.forEach((k, v) -> log.info("Lock (max as seen on stat) {} {}", k, v));
         log.info("Pairwise done balance");
         pairwiseDoneBalance.forEach((k, v) -> log.info("{} {}", k, v));
         log.info("Pairwise amounts at best statistics");
@@ -129,7 +129,7 @@ class TestTradeRepository {
     }
 
     private List<Closed> computePaired(List<Closed> closed) {
-        Map<Integer, Long> pairOccurency = closed.stream().map(Closed::getPairId)
+        Map<String, Long> pairOccurency = closed.stream().map(Closed::getPairId)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         return closed.stream()
                 .filter(it -> pairOccurency.get(it.getPairId()) == 2)
@@ -208,8 +208,8 @@ class TestTradeRepository {
         return doneBalance;
     }
 
-    private Map<TradingCurrency, BigDecimal> computeLockedBalance(String client) {
-        Map<TradingCurrency, BigDecimal> lockedBalance = new HashMap<>();
+    private void computeLockedBalance(String client) {
+        Map<TradingCurrency, BigDecimal> currentLocked = new HashMap<>();
         List<Opened> open = byClientPairOrders.getOrDefault(client, ImmutableMap.of()).values().stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -217,17 +217,22 @@ class TestTradeRepository {
         for (Opened val : open) {
             OrderBalance balance = computeWalletLock(val.getCommand());
 
-            lockedBalance.compute(
+            currentLocked.compute(
                     TradingCurrency.fromCode(val.getCommand().getCurrencyFrom()),
                     (id, bal) -> null == bal ? balance.getFrom() : bal.add(balance.getFrom())
             );
-            lockedBalance.compute(
+            currentLocked.compute(
                     TradingCurrency.fromCode(val.getCommand().getCurrencyTo()),
                     (id, bal) -> null == bal ? balance.getTo() : bal.add(balance.getTo())
             );
         }
 
-        return lockedBalance;
+        for (TradingCurrency currency : Sets.union(currentLocked.keySet(), lockedBalance.keySet())) {
+            lockedBalance.put(currency,
+                    currentLocked.getOrDefault(currency, BigDecimal.ZERO).abs()
+                            .max(lockedBalance.getOrDefault(currency, BigDecimal.ZERO).abs())
+            );
+        }
     }
 
     private OrderBalance computeWalletLock(CreateOrderCommand command) {
@@ -243,10 +248,6 @@ class TestTradeRepository {
         }
 
         return new OrderBalance(from, to);
-    }
-
-    private static boolean isSell(CreateOrderCommand command) {
-        return command.getAmount().compareTo(BigDecimal.ZERO) < 0;
     }
 
     private <T extends Number> void logSeriesStats(List<T> values) {
@@ -284,7 +285,7 @@ class TestTradeRepository {
     @Data
     private static class Closed {
 
-        private final int pairId;
+        private final String pairId;
         private final long timestampOpen;
         private final long timestampClose;
         private final CreateOrderCommand command;
@@ -294,7 +295,7 @@ class TestTradeRepository {
     @Data
     private static class Opened {
 
-        private final int pairId;
+        private final String pairId;
         private final long minimalIndexThatCanClose;
         private final long timestamp;
         private final CreateOrderCommand command;

@@ -6,7 +6,6 @@ import com.google.common.io.Resources;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
-import com.gtc.model.gateway.command.create.MultiOrderCreateCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.config.CacheConfig;
@@ -15,6 +14,7 @@ import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.repository.*;
+import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
@@ -25,26 +25,33 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
-import com.gtc.opportunity.trader.service.opportunity.common.TradeCreationService;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
+import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
+ * Note: orders are created immediately instead of going one-by-one
+ *
  * Test will only start if it sees property GLOBAL_NN_TEST == true.
  * Uses env. vars or (defaults):
  * HISTORY_DIR (/mnt/storage-box/bid/history)
@@ -72,6 +79,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
     private EnvContainer env = new EnvContainer();
 
+    private AtomicLong lastBookTimestamp = new AtomicLong();
+    private LocalTime localTime;
     private TestTradeRepository testTradeRepository;
     private ConfigCache configs;
     private NnDataRepository repository;
@@ -85,15 +94,16 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
 
-    @Before
+    @BeforeEach
     public void init() {
         System.setProperty("ND4J_FALLBACK", "true");
         initClientConfigCache();
+        initLocalTime();
         testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig()));
         repository = new NnDataRepository(configs);
         mapper = new FeatureMapper();
-        modelFactory = new ModelFactory(mapper, configs);
-        solver = new NnSolver(configs, modelFactory, repository);
+        modelFactory = new ModelFactory(localTime, mapper, configs);
+        solver = new NnSolver(localTime, configs, modelFactory, repository);
         createTradesService = tradesService();
         nnAnalyzer = new NnAnalyzer(solver, createTradesService);
         disptacher = new NnDisptacher(repository, nnAnalyzer, configs);
@@ -109,6 +119,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         try (HistoryBookReader reader = reader()) {
             while (true) {
                 OrderBook book = reader.read();
+                lastBookTimestamp.set(book.getMeta().getTimestamp());
                 testTradeRepository.acceptOrderBook(book);
                 pointIndex++;
                 disptacher.acceptOrderBook(book);
@@ -164,7 +175,6 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
         String name = getClientName();
         initTradeCreationService(name);
-        initGatewayOrderCreationHandler();
 
         return new NnCreateTradesService(commander, tradeCreationService, configs,
                 mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class));
@@ -202,9 +212,9 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         return NnConfig.builder()
                 .clientCfg(cfg)
                 .averageDtSBetweenLabels(new BigDecimal("0.5"))
-                .bookTestForOpenPerS(BigDecimal.ONE)
-                .collectNlabeled(1000)
-                .futureNwindow(36000)
+                .bookTestForOpenPerS(env.getBookTestForOpenPerS())
+                .collectNlabeled(env.getCollectNlabellled())
+                .futureNwindow(env.getFutureNwindow())
                 .futurePriceGainPct(new BigDecimal(env.getFutureGainPct().doubleValue()))
                 .networkYamlSpec(env.getNnConfig())
                 .noopThreshold(env.getNoopThreshold())
@@ -212,47 +222,53 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .oldThresholdM(Integer.MAX_VALUE)
                 .proceedFalsePositive(new BigDecimal("0.3"))
                 .trainRelativeSize(new BigDecimal("0.7"))
-                .truthThreshold(new BigDecimal("0.7"))
+                .truthThreshold(env.getTruthThreshold())
                 .enabled(true)
                 .build();
     }
 
+    // Here comes great simplification - we create orders immediately
     private void initTradeCreationService(String name) {
 
-        when(tradeCreationService.createTradeNoSideValidation(
-                any(ClientConfig.class), any(BigDecimal.class), any(BigDecimal.class), anyBoolean())
+        when(tradeCreationService.createTradeNoSideValidation(nullable(Trade.class),
+                isA(ClientConfig.class), isA(BigDecimal.class), isA(BigDecimal.class), anyBoolean(), anyBoolean())
         ).thenAnswer(inv -> {
-            ClientConfig cfg = inv.getArgumentAt(0, ClientConfig.class);
-            BigDecimal price = inv.getArgumentAt(1, BigDecimal.class);
-            BigDecimal amount = inv.getArgumentAt(2, BigDecimal.class);
-            boolean isSell = inv.getArgumentAt(3, Boolean.class);
+            log.info("Creating trade at {}", Instant.ofEpochMilli(lastBookTimestamp.get())
+                    .atZone(ZoneId.systemDefault()).toLocalDateTime());
+            Trade depends = inv.getArgument(0);
+            ClientConfig cfg = inv.getArgument(1);
+            BigDecimal price = inv.getArgument(2);
+            BigDecimal amount = inv.getArgument(3);
+            boolean isSell = inv.getArgument(4);
 
             String id = UuidGenerator.get();
 
+            CreateOrderCommand trade = CreateOrderCommand.builder()
+                    .clientName(name)
+                    .currencyFrom(cfg.getCurrency().getCode())
+                    .currencyTo(cfg.getCurrencyTo().getCode())
+                    .price(price)
+                    .amount(isSell ? amount.abs().negate() : amount.abs())
+                    // id is not unique, actually order is paired via id
+                    .id(null != depends ? depends.getId() : id)
+                    .orderId(id)
+                    .build();
+
+            testTradeRepository.acceptTrade(trade, REQUEST_LAG_N);
             return new TradeDto(
                     Trade.builder()
+                            .id(id)
                             .openingPrice(price)
                             .openingAmount(amount)
                             .build(),
-                    CreateOrderCommand.builder()
-                            .clientName(name)
-                            .currencyFrom(cfg.getCurrency().getCode())
-                            .currencyTo(cfg.getCurrencyTo().getCode())
-                            .price(price)
-                            .amount(isSell ? amount.abs().negate() : amount.abs())
-                            .id("1111")
-                            .orderId(id)
-                            .build()
+                    trade
             );
         });
     }
 
-    private void initGatewayOrderCreationHandler() {
-        doAnswer(invocation -> {
-            MultiOrderCreateCommand trade = (MultiOrderCreateCommand) invocation.getArguments()[0];
-            testTradeRepository.acceptTrade(trade, REQUEST_LAG_N);
-            return null;
-        }).when(commander).createOrders(any(MultiOrderCreateCommand.class));
+    private void initLocalTime() {
+        localTime = mock(LocalTime.class);
+        when(localTime.timestampMs()).thenAnswer(invocation -> lastBookTimestamp.get());
     }
 
     @Data
@@ -277,8 +293,12 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         private BigDecimal minOrder = new BigDecimal(get("MIN_ORDER", "1"));
         private BigDecimal maxOrder = new BigDecimal(get("MAX_ORDER", "10"));
         private int rebuildModelEachN = Integer.valueOf(get("REBUILD_MODEL_EACH_N", "10000"));
+        private int collectNlabellled = Integer.valueOf(get("COLLECT_N_LABELED", "1000"));
+        private int futureNwindow = Integer.valueOf(get("FUTURE_N_WINDOW", "36000"));
         private String nnConfig = getConfig(get("NN_CONFIG", "nn/default_nn.yaml"));
 
+        private BigDecimal truthThreshold = new BigDecimal(get("TRUTH_THRESHOLD", "0.7"));
+        private BigDecimal bookTestForOpenPerS = new BigDecimal(get("BOOK_TEST_FOR_OPEN_S", "0.01"));
         private BigDecimal futureGainPct = new BigDecimal(get("FUTURE_GAIN_PCT", "0.2"));
         private BigDecimal noopThreshold = new BigDecimal(get("NOOP_THRESHOLD", "1.002"));
 

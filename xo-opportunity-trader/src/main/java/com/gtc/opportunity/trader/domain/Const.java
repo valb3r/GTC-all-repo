@@ -13,6 +13,7 @@ public final class Const {
     @UtilityClass
     public final class InternalMessaging {
 
+        public static final String TRADE_ID = "tradeId";
         public static final String MSG_ID = "messageId";
         public static final String ORDER_ID = "orderId";
     }

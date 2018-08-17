@@ -18,6 +18,9 @@ import java.util.UUID;
 @NoArgsConstructor
 public class BaseMessage implements Serializable {
 
+    public static final int HIGH_PRIO = -10;
+    public static final int LOW_PRIO = 0;
+
     protected static final String MIN_DECIMAL = "0.0000000000000000000001";
 
     public String type() {
@@ -35,6 +38,8 @@ public class BaseMessage implements Serializable {
     private String type;
 
     private RetryStrategy retryStrategy;
+
+    private int priority = LOW_PRIO;
 
     public BaseMessage(String clientName, String id) {
         this.clientName = clientName;

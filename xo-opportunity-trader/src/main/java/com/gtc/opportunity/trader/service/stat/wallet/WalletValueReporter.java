@@ -57,8 +57,10 @@ public class WalletValueReporter {
             usdValue = usdValue.add(wallet.getBalance().multiply(pricing.getPriceUsd()));
             BigDecimal walletBtc = wallet.getBalance().multiply(pricing.getPriceBtc());
             btcValue = btcValue.add(walletBtc);
+            BigDecimal inBuy = tradeRepository.lockedByBuyTradesWithStatus(wallet, OPEN);
+            BigDecimal inSell = tradeRepository.lockedBySellTradesWithStatus(wallet, OPEN);
             btcValueWithOpen = btcValueWithOpen
-                    .add(walletBtc.add(tradeRepository.lockedByTradesWithStatus(wallet, OPEN)));
+                    .add(walletBtc.add((inBuy.add(inSell)).multiply(pricing.getPriceBtc())));
         }
 
         NewRelic.recordMetric(AMOUNT_RAW, rawValue.floatValue());

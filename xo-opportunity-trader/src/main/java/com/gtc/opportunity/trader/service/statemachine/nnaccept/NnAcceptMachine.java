@@ -1,12 +1,15 @@
 package com.gtc.opportunity.trader.service.statemachine.nnaccept;
 
-import com.gtc.opportunity.trader.domain.AcceptedNnTrade;
 import com.gtc.opportunity.trader.domain.AcceptEvent;
+import com.gtc.opportunity.trader.domain.AcceptedNnTrade;
 import com.gtc.opportunity.trader.domain.NnAcceptStatus;
 import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.TransientDataAccessException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.statemachine.StateContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +24,22 @@ import static com.gtc.opportunity.trader.domain.Const.InternalMessaging.ORDER_ID
  */
 @Slf4j
 @Service
+@Retryable(value = TransientDataAccessException.class,
+        maxAttemptsExpression = "3",
+        backoff = @Backoff(delay = 5000L, multiplier = 3),
+        exceptionExpression = "#{#root.cause instanceof T(org.hibernate.exception.LockAcquisitionException)}"
+)
 @RequiredArgsConstructor
 public class NnAcceptMachine {
 
     private final CurrentTimestamp timestamp;
     private final AcceptedNnTradeRepository nnTradeRepository;
+
+    @Transactional
+    public void pushedSlave(StateContext<NnAcceptStatus, AcceptEvent> state) {
+        log.info("Proceeding with slave event {}", state);
+        acceptAndGet(state);
+    }
 
     @Transactional
     public void ack(StateContext<NnAcceptStatus, AcceptEvent> state) {
@@ -42,6 +56,12 @@ public class NnAcceptMachine {
     @Transactional
     public void tradeError(StateContext<NnAcceptStatus, AcceptEvent> state) {
         log.info("Trade Error evt {}", state);
+        acceptAndGet(state);
+    }
+
+    @Transactional
+    public void abort(StateContext<NnAcceptStatus, AcceptEvent> state) {
+        log.info("Trade Abort evt {}", state);
         acceptAndGet(state);
     }
 

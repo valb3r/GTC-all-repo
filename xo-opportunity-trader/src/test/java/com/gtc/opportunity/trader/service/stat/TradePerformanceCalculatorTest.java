@@ -6,9 +6,9 @@ import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
-import com.gtc.opportunity.trader.service.opportunity.creation.ConfigCache;
-import org.junit.Before;
-import org.junit.Test;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -41,7 +41,7 @@ public class TradePerformanceCalculatorTest extends BaseMockitoTest {
     @InjectMocks
     private TradePerformanceCalculator calculator;
 
-    @Before
+    @BeforeEach
     public void init() {
         when(pricingRepository.priceList()).thenReturn(
                 ImmutableMap.of(
@@ -80,6 +80,36 @@ public class TradePerformanceCalculatorTest extends BaseMockitoTest {
         assertGain(performance);
     }
 
+    @Test
+    public void calculateHasErrorChainNoLoss() {
+        Trade master = common().openingPrice(LESS).isSell(false).build();
+        Trade slave = common().dependsOn(master).openingAmount(BigDecimal.ONE).openingPrice(MORE).isSell(true).build();
+        master.setStatus(TradeStatus.NEED_RETRY);
+        slave.setStatus(TradeStatus.CANCELLED);
+
+        TradePerformanceCalculator.Performance performance = calculator.calculateOnGroupedByPair(
+                ImmutableList.of(master, slave),
+                Trade::getId
+        );
+
+        assertErrorGain(performance, "2", "0");
+    }
+
+    @Test
+    public void calculateHasLoss() {
+        Trade master = common().openingPrice(LESS).isSell(false).build();
+        Trade slave = common().dependsOn(master).openingAmount(BigDecimal.ONE).openingPrice(MORE).isSell(true).build();
+        master.setStatus(TradeStatus.CLOSED);
+        slave.setStatus(TradeStatus.CANCELLED);
+
+        TradePerformanceCalculator.Performance performance = calculator.calculateOnGroupedByPair(
+                ImmutableList.of(master, slave),
+                Trade::getId
+        );
+
+        assertErrorGain(performance, "1", "0.1");
+    }
+
     private static Trade.TradeBuilder common() {
         LocalDateTime recorded = LocalDateTime.now();
         LocalDateTime closed = recorded.plusSeconds(1);
@@ -95,6 +125,17 @@ public class TradePerformanceCalculatorTest extends BaseMockitoTest {
         assertThat(performance.getInOrders()).isEqualByComparingTo("0");
         assertThat(performance.getExpectedProfitBtc()).isEqualByComparingTo("0.25");
         assertThat(performance.getClaimedProfitBtc()).isEqualByComparingTo("0.25");
+        assertThat(performance.getClaimedLossBtc()).isEqualByComparingTo("0");
         assertThat(performance.getLatestTimeToCloseS()).isEqualTo(1);
+    }
+
+    private void assertErrorGain(TradePerformanceCalculator.Performance performance,
+                                 String inErrors, String expectedLoss) {
+        assertThat(performance.getTotal()).isEqualByComparingTo("2");
+        assertThat(performance.getInErrors()).isEqualByComparingTo(inErrors);
+        assertThat(performance.getInOrders()).isEqualByComparingTo("0");
+        assertThat(performance.getExpectedProfitBtc()).isEqualByComparingTo("0.25");
+        assertThat(performance.getClaimedProfitBtc()).isEqualByComparingTo("0");
+        assertThat(performance.getClaimedLossBtc()).isEqualByComparingTo(expectedLoss);
     }
 }

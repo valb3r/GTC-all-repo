@@ -59,7 +59,7 @@ app:
     opportunities:
         minGain: 1.003
     updater:
-        maxToCheckStuckPerClient: 3
+        maxToCheckStuckPerClient: 30
         orderTimeoutS: 600
     ws:
         market: ws://localhost:8080/api/market
@@ -78,6 +78,7 @@ app:
         opportunitySearchMs: 100
         wsReconnectS: 10
         pushStatsS: 10
+        pushSlaveS: 60
         # using prime numbers to avoid temporal collisions
         order:
             bulkUpdateStatusS: 17

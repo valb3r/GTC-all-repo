@@ -1,9 +1,13 @@
 package com.gtc.tradinggateway.config;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
@@ -15,6 +19,9 @@ import org.springframework.http.client.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.math.BigDecimal;
 
 /**
  * Created by mikro on 08.02.2018.
@@ -29,12 +36,16 @@ public class ConfigFactory {
     private boolean traceEnabled;
 
     ObjectMapper defaultMapper() {
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(new BigDecimalSerializer());
+
         return new ObjectMapper(new JsonFactory())
                 .setPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CAMEL_CASE)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, false)
                 .configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, true)
-                .configure(DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES, false)
+                .registerModule(module);
     }
 
     RestTemplate defaultRestTemplate(ObjectMapper mapper) {
@@ -89,6 +100,18 @@ public class ConfigFactory {
             );
 
             return response;
+        }
+    }
+
+    public static class BigDecimalSerializer extends StdSerializer<BigDecimal> {
+
+        BigDecimalSerializer() {
+            super(BigDecimal.class);
+        }
+
+        @Override
+        public void serialize(BigDecimal value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeNumber(value.toPlainString());
         }
     }
 }

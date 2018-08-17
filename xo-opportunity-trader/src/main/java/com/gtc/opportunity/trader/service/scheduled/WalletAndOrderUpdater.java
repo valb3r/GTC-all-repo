@@ -1,7 +1,6 @@
 package com.gtc.opportunity.trader.service.scheduled;
 
 import com.google.common.collect.ImmutableSet;
-import com.gtc.model.gateway.RetryStrategy;
 import com.gtc.model.gateway.command.account.GetAllBalancesCommand;
 import com.gtc.model.gateway.command.manage.GetOrderCommand;
 import com.gtc.model.gateway.command.manage.ListOpenCommand;
@@ -101,15 +100,13 @@ public class WalletAndOrderUpdater {
                     // shuffle so that in case of rate-limiting we get a change to get response
                     Collections.shuffle(orders);
                     orders.stream().limit(maxToCheckStuckPerClient).map(
-                            td -> {
-                                GetOrderCommand command = GetOrderCommand.builder()
+                            td ->
+                                GetOrderCommand.builder()
                                         .id(UuidGenerator.get())
                                         .clientName(td.getClient().getName())
                                         .orderId(td.getAssignedId())
-                                        .build();
-                                command.setRetryStrategy(RetryStrategy.BASIC_RETRY);
-                                return command;
-                            }
+                                        .build()
+
                     ).forEach(commander::getOrder);
                 });
     }

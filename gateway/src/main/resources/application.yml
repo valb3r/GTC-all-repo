@@ -92,7 +92,7 @@ app:
             NANO-BTC=NANOBTC
         customResponseCurrencyMapping:
             USD=USDT
-        ratePerM: 10
+        ratePerM: 60
         minRequestSeparationMs: 30
     wex:
         restBase: "https://wex.nz/tapi"
@@ -143,8 +143,8 @@ app:
             DASH-LTC=DSHLTC
         customResponseCurrencyMapping:
             dsh=DASH
-        ratePerM: 5
-        createRatePerM: 5
+        ratePerM: 60
+        createRatePerM: 10
     okex:
         restBase: "https://www.okex.com/api/v1"
         wsBase: "wss://real.okex.com:10441/websocket"
@@ -183,6 +183,7 @@ app:
         # mocks (need MOCK_ENABLED as true): mock-asia,mock-europe
         active: bitfinex,binance,wex,hitbtc,huobi,therocktrading,okex
     schedule:
+        poolSize: 5
         puppeteerS: 10
         pingMs: 5000
     async:
@@ -193,4 +194,7 @@ app:
         enabled: true
         reportIntervalMs: 60000
         window: 1000
+    rate-equalizer:
+        queueCapacity: 200
+        requestsPerSec: 1
 
