@@ -8,7 +8,7 @@ import com.gtc.opportunity.trader.BaseNnTradeInitialized;
 import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListener;
-import com.gtc.opportunity.trader.service.scheduled.NnSlaveOrderPusher;
+import com.gtc.opportunity.trader.service.scheduled.trade.management.NnSlaveOrderPusher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

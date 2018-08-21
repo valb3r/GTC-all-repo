@@ -49,21 +49,23 @@ public interface TradeRepository extends CrudRepository<Trade, String> {
             "AND t.statusUpdated <= :lastUpdate " +
             "AND t.client.enabled = :clientEnabled " +
             "AND t.nnOrder IS NOT NULL " +
+            "AND t.dependsOn IS NOT NULL " +
             "ORDER BY t.statusUpdated DESC")
-    List<Trade> findNnByStatusInAndStatusUpdatedBefore(
+    List<Trade> findNnSlaveByStatusInAndStatusUpdatedBefore(
             @Param("statuses") Collection<TradeStatus> statuses,
             @Param("lastUpdate") LocalDateTime lastUpdate,
             @Param("clientEnabled") boolean clientEnabled);
 
-    @Query("SELECT t FROM Trade t WHERE t.client = :client " +
-            "AND (t.currencyFrom = :currency OR t.currencyTo = :currency) " +
-            "AND (t.status IN (:unknownStatuses) " +
-            "OR ((t.status IN (:openedStatuses) AND t.wallet.statusUpdated <= t.statusUpdated)))")
-    Collection<Trade> findByWalletKey(
-            @Param("client") Client client,
-            @Param("currency") TradingCurrency currency,
-            @Param("unknownStatuses") Set<TradeStatus> unknownStatuses,
-            @Param("openedStatuses") Set<TradeStatus> openedStatuses);
+    @Query("SELECT t FROM Trade t WHERE t.status IN (:statuses) " +
+            "AND t.recordedOn <= :lastUpdate " +
+            "AND t.client.enabled = :clientEnabled " +
+            "AND t.nnOrder IS NOT NULL " +
+            "AND t.dependsOn IS NULL " +
+            "ORDER BY t.recordedOn DESC")
+    List<Trade> findNnMasterByStatusInAndRecordedOnBefore(
+            @Param("statuses") Collection<TradeStatus> statuses,
+            @Param("lastUpdate") LocalDateTime lastUpdate,
+            @Param("clientEnabled") boolean clientEnabled);
 
     long countAllByStatusEquals(TradeStatus status);
 

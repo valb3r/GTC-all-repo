@@ -16,13 +16,15 @@ import org.springframework.test.context.support.AbstractTestExecutionListener;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.gtc.opportunity.trader.config.ScheduledConfig.NO_SCHEDULER;
+
 /**
  * Created by Valentyn Berezin on 02.08.18.
  */
 @Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = AppInitializer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles(Const.SpringProfiles.TEST)
+@ActiveProfiles({Const.SpringProfiles.TEST, NO_SCHEDULER})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @TestExecutionListeners(value = BaseIT.ExecutionListener.class,
         mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)

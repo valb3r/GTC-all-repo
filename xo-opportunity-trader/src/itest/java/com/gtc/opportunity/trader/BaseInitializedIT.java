@@ -31,6 +31,8 @@ public abstract class BaseInitializedIT extends BaseIT {
     protected static final BigDecimal MIN_ORDER = BigDecimal.ONE;
     protected static final BigDecimal MAX_ORDER = BigDecimal.TEN;
     protected static final BigDecimal WALLET_BAL = BigDecimal.TEN;
+    protected static final int MAX_SLAVE_DELAY_M = 60;
+    protected static final int EXPIRE_OPEN_H = 24;
 
     @Autowired
     protected ClientRepository clientRepository;
@@ -77,7 +79,8 @@ public abstract class BaseInitializedIT extends BaseIT {
                 .networkYamlSpec("")
                 .collectNlabeled(1000)
                 .futureNwindow(36000)
-                .maxSlaveDelayM(600)
+                .maxSlaveDelayM(MAX_SLAVE_DELAY_M)
+                .expireOpenH(EXPIRE_OPEN_H)
                 .bookTestForOpenPerS(BigDecimal.ONE)
                 .averageDtSBetweenLabels(BigDecimal.ONE)
                 .build();

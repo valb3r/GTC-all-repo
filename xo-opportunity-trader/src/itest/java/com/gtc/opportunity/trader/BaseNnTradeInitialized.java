@@ -30,8 +30,8 @@ public abstract class BaseNnTradeInitialized extends BaseInitializedIT {
     protected TradeRepository tradeRepository;
 
     protected AcceptedNnTrade createdNnTrade;
-    protected Trade createdTradeSell;
-    protected Trade createdTradeBuy;
+    protected Trade createdMasterTradeSell;
+    protected Trade createdSlaveTradeBuy;
 
     @BeforeTransaction
     public void buildTrades() {
@@ -49,7 +49,7 @@ public abstract class BaseNnTradeInitialized extends BaseInitializedIT {
                 .status(NnAcceptStatus.MASTER_UNKNOWN)
                 .build());
 
-        createdTradeSell = tradeRepository.save(Trade.builder()
+        createdMasterTradeSell = tradeRepository.save(Trade.builder()
                 .id(TRADE_ONE)
                 .assignedId(TRADE_ONE)
                 .client(createdClient)
@@ -67,14 +67,14 @@ public abstract class BaseNnTradeInitialized extends BaseInitializedIT {
                 .wallet(walletFrom)
                 .build());
 
-        createdTradeBuy = tradeRepository.save(Trade.builder()
+        createdSlaveTradeBuy = tradeRepository.save(Trade.builder()
                 .id(TRADE_TWO)
                 .assignedId(TRADE_TWO)
                 .client(createdClient)
                 .currencyFrom(FROM)
                 .currencyTo(TO)
                 .nnOrder(createdNnTrade)
-                .dependsOn(createdTradeSell)
+                .dependsOn(createdMasterTradeSell)
                 .openingAmount(BigDecimal.ONE)
                 .openingPrice(BigDecimal.ONE)
                 .amount(BigDecimal.ONE)
