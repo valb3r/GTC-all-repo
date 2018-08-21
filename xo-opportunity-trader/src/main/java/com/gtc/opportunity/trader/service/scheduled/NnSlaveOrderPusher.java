@@ -48,11 +48,11 @@ public class NnSlaveOrderPusher {
     private void ackAndCreateOrders(Trade trade) {
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName("Push dependent " + trade.getId());
-        if (checkForExpirationAndExpireIfNeeded(trade)) {
-            return;
-        }
-
         try {
+            if (checkForExpirationAndExpireIfNeeded(trade)) {
+                return;
+            }
+
             if (!handler.publishDependentOrderIfPossible(trade)) {
                 return;
             }
