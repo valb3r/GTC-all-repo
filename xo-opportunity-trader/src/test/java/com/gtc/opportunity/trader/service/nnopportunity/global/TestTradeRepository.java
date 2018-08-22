@@ -180,12 +180,7 @@ class TestTradeRepository {
         for (Opened open : opened) {
             boolean isSell = open.getCommand().getAmount().compareTo(BigDecimal.ZERO) < 0;
             double deviationPrice = isSell ? book.getBestBuy() : book.getBestSell();
-
-            if (deviationPrice == 0.0) {
-                continue;
-            }
-
-            double deviation = open.getCommand().getPrice().doubleValue() / deviationPrice * 100.0 - 100.0;
+            double deviation = Math.abs(open.getCommand().getPrice().doubleValue() / deviationPrice * 100.0 - 100.0);
 
             byIsSellByTradeIdDeviation.computeIfAbsent(
                     isSell,
