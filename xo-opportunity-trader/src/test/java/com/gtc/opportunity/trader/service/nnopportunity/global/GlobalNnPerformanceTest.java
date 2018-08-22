@@ -32,6 +32,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -110,11 +111,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GLOBAL_NN_TEST", matches = "true")
     public void test() {
-        if (!"true".equals(System.getenv("GLOBAL_NN_TEST"))) {
-            return;
-        }
-
         long pointIndex = 0;
         try (HistoryBookReader reader = reader()) {
             while (true) {

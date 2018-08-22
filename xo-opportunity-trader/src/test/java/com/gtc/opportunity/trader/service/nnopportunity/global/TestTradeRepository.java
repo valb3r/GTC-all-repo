@@ -42,6 +42,7 @@ class TestTradeRepository {
             new ConcurrentHashMap<>();
 
     private final Map<TradingCurrency, BigDecimal> lockedBalance = new ConcurrentHashMap<>();
+    private final Map<Boolean, Map<String, Double>> byIsSellByTradeIdDeviation = new ConcurrentHashMap<>();
     private final List<Closed> done = new CopyOnWriteArrayList<>();
 
     private final Map<String, ClientConfig> configs;
@@ -80,6 +81,9 @@ class TestTradeRepository {
                 .filter(it -> canCompleteCommand(it.getCommand(), book))
                 .collect(Collectors.toList());
 
+        computeLockedBalance(book.getMeta().getClient());
+        computeTradeDeviations(book);
+
         if (closed.isEmpty()) {
             return;
         }
@@ -95,7 +99,6 @@ class TestTradeRepository {
                         book)
                 ).collect(Collectors.toList())
         );
-        computeLockedBalance(book.getMeta().getClient());
     }
 
     void logStats() {
@@ -135,6 +138,10 @@ class TestTradeRepository {
         Function<String, Map<String, Object>> reportKey = root ->
                 (Map<String, Object>) report.computeIfAbsent(root, id -> new LinkedHashMap<String, Object>());
 
+        report.put("active",
+                byClientPairOrders.getOrDefault(client, Collections.emptyMap()).entrySet().stream()
+                        .mapToInt(it -> it.getValue().size()).sum());
+        report.put("done", done.size());
         report.put("client", client);
         report.put("gain", envContainer.getFutureGainPct());
         report.put("threshold", envContainer.getNoopThreshold());
@@ -150,9 +157,39 @@ class TestTradeRepository {
         timeToClose.forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
         );
+        byIsSellByTradeIdDeviation.forEach((k, v) ->
+                logSeriesStats(v.values(), reportKey.apply("priceDeviations" + (k ? "Sell" : "Buy")))
+        );
 
         log.info("Porcelain `{}`", MAPPER.writer().writeValueAsString(report));
         log.info("{}", MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(report));
+    }
+
+    private void computeTradeDeviations(OrderBook book) {
+        List<Opened> opened = byClientPairOrders.getOrDefault(book.getMeta().getClient(), Collections.emptyMap())
+                .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
+
+        for (Opened open : opened) {
+            boolean isSell = open.getCommand().getAmount().compareTo(BigDecimal.ZERO) < 0;
+            double deviationPrice = isSell ? book.getBestBuy() : book.getBestSell();
+
+            if (deviationPrice == 0.0) {
+                continue;
+            }
+
+            double deviation = open.getCommand().getPrice().doubleValue() / deviationPrice * 100.0 - 100.0;
+
+            byIsSellByTradeIdDeviation.computeIfAbsent(
+                    isSell,
+                    id -> new HashMap<>()
+            ).compute(open.getPairId(), (id, value) -> {
+               if (null == value) {
+                   return deviation;
+               }
+
+               return Math.max(value, deviation);
+            });
+        }
     }
 
     private List<Closed> computePaired(List<Closed> closed) {
@@ -277,7 +314,7 @@ class TestTradeRepository {
         return new OrderBalance(from, to);
     }
 
-    private <T extends Number> void logSeriesStats(List<T> values, Map<String, Object> target) {
+    private <T extends Number> void logSeriesStats(Collection<T> values, Map<String, Object> target) {
         DescriptiveStatistics statistics = new DescriptiveStatistics();
         values.forEach(it -> statistics.addValue(it.doubleValue()));
         target.put("mean", statistics.getMean());
