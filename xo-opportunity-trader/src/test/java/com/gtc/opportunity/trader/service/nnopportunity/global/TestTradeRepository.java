@@ -158,7 +158,7 @@ class TestTradeRepository {
                 logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
         );
         byIsSellByTradeIdDeviation.forEach((k, v) ->
-                logSeriesStats(v.values(), reportKey.apply("priceDeviations" + (k ? "Sell" : "Buy")))
+                logSeriesStats(v.values(), reportKey.apply("priceDeviationsPct" + (k ? "Sell" : "Buy")))
         );
 
         log.info("Porcelain `{}`", MAPPER.writer().writeValueAsString(report));
