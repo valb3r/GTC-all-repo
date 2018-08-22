@@ -3,7 +3,7 @@ package com.gtc.opportunity.trader.service.command;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gtc.opportunity.trader.config.WsConfig;
 import com.gtc.opportunity.trader.repository.NnConfigRepository;
-import com.gtc.opportunity.trader.service.nnopportunity.NnDisptacher;
+import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ public class NnWsMarketDataClient extends BaseWsMarketDataClient {
             WsConfig wsConfig,
             ObjectMapper objectMapper,
             NnConfigRepository configs,
-            NnDisptacher disptacher) {
+            NnDispatcher disptacher) {
         super(
                 "nnMarket",
                 wsConfig,

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-public class NnDisptacher {
+public class NnDispatcher {
 
     private static final double EPSILON = 1e-16;
 

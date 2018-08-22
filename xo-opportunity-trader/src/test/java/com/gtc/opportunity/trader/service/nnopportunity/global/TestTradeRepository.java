@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class TestTradeRepository {
 
+    private static final double EPSILON = 1e-16;
     private static final long MILLIS_IN_10M = 600000;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -71,6 +72,13 @@ class TestTradeRepository {
     }
 
     void acceptOrderBook(OrderBook book) {
+        if (!Double.isFinite(book.getBestSell())
+                || !Double.isFinite(book.getBestBuy())
+                || book.getBestSell() < EPSILON
+                || book.getBestBuy() < EPSILON) {
+            return;
+        }
+
         pointIndex++;
         computeMinMaxDate(book);
         List<Opened> open = byClientPairOrders
