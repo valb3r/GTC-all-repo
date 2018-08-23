@@ -26,7 +26,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class WalletValueReporter {
 
-    private static final Set<TradeStatus> OPEN = ImmutableSet.of(TradeStatus.OPENED, TradeStatus.UNKNOWN);
+    private static final Set<TradeStatus> OPEN = ImmutableSet.of(TradeStatus.OPENED);
 
     private static final String AMOUNT_RAW = "Custom/Amount/RAW";
     private static final String AMOUNT_USD = "Custom/Amount/USD";
