@@ -168,12 +168,27 @@ class TestTradeRepository {
         timeToClose.forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
         );
-        byIsSellByTradeIdDeviation.forEach((k, v) ->
-                logSeriesStats(v.values(), reportKey.apply("priceDeviationsPct" + (k ? "Sell" : "Buy")))
+        computeDoneDeviations().forEach((k, v) ->
+                logSeriesStats(v, reportKey.apply("priceDeviationsPct" + (k ? "Sell" : "Buy")))
         );
 
         log.info("Porcelain `{}`", MAPPER.writer().writeValueAsString(report));
         log.info("{}", MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(report));
+    }
+
+    private Map<Boolean, List<Double>> computeDoneDeviations() {
+        Map<Boolean, List<Double>> doneDeviations = new HashMap<>();
+        for (Closed closed : done) {
+            Double val = byIsSellByTradeIdDeviation
+                    .getOrDefault(isSell(closed.getCommand()), Collections.emptyMap())
+                    .get(closed.getCommand().getOrderId());
+            if (null != val) {
+                doneDeviations
+                        .computeIfAbsent(isSell(closed.getCommand()), id -> new ArrayList<>())
+                        .add(val);
+            }
+        }
+        return doneDeviations;
     }
 
     private void computeTradeDeviations(OrderBook book) {
@@ -181,7 +196,7 @@ class TestTradeRepository {
                 .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
 
         for (Opened open : opened) {
-            boolean isSell = open.getCommand().getAmount().compareTo(BigDecimal.ZERO) < 0;
+            boolean isSell = isSell(open.getCommand());
             double deviationPrice = isSell ? book.getBestBuy() : book.getBestSell();
             double deviation = Math.abs(open.getCommand().getPrice().doubleValue() / deviationPrice * 100.0 - 100.0);
 
