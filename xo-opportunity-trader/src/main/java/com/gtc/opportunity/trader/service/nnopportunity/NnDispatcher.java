@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NnDispatcher {
 
+    private static final double MAX_VAL = 1e10;
     private static final double EPSILON = 1e-16;
 
     private final NnDataRepository repository;
@@ -38,6 +39,8 @@ public class NnDispatcher {
         return Double.isFinite(book.getBestSell())
                 && Double.isFinite(book.getBestBuy())
                 && book.getBestSell() > EPSILON
-                && book.getBestBuy() > EPSILON;
+                && book.getBestBuy() > EPSILON
+                && book.getBestBuy() < MAX_VAL
+                && book.getBestSell() < MAX_VAL;
     }
 }
