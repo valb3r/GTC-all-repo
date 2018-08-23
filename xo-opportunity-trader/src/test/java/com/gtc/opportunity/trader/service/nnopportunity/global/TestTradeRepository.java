@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class TestTradeRepository {
 
+    private static final double MAX_VAL = 1e10;
     private static final double EPSILON = 1e-16;
     private static final long MILLIS_IN_10M = 600000;
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -75,7 +76,9 @@ class TestTradeRepository {
         if (!Double.isFinite(book.getBestSell())
                 || !Double.isFinite(book.getBestBuy())
                 || book.getBestSell() < EPSILON
-                || book.getBestBuy() < EPSILON) {
+                || book.getBestBuy() < EPSILON
+                || book.getBestSell() > MAX_VAL
+                || book.getBestBuy() > MAX_VAL) {
             return;
         }
 
