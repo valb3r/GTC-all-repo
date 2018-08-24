@@ -181,7 +181,7 @@ class TestTradeRepository {
         for (Closed closed : done) {
             Double val = byIsSellByTradeIdDeviation
                     .getOrDefault(isSell(closed.getCommand()), Collections.emptyMap())
-                    .get(closed.getCommand().getOrderId());
+                    .get(closed.getPairId());
             if (null != val) {
                 doneDeviations
                         .computeIfAbsent(isSell(closed.getCommand()), id -> new ArrayList<>())
