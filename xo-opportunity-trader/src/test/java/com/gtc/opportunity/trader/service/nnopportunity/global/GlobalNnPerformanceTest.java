@@ -18,7 +18,7 @@ import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
-import com.gtc.opportunity.trader.service.nnopportunity.NnDisptacher;
+import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
 import com.gtc.opportunity.trader.service.nnopportunity.creation.NnCreateTradesService;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
@@ -32,6 +32,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +90,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private NnSolver solver;
     private NnCreateTradesService createTradesService;
     private NnAnalyzer nnAnalyzer;
-    private NnDisptacher disptacher;
+    private NnDispatcher disptacher;
 
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
@@ -106,15 +107,12 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         solver = new NnSolver(localTime, configs, modelFactory, repository);
         createTradesService = tradesService();
         nnAnalyzer = new NnAnalyzer(solver, createTradesService);
-        disptacher = new NnDisptacher(repository, nnAnalyzer, configs);
+        disptacher = new NnDispatcher(repository, nnAnalyzer, configs);
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GLOBAL_NN_TEST", matches = "true")
     public void test() {
-        if (!"true".equals(System.getenv("GLOBAL_NN_TEST"))) {
-            return;
-        }
-
         long pointIndex = 0;
         try (HistoryBookReader reader = reader()) {
             while (true) {

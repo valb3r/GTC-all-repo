@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class TestTradeRepository {
 
+    private static final double MAX_VAL = 1e10;
+    private static final double EPSILON = 1e-16;
     private static final long MILLIS_IN_10M = 600000;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -42,6 +44,7 @@ class TestTradeRepository {
             new ConcurrentHashMap<>();
 
     private final Map<TradingCurrency, BigDecimal> lockedBalance = new ConcurrentHashMap<>();
+    private final Map<Boolean, Map<String, Double>> byIsSellByTradeIdDeviation = new ConcurrentHashMap<>();
     private final List<Closed> done = new CopyOnWriteArrayList<>();
 
     private final Map<String, ClientConfig> configs;
@@ -70,6 +73,15 @@ class TestTradeRepository {
     }
 
     void acceptOrderBook(OrderBook book) {
+        if (!Double.isFinite(book.getBestSell())
+                || !Double.isFinite(book.getBestBuy())
+                || book.getBestSell() < EPSILON
+                || book.getBestBuy() < EPSILON
+                || book.getBestSell() > MAX_VAL
+                || book.getBestBuy() > MAX_VAL) {
+            return;
+        }
+
         pointIndex++;
         computeMinMaxDate(book);
         List<Opened> open = byClientPairOrders
@@ -79,6 +91,9 @@ class TestTradeRepository {
                 .filter(it -> it.getMinimalIndexThatCanClose() <= pointIndex)
                 .filter(it -> canCompleteCommand(it.getCommand(), book))
                 .collect(Collectors.toList());
+
+        computeLockedBalance(book.getMeta().getClient());
+        computeTradeDeviations(book);
 
         if (closed.isEmpty()) {
             return;
@@ -95,7 +110,6 @@ class TestTradeRepository {
                         book)
                 ).collect(Collectors.toList())
         );
-        computeLockedBalance(book.getMeta().getClient());
     }
 
     void logStats() {
@@ -135,6 +149,10 @@ class TestTradeRepository {
         Function<String, Map<String, Object>> reportKey = root ->
                 (Map<String, Object>) report.computeIfAbsent(root, id -> new LinkedHashMap<String, Object>());
 
+        report.put("active",
+                byClientPairOrders.getOrDefault(client, Collections.emptyMap()).entrySet().stream()
+                        .mapToInt(it -> it.getValue().size()).sum());
+        report.put("done", done.size());
         report.put("client", client);
         report.put("gain", envContainer.getFutureGainPct());
         report.put("threshold", envContainer.getNoopThreshold());
@@ -150,9 +168,49 @@ class TestTradeRepository {
         timeToClose.forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
         );
+        computeDoneDeviations().forEach((k, v) ->
+                logSeriesStats(v, reportKey.apply("priceDeviationsPct" + (k ? "Sell" : "Buy")))
+        );
 
         log.info("Porcelain `{}`", MAPPER.writer().writeValueAsString(report));
         log.info("{}", MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(report));
+    }
+
+    private Map<Boolean, List<Double>> computeDoneDeviations() {
+        Map<Boolean, List<Double>> doneDeviations = new HashMap<>();
+        for (Closed closed : done) {
+            Double val = byIsSellByTradeIdDeviation
+                    .getOrDefault(isSell(closed.getCommand()), Collections.emptyMap())
+                    .get(closed.getCommand().getOrderId());
+            if (null != val) {
+                doneDeviations
+                        .computeIfAbsent(isSell(closed.getCommand()), id -> new ArrayList<>())
+                        .add(val);
+            }
+        }
+        return doneDeviations;
+    }
+
+    private void computeTradeDeviations(OrderBook book) {
+        List<Opened> opened = byClientPairOrders.getOrDefault(book.getMeta().getClient(), Collections.emptyMap())
+                .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
+
+        for (Opened open : opened) {
+            boolean isSell = isSell(open.getCommand());
+            double deviationPrice = isSell ? book.getBestBuy() : book.getBestSell();
+            double deviation = Math.abs(open.getCommand().getPrice().doubleValue() / deviationPrice * 100.0 - 100.0);
+
+            byIsSellByTradeIdDeviation.computeIfAbsent(
+                    isSell,
+                    id -> new HashMap<>()
+            ).compute(open.getPairId(), (id, value) -> {
+               if (null == value) {
+                   return deviation;
+               }
+
+               return Math.max(value, deviation);
+            });
+        }
     }
 
     private List<Closed> computePaired(List<Closed> closed) {
@@ -277,7 +335,7 @@ class TestTradeRepository {
         return new OrderBalance(from, to);
     }
 
-    private <T extends Number> void logSeriesStats(List<T> values, Map<String, Object> target) {
+    private <T extends Number> void logSeriesStats(Collection<T> values, Map<String, Object> target) {
         DescriptiveStatistics statistics = new DescriptiveStatistics();
         values.forEach(it -> statistics.addValue(it.doubleValue()));
         target.put("mean", statistics.getMean());
