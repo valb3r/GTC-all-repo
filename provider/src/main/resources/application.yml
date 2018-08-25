@@ -17,6 +17,9 @@ server:
     tomcat:
         max-threads: 4
 app:
+    marketStat:
+        cryptocompare: https://min-api.cryptocompare.com/data/price?fsym=%FROM%&tsyms=%TO%
+        pollingDelayS: 600
     clients:
         # active clients, will get filtered by name()
         # active (all): bitfinex,zb,hitbtc,gdax,bitstamp,binance,therocktrading,okex,huobi,exx,wex

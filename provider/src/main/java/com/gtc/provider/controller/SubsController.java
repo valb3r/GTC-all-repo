@@ -1,7 +1,9 @@
 package com.gtc.provider.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gtc.model.provider.SubscribeDto;
+import com.gtc.model.provider.ProviderSubsDto;
+import com.gtc.model.provider.SubscribeStreamDto;
+import com.gtc.model.provider.SubscribeMarketPricesDto;
 import com.gtc.provider.service.SubsRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +29,20 @@ public class SubsController extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        SubscribeDto subs = mapper.readValue(message.asBytes(), SubscribeDto.class);
+        ProviderSubsDto subs = mapper.readValue(message.asBytes(), ProviderSubsDto.class);
         if (!validator.validate(subs).isEmpty()) {
             throw new IllegalArgumentException("Invalid subs");
         }
 
-        if (subs.getMode() == SubscribeDto.Mode.TICKER) {
-            registry.subscribeTicker(session, subs.getClient());
-        } else if (subs.getMode() == SubscribeDto.Mode.BOOK) {
-            registry.subscribeBook(session, subs.getClient());
+        if (subs.getMode() == ProviderSubsDto.Mode.TICKER) {
+            registry.subscribeTicker(session,
+                    mapper.readValue(message.asBytes(), SubscribeStreamDto.class).getClient());
+        } else if (subs.getMode() == ProviderSubsDto.Mode.BOOK) {
+            registry.subscribeBook(session,
+                    mapper.readValue(message.asBytes(), SubscribeStreamDto.class).getClient());
+        } else if (subs.getMode() == ProviderSubsDto.Mode.MARKET_PRICE) {
+            SubscribeMarketPricesDto prices = mapper.readValue(message.asBytes(), SubscribeMarketPricesDto.class);
+            prices.getTo().forEach(it -> registry.subscribeMarket(session, prices.getFrom(), it));
         }
     }
 

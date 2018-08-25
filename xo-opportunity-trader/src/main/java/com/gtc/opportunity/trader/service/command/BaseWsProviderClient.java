@@ -4,9 +4,8 @@ import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.google.common.base.Joiner;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.model.provider.SubscribeDto;
+import com.gtc.model.provider.ProviderSubsDto;
 import com.gtc.opportunity.trader.config.WsConfig;
 import com.gtc.ws.BaseWebsocketClient;
 import lombok.SneakyThrows;
@@ -26,21 +25,21 @@ import static com.gtc.opportunity.trader.config.Const.Ws.WS_RECONNECT_S;
  * Created by Valentyn Berezin on 16.06.18.
  */
 @Slf4j
-public abstract class BaseWsMarketDataClient {
+public abstract class BaseWsProviderClient {
 
     private final BaseWebsocketClient wsClient;
     private final ObjectReader bookReader;
 
-    private final Supplier<List<String>> clientNames;
+    private final Supplier<List<? extends ProviderSubsDto>> subscribe;
     private final Consumer<OrderBook> handleBook;
 
     private AtomicInteger lastConnVersion = new AtomicInteger();
 
-    BaseWsMarketDataClient(
+    BaseWsProviderClient(
             String name,
             WsConfig wsConfig,
             ObjectMapper objectMapper,
-            Supplier<List<String>> clientNames,
+            Supplier<List<? extends ProviderSubsDto>> subscribe,
             Consumer<OrderBook> handleBook) {
         this.wsClient = new BaseWebsocketClient(
                 new BaseWebsocketClient.Config(
@@ -57,7 +56,7 @@ public abstract class BaseWsMarketDataClient {
                 )
         );
         this.bookReader = objectMapper.readerFor(OrderBook.class);
-        this.clientNames = clientNames;
+        this.subscribe = subscribe;
         this.handleBook = handleBook;
     }
 
@@ -66,7 +65,7 @@ public abstract class BaseWsMarketDataClient {
 
         if (!wsClient.isDisconnected()) {
 
-            if (lastConnVersion.get() != computeConnectionVersion(clientNames.get())) {
+            if (lastConnVersion.get() != computeConnectionVersion(subscribe.get())) {
                 log.info("Connection version change detected, asking WS to disconnect");
                 wsClient.disconnect();
             }
@@ -78,15 +77,15 @@ public abstract class BaseWsMarketDataClient {
 
     @Transactional(readOnly = true)
     public void subscribeOnConnect(RxObjectEventConnected conn) {
-        List<String> names = clientNames.get();
-        lastConnVersion.set(computeConnectionVersion(names));
-        names.forEach(name ->
-                BaseWebsocketClient.sendIfNotNull(conn, new SubscribeDto(name, SubscribeDto.Mode.BOOK))
+        List<? extends ProviderSubsDto> subs = subscribe.get();
+        lastConnVersion.set(computeConnectionVersion(subs));
+        subs.forEach(it ->
+                BaseWebsocketClient.sendIfNotNull(conn, it)
         );
     }
 
-    private int computeConnectionVersion(List<String> names) {
-        return Joiner.on("").join(names).hashCode();
+    private int computeConnectionVersion(List<? extends ProviderSubsDto> subscribe) {
+        return subscribe.hashCode();
     }
 
     @SneakyThrows

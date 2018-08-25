@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.model.provider.SubscribeDto;
+import com.gtc.model.provider.ProviderSubsDto;
+import com.gtc.model.provider.SubscribeStreamDto;
 import com.gtc.persistor.config.WsConfig;
 import com.gtc.ws.BaseWebsocketClient;
 import lombok.SneakyThrows;
@@ -26,7 +27,6 @@ public class WsMarketDataClient {
 
     private final WsConfig cfg;
     private final OrderBookRepository bookRepository;
-    private final ObjectMapper mapper;
     private final BaseWebsocketClient wsClient;
 
     private final ObjectReader bookReader;
@@ -37,7 +37,6 @@ public class WsMarketDataClient {
             ObjectMapper objectMapper) {
         this.cfg = wsConfig;
         this.bookRepository = bookRepository;
-        this.mapper = objectMapper;
         this.wsClient = new BaseWebsocketClient(
                 new BaseWebsocketClient.Config(
                         wsConfig.getProvider(),
@@ -67,7 +66,7 @@ public class WsMarketDataClient {
     private void subscribeOnConnect(RxObjectEventConnected conn) {
         cfg.getMarketsToSubscribe()
                 .forEach(name ->
-                        BaseWebsocketClient.sendIfNotNull(conn, new SubscribeDto(name, SubscribeDto.Mode.BOOK))
+                        BaseWebsocketClient.sendIfNotNull(conn, new SubscribeStreamDto(ProviderSubsDto.Mode.BOOK, name))
                 );
     }
 
