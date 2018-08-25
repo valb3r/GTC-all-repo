@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.ProviderSubsDto;
 import com.gtc.model.provider.SubscribeStreamDto;
 import com.gtc.opportunity.trader.config.WsConfig;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @ConditionalOnProperty(value = "XO_ENABLED", havingValue = "true")
-public class XoWsMarketDataClient extends BaseWsProviderClient {
+public class XoWsMarketDataClient extends BaseWsProviderClient<OrderBook> {
 
     public XoWsMarketDataClient(
             WsConfig wsConfig,
@@ -34,7 +35,8 @@ public class XoWsMarketDataClient extends BaseWsProviderClient {
                                 ProviderSubsDto.Mode.BOOK,
                                 it.getName()))
                         .collect(Collectors.toList()),
-                bookRepository::addOrderBook
+                bookRepository::addOrderBook,
+                OrderBook.class
         );
     }
 }

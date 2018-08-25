@@ -15,6 +15,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class MarketPrice {
 
+    private final String meta = "META";
+
     private TradingCurrency from;
     private TradingCurrency to;
     private BigDecimal price;

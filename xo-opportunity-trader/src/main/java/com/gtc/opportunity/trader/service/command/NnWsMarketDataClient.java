@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.ProviderSubsDto;
 import com.gtc.model.provider.SubscribeStreamDto;
 import com.gtc.opportunity.trader.config.WsConfig;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class NnWsMarketDataClient extends BaseWsProviderClient {
+public class NnWsMarketDataClient extends BaseWsProviderClient<OrderBook> {
 
     public NnWsMarketDataClient(
             WsConfig wsConfig,
@@ -32,7 +33,8 @@ public class NnWsMarketDataClient extends BaseWsProviderClient {
                                 ProviderSubsDto.Mode.BOOK,
                                 it.getClientCfg().getClient().getName()))
                         .collect(Collectors.toList()),
-                disptacher::acceptOrderBook
+                disptacher::acceptOrderBook,
+                OrderBook.class
         );
     }
 }

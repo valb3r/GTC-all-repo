@@ -4,7 +4,6 @@ import com.appunite.websocket.rx.object.messages.RxObjectEventConnected;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.ProviderSubsDto;
 import com.gtc.opportunity.trader.config.WsConfig;
 import com.gtc.ws.BaseWebsocketClient;
@@ -25,13 +24,13 @@ import static com.gtc.opportunity.trader.config.Const.Ws.WS_RECONNECT_S;
  * Created by Valentyn Berezin on 16.06.18.
  */
 @Slf4j
-public abstract class BaseWsProviderClient {
+public abstract class BaseWsProviderClient<T> {
 
     private final BaseWebsocketClient wsClient;
-    private final ObjectReader bookReader;
+    private final ObjectReader reader;
 
     private final Supplier<List<? extends ProviderSubsDto>> subscribe;
-    private final Consumer<OrderBook> handleBook;
+    private final Consumer<T> consumeMessage;
 
     private AtomicInteger lastConnVersion = new AtomicInteger();
 
@@ -40,7 +39,8 @@ public abstract class BaseWsProviderClient {
             WsConfig wsConfig,
             ObjectMapper objectMapper,
             Supplier<List<? extends ProviderSubsDto>> subscribe,
-            Consumer<OrderBook> handleBook) {
+            Consumer<T> consumeMessage,
+            Class<T> message) {
         this.wsClient = new BaseWebsocketClient(
                 new BaseWebsocketClient.Config(
                         wsConfig.getMarket(),
@@ -55,9 +55,9 @@ public abstract class BaseWsProviderClient {
                         }
                 )
         );
-        this.bookReader = objectMapper.readerFor(OrderBook.class);
+        this.reader = objectMapper.readerFor(message);
         this.subscribe = subscribe;
-        this.handleBook = handleBook;
+        this.consumeMessage = consumeMessage;
     }
 
     @Scheduled(fixedDelayString = WS_RECONNECT_S)
@@ -94,7 +94,7 @@ public abstract class BaseWsProviderClient {
             return;
         }
 
-        OrderBook book = bookReader.readValue(node);
-        handleBook.accept(book);
+        T message = reader.readValue(node);
+        consumeMessage.accept(message);
     }
 }
