@@ -82,7 +82,6 @@ public class StatsReporter {
 
         stats.getTicker().forEach((pair, value) ->
                 subsRegistry.publishTicker(
-                        clientName,
                         Ticker.builder()
                                 .meta(new ByClientAndCurrency(clientName, pair))
                                 .tickerDate(value.getTimestamp())
@@ -93,7 +92,7 @@ public class StatsReporter {
 
     private void writeHistogramIfNeeded(String clientName, MarketDto stats) {
         stats.getMarket().forEach((currency, market) ->
-                subsRegistry.publishOrderBook(clientName, writeMarketHistory(clientName, currency, market))
+                subsRegistry.publishOrderBook(writeMarketHistory(clientName, currency, market))
         );
     }
 

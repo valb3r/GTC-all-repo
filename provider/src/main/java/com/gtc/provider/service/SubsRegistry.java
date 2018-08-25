@@ -1,8 +1,11 @@
 package com.gtc.provider.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gtc.meta.TradingCurrency;
+import com.gtc.model.provider.MarketPrice;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.model.provider.Ticker;
+import com.gtc.provider.market.MarketSubsRegistry;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -28,6 +31,8 @@ import java.util.stream.Collectors;
 public class SubsRegistry {
 
     private final ObjectMapper mapper;
+    private final MarketSubsRegistry marketSubsRegistry;
+
     private final Map<String, Set<WebSocketSession>> tickerClientToSessionId = new ConcurrentHashMap<>();
     private final Map<String, Set<WebSocketSession>> bookClientToSessionId = new ConcurrentHashMap<>();
     private final Map<String, Object> locks = new ConcurrentHashMap<>();
@@ -40,6 +45,10 @@ public class SubsRegistry {
         bookClientToSessionId.computeIfAbsent(clientName, id -> ConcurrentHashMap.newKeySet()).add(session);
     }
 
+    public void subscribeMarket(WebSocketSession session, TradingCurrency from, TradingCurrency to) {
+        marketSubsRegistry.subscribeMarket(session, from, to);
+    }
+
     public void unsubscribe(WebSocketSession session) {
         tickerClientToSessionId.forEach((k, v) -> v.remove(session));
         bookClientToSessionId.forEach((k, v) -> v.remove(session));
@@ -47,19 +56,25 @@ public class SubsRegistry {
     }
 
     @SneakyThrows
-    public void publishTicker(String clientName, Ticker ticker) {
+    public void publishTicker(Ticker ticker) {
         String msg = mapper.writeValueAsString(ticker);
         tickerClientToSessionId
-                .getOrDefault(clientName, Collections.emptySet())
+                .getOrDefault(ticker.getMeta().getClient(), Collections.emptySet())
                 .forEach(it -> doSend(it, msg));
     }
 
     @SneakyThrows
-    public void publishOrderBook(String clientName, OrderBook orderBook) {
+    public void publishOrderBook(OrderBook orderBook) {
         String msg = mapper.writeValueAsString(orderBook);
         bookClientToSessionId
-                .getOrDefault(clientName, Collections.emptySet())
+                .getOrDefault(orderBook.getMeta().getClient(), Collections.emptySet())
                 .forEach(it -> doSend(it, msg));
+    }
+
+    @SneakyThrows
+    public void publishMarketPrice(MarketPrice price) {
+        String msg = mapper.writeValueAsString(price);
+        marketSubsRegistry.destinations(price).forEach(it -> doSend(it, msg));
     }
 
     @SneakyThrows
@@ -87,6 +102,10 @@ public class SubsRegistry {
                 unsubscribe(session);
             }
         }
+    }
+
+    private static String key(TradingCurrency from, TradingCurrency to) {
+        return from.getCode() + to.getCode();
     }
 
     @Data
