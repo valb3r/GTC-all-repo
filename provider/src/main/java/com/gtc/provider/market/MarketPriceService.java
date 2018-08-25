@@ -3,6 +3,7 @@ package com.gtc.provider.market;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.provider.MarketPrice;
 import com.gtc.provider.service.SubsRegistry;
+import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,13 +27,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MarketPriceService {
 
-    private final RestTemplate restTemplate;
+    private final RestTemplate restTemplate = new RestTemplate();
+
     private final SubsRegistry subsRegistry;
     private final MarketSubsRegistry marketRegistry;
 
     @Value("${app.marketStat.cryptocompare}")
     private String apiUrl;
 
+    @Trace(dispatcher = true)
     @Scheduled(fixedDelayString = "#{${app.marketStat.pollingDelayS} * 1000}")
     public void pollAndPublish() {
         marketRegistry.dataToPoll().forEach(this::getPriceAndPublish);

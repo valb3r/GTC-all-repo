@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = {
         "com.gtc.provider.service",
         "com.gtc.provider.clients",
+        "com.gtc.provider.market",
         "com.gtc.provider.controller",
         "com.gtc.provider.config"
 })
