@@ -89,6 +89,8 @@ public class SubsRegistry {
                 .flatMap(it -> it.getValue().stream())
                 .collect(Collectors.toSet()));
 
+        sessions.addAll(marketSubsRegistry.allSessions());
+
         String msg = mapper.writeValueAsString(new Ping());
         sessions.forEach(subs -> doSend(subs, msg));
     }
@@ -102,10 +104,6 @@ public class SubsRegistry {
                 unsubscribe(session);
             }
         }
-    }
-
-    private static String key(TradingCurrency from, TradingCurrency to) {
-        return from.getCode() + to.getCode();
     }
 
     @Data

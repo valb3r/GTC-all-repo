@@ -34,6 +34,12 @@ public class MarketSubsRegistry {
         );
     }
 
+    public Set<WebSocketSession> allSessions() {
+        return marketPricesToSessionId.entrySet().stream()
+                .flatMap(it -> it.getValue().stream())
+                .collect(Collectors.toSet());
+    }
+
     Map<TradingCurrency, Set<TradingCurrency>> dataToPoll() {
         return marketPricesToSessionId.keySet().stream().collect(
                 Collectors.groupingBy(
