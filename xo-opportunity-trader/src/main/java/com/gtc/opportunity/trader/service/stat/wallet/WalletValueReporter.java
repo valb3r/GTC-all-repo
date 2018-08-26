@@ -5,9 +5,11 @@ import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.domain.CryptoPricing;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.domain.Wallet;
+import com.gtc.opportunity.trader.domain.stat.StaticWallet;
 import com.gtc.opportunity.trader.repository.CryptoPricingRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
 import com.gtc.opportunity.trader.repository.WalletRepository;
+import com.gtc.opportunity.trader.repository.stat.StaticWalletRepository;
 import com.newrelic.api.agent.NewRelic;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +33,12 @@ public class WalletValueReporter {
     private static final String AMOUNT_RAW = "Custom/Amount/RAW";
     private static final String AMOUNT_USD = "Custom/Amount/USD";
     private static final String AMOUNT_MILLI_BTC = "Custom/Amount/MilliBTC";
+    private static final String AMOUNT_STATIC_MILLI_BTC = "Custom/Amount/Static/MilliBTC";
     private static final String AMOUNT_WITH_OPEN_MILLI_BTC = "Custom/Amount/WithOpenMilliBTC";
 
     private final TradeRepository tradeRepository;
     private final WalletRepository walletRepository;
+    private final StaticWalletRepository staticWalletRepository;
     private final CryptoPricingRepository cryptoPricingRepository;
 
     @Trace(dispatcher = true)
@@ -42,6 +46,11 @@ public class WalletValueReporter {
     @Scheduled(fixedRateString = "#{${app.schedule.reportTradePerformanceS} * 1000}")
     public void reportWalletValue() {
         Map<TradingCurrency, CryptoPricing> priceList = cryptoPricingRepository.priceList();
+        reportActualWalletValue(priceList);
+        reportStaticWalletValue(priceList);
+    }
+
+    private void reportActualWalletValue(Map<TradingCurrency, CryptoPricing> priceList) {
         BigDecimal rawValue = BigDecimal.ZERO;
         BigDecimal usdValue = BigDecimal.ZERO;
         BigDecimal btcValue = BigDecimal.ZERO;
@@ -67,5 +76,24 @@ public class WalletValueReporter {
         NewRelic.recordMetric(AMOUNT_USD, usdValue.floatValue());
         NewRelic.recordMetric(AMOUNT_MILLI_BTC, btcValue.floatValue() * 1000.0f);
         NewRelic.recordMetric(AMOUNT_WITH_OPEN_MILLI_BTC, btcValueWithOpen.floatValue() * 1000.0f);
+    }
+
+    /**
+     * reports performance of a wallet where no actions are done - it just follows market
+      */
+    private void reportStaticWalletValue(Map<TradingCurrency, CryptoPricing> priceList) {
+        BigDecimal btcValue = BigDecimal.ZERO;
+
+        for (StaticWallet wallet : staticWalletRepository.findByBalanceGreaterThan(BigDecimal.ZERO)) {
+            CryptoPricing pricing = priceList.get(wallet.getCurrency());
+            if (null == pricing) {
+                continue;
+            }
+
+            BigDecimal walletBtc = wallet.getBalance().multiply(pricing.getPriceBtc());
+            btcValue = btcValue.add(walletBtc);
+        }
+
+        NewRelic.recordMetric(AMOUNT_STATIC_MILLI_BTC, btcValue.floatValue() * 1000.0f);
     }
 }

@@ -17,7 +17,7 @@ import java.io.Serializable;
 @EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
-class ByClientAndCurrency implements Serializable {
+public class ByClientAndCurrency implements Serializable {
 
     @Id
     @GeneratedValue
