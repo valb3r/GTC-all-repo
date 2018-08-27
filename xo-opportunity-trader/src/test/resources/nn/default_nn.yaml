@@ -25,7 +25,7 @@ confs:
     l2: 1.0E-4
     l2Bias: 0.0
     layerName: "layer0"
-    nin: 20
+    nin: 80
     nout: 10
     weightInit: "XAVIER"
     weightNoise: null
