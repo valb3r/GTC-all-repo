@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class FeatureMapper {
 
     public static final int CAN_PROCEED_POS = 0;
-    static final int FEATURE_SIZE = 20;
+    static final int FEATURE_SIZE = 80;
     static final int LABEL_SIZE = 2;
 
     INDArray extractFeatures(FlatOrderBookWithHistory book) {
