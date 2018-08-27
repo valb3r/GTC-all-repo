@@ -1,12 +1,16 @@
 package com.gtc.opportunity.trader.service.nnopportunity;
 
 import com.gtc.model.provider.OrderBook;
+import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
+import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.newrelic.api.agent.Trace;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 /**
  * Created by Valentyn Berezin on 29.07.18.
@@ -28,11 +32,8 @@ public class NnDispatcher {
             return;
         }
 
-        try {
-            analyzer.analyzeAndCreateTradesIfNecessary(book);
-        } finally {
-            repository.addOrderBook(book);
-        }
+        Map<Strategy, FlatOrderBookWithHistory> enhancedBook = repository.addOrderBook(book);
+        analyzer.analyzeAndCreateTradesIfNecessary(book, enhancedBook);
     }
 
     private boolean validateBook(OrderBook book) {

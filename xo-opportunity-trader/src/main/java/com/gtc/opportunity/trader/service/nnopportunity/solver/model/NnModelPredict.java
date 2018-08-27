@@ -1,7 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity.solver.model;
 
 import com.gtc.opportunity.trader.domain.NnConfig;
-import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
+import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.StrategyDetails;
@@ -54,7 +54,7 @@ public class NnModelPredict {
                 .mapToDouble(it -> timestamp - it.getTimestamp()).average().orElse(0.0) / 1000.0);
     }
 
-    public Optional<StrategyDetails> computeStrategyIfPossible(Strategy strategy, FlatOrderBook book) {
+    public Optional<StrategyDetails> computeStrategyIfPossible(Strategy strategy, FlatOrderBookWithHistory book) {
         INDArray results = model.output(featureMapper.extractFeatures(book));
         float voteValue = results.getFloat(CAN_PROCEED_POS);
 
@@ -95,7 +95,7 @@ public class NnModelPredict {
         log.info("Model passed assessment");
     }
 
-    private void asses(Evaluation eval, List<FlatOrderBook> books, boolean isProceed) {
+    private void asses(Evaluation eval, List<FlatOrderBookWithHistory> books, boolean isProceed) {
         books.stream().map(featureMapper::extractFeatures).forEach(features ->
                 eval.eval(model.output(features), featureMapper.extractLabels(isProceed))
         );
@@ -108,10 +108,10 @@ public class NnModelPredict {
     @Getter
     private static class Splitter {
 
-        private final List<FlatOrderBook> proceedTrain;
-        private final List<FlatOrderBook> noopTrain;
-        private final List<FlatOrderBook> proceedTest;
-        private final List<FlatOrderBook> noopTest;
+        private final List<FlatOrderBookWithHistory> proceedTrain;
+        private final List<FlatOrderBookWithHistory> noopTrain;
+        private final List<FlatOrderBookWithHistory> proceedTest;
+        private final List<FlatOrderBookWithHistory> noopTest;
 
         Splitter(NnConfig config, Snapshot snapshot) {
             int splitTrainProceed = (int) (config.getTrainRelativeSize().doubleValue()

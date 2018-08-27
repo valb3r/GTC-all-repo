@@ -2,7 +2,7 @@ package com.gtc.opportunity.trader.service.nnopportunity.solver;
 
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.NnConfig;
-import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
+import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
@@ -11,7 +11,6 @@ import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactor
 import com.gtc.opportunity.trader.service.nnopportunity.solver.model.NnModelPredict;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.time.RateLimiter;
-import com.gtc.opportunity.trader.service.nnopportunity.util.BookFlattener;
 import com.gtc.opportunity.trader.service.nnopportunity.util.OrderBookKey;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import com.newrelic.api.agent.Trace;
@@ -32,9 +31,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import static com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy.BUY_LOW_SELL_HIGH;
-import static com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy.SELL_HIGH_BUY_LOW;
-
 /**
  * Created by Valentyn Berezin on 27.07.18.
  */
@@ -53,13 +49,13 @@ public class NnSolver {
     private final ModelFactory factory;
     private final NnDataRepository repository;
 
-    Optional<StrategyDetails> findStrategy(OrderBook book) {
-        Optional<StrategyDetails> buyLowSellHigh = solveForStrategy(book, BUY_LOW_SELL_HIGH);
-        Optional<StrategyDetails> sellHighBuyLow = solveForStrategy(book, SELL_HIGH_BUY_LOW);
-
+    Optional<StrategyDetails> findStrategy(OrderBook book, Map<Strategy, FlatOrderBookWithHistory> candidates) {
         Map<Double, StrategyDetails> votes = new HashMap<>();
-        buyLowSellHigh.ifPresent(it -> votes.put(it.getConfidence(), it));
-        sellHighBuyLow.ifPresent(it -> votes.put(it.getConfidence(), it));
+
+        candidates.forEach((strategy, strategyValue) -> {
+            Optional<StrategyDetails> result = solveForStrategy(book, strategyValue, strategy);
+            result.ifPresent(it -> votes.put(it.getConfidence(), it));
+        });
 
         return Optional.ofNullable(
                 votes.get(votes.keySet().stream().max(Double::compareTo).orElse(0.0))
@@ -96,7 +92,8 @@ public class NnSolver {
         );
     }
 
-    private Optional<StrategyDetails> solveForStrategy(OrderBook book, Strategy strategy) {
+    private Optional<StrategyDetails> solveForStrategy(
+            OrderBook book, FlatOrderBookWithHistory flatBook, Strategy strategy) {
         NnModelPredict predict = predictors.get(key(OrderBookKey.key(book), strategy));
 
         if (null == predict) {
@@ -107,7 +104,7 @@ public class NnSolver {
             return Optional.empty();
         }
 
-        return predict.computeStrategyIfPossible(strategy, BookFlattener.simplify(book));
+        return predict.computeStrategyIfPossible(strategy, flatBook);
     }
 
     private void createPredictor(Strategy strategy, Snapshot snapshot) {
@@ -137,9 +134,11 @@ public class NnSolver {
     }
 
     private boolean oldData(Snapshot snapshot) {
-        long actOld = (long) snapshot.getProceedLabel().stream().mapToLong(FlatOrderBook::getTimestamp).average()
+        long actOld = (long) snapshot.getProceedLabel().stream()
+                .mapToLong(FlatOrderBookWithHistory::getTimestamp).average()
                 .orElse(0.0);
-        long noopOld = (long) snapshot.getNoopLabel().stream().mapToLong(FlatOrderBook::getTimestamp).average()
+        long noopOld = (long) snapshot.getNoopLabel().stream()
+                .mapToLong(FlatOrderBookWithHistory::getTimestamp).average()
                 .orElse(0.0);
 
         return localTime.timestampMs() - Math.min(actOld, noopOld)

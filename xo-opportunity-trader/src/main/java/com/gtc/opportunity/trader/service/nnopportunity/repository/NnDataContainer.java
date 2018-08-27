@@ -2,6 +2,7 @@ package com.gtc.opportunity.trader.service.nnopportunity.repository;
 
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
+import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import com.gtc.opportunity.trader.service.nnopportunity.dto.Snapshot;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;
 
@@ -11,29 +12,21 @@ import java.util.stream.Collectors;
 public class NnDataContainer {
 
     private final Key key;
-    private final List<FlatOrderBook> uncategorized = new LinkedList<>();
     private final Map<Strategy, StrategyData> strategies;
-
-    private final int capacity;
 
     NnDataContainer(Key key, NnConfig config) {
         this.key = key;
-        this.capacity = config.getFutureNwindow();
         this.strategies = Arrays.stream(Strategy.values())
                 .collect(Collectors.toMap(it -> it, it -> new StrategyData(it, config)));
     }
 
-    void add(FlatOrderBook book) {
-        if (uncategorized.size() + 1 >= capacity) {
-            FlatOrderBook mature = uncategorized.remove(0);
-            strategies.forEach((name, data) -> {
-                data.evictPrice(mature);
-                data.labelIfCompliantAndStore(mature);
-            });
-        }
+    Map<Strategy, FlatOrderBookWithHistory> add(FlatOrderBook book) {
+        Map<Strategy, FlatOrderBookWithHistory> result = new EnumMap<>(Strategy.class);
+        strategies.forEach((strategy, data) ->
+            data.addBook(book).ifPresent(res -> result.put(strategy, res))
+        );
 
-        uncategorized.add(book);
-        strategies.forEach((name, data) -> data.addPrice(book));
+        return result;
     }
 
     Snapshot snapshot(Strategy strategy) {
@@ -52,7 +45,7 @@ public class NnDataContainer {
         double avgActAgeS = strategies.values().stream()
                 .mapToDouble(it -> avgAge(it.getActLabel(), currTimeMs)).average().orElse(-1.0);
 
-        double minCacheFullness = (double) uncategorized.size() / capacity;
+        double minCacheFullness = strategies.values().stream().mapToDouble(StrategyData::fullness).min().orElse(-1.0);
         double minLabelFullness = strategies.values().stream().mapToDouble(it -> Math.min(
                 (double) it.getNoopLabel().size() / it.getCollectNlabels(),
                 (double) it.getActLabel().size() / it.getCollectNlabels()
@@ -61,13 +54,13 @@ public class NnDataContainer {
         return new ContainerStatistics(avgNoopAgeS, avgActAgeS, minCacheFullness, minLabelFullness);
     }
 
-    private double avgAge(Queue<FlatOrderBook> data, long currTime) {
+    private double avgAge(Queue<FlatOrderBookWithHistory> data, long currTime) {
         if (data.isEmpty()) {
             return -1.0;
         }
 
         double total = 0.0;
-        for (FlatOrderBook book : data) {
+        for (FlatOrderBookWithHistory book : data) {
             total += (currTime - book.getTimestamp()) / 1000.0;
         }
 
