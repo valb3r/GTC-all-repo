@@ -1,16 +1,18 @@
 package com.gtc.opportunity.trader.service.nnopportunity.repository;
 
 import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.ImmutableList;
 import com.gtc.opportunity.trader.domain.NnConfig;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
+import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -19,15 +21,14 @@ import java.util.stream.Stream;
 @Slf4j
 class StrategyData {
 
-    private final Map<Float, AtomicInteger> pricesInFuture = new HashMap<>();
-
     private final AtomicLong lastBookTimestamp = new AtomicLong();
+    private final List<FlatOrderBook> booksInFuture = new ArrayList<>();
 
     @Getter
-    private final Queue<FlatOrderBook> noopLabel;
+    private final Queue<FlatOrderBookWithHistory> noopLabel;
 
     @Getter
-    private final Queue<FlatOrderBook> actLabel;
+    private final Queue<FlatOrderBookWithHistory> actLabel;
 
     private final NnConfig cfg;
     private final float gainNoopThreshold;
@@ -66,43 +67,58 @@ class StrategyData {
         return cfg.getCollectNlabeled() == noopLabel.size() && cfg.getCollectNlabeled() == actLabel.size();
     }
 
-    void addPrice(FlatOrderBook book) {
-        synchronized (pricesInFuture) {
-            pricesInFuture.computeIfAbsent(getSecondPrice.apply(book), id -> new AtomicInteger()).incrementAndGet();
-        }
+    double fullness() {
+        return (double) booksInFuture.size() / cfg.getFutureNwindow();
     }
 
-    void evictPrice(FlatOrderBook book) {
-        float price = getSecondPrice.apply(book);
-        synchronized (pricesInFuture) {
-            if (0 == pricesInFuture.get(price).decrementAndGet()) {
-                pricesInFuture.remove(price);
+    Optional<FlatOrderBookWithHistory> addBook(FlatOrderBook book) {
+        synchronized (booksInFuture) {
+            booksInFuture.add(book);
+            if (booksInFuture.size() < cfg.getFutureNwindow()) {
+                return Optional.empty();
             }
+            FlatOrderBook mature = booksInFuture.remove(0);
+            return labelIfCompliantAndStore(mature);
         }
     }
 
-    void labelIfCompliantAndStore(FlatOrderBook book) {
+    private Optional<FlatOrderBookWithHistory> labelIfCompliantAndStore(FlatOrderBook book) {
         if (!canStore(book)) {
-            return;
+            return Optional.empty();
         }
 
         lastBookTimestamp.set(book.getTimestamp());
 
-        Set<Float> futurePrices;
-        synchronized (pricesInFuture) {
-            futurePrices = new HashSet<>(pricesInFuture.keySet());
-        }
+        Set<Float> futurePrices = booksInFuture.stream()
+                .map(getSecondPrice)
+                .collect(Collectors.toSet());
 
         float bestFuture = futurePriceDesiredBound.apply(futurePrices.stream());
+        FlatOrderBookWithHistory result = new FlatOrderBookWithHistory(book, readCurrentHistory());
         if (gainOnFirstSecond.apply(getFirstPrice.apply(book), bestFuture) <= gainNoopThreshold) {
             synchronized (noopLabel) {
-                noopLabel.add(book);
+                noopLabel.add(result);
             }
         } else {
             synchronized (actLabel) {
-                actLabel.add(book);
+                actLabel.add(result);
             }
         }
+
+        return Optional.of(result);
+    }
+
+    private List<FlatOrderBook> readCurrentHistory() {
+        return ImmutableList.of(
+                getAt(10.0),
+                getAt(50.0),
+                getAt(100.0)
+        );
+    }
+
+    private FlatOrderBook getAt(double percentile) {
+        int pos = (int) ((booksInFuture.size() - 1) * percentile / 100.0);
+        return booksInFuture.get(pos >= booksInFuture.size() ? booksInFuture.size() - 1 : pos);
     }
 
     private boolean canStore(FlatOrderBook book) {
