@@ -53,6 +53,7 @@ class TestTradeRepository {
     private LocalDateTime min = LocalDateTime.MAX;
     private LocalDateTime max = LocalDateTime.MIN;
     private LocalDateTime current = LocalDateTime.MIN;
+    private long currentTimestamp = 0;
     private long pointIndex = 0;
 
     private static boolean isSell(CreateOrderCommand command) {
@@ -129,12 +130,17 @@ class TestTradeRepository {
         Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeOrderBalance(client, computePaired(done));
         Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts =
                 computeClosingAmountsAtBest(computePaired(done));
-        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(done, MILLIS_IN_10M);
+        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(opened(client), done, MILLIS_IN_10M);
 
         log.info("--------------------------- Statistics for {} ------------------------", client);
         reportJsonStats(client, doneBalance, pairwiseDoneBalance, pairwiseBestAmounts, timeToClose);
     }
 
+    private List<Opened> opened(String client) {
+        return byClientPairOrders.getOrDefault(client, Collections.emptyMap()).values().stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
     @SneakyThrows
     @SuppressWarnings("unchecked")
     private void reportJsonStats(
@@ -167,6 +173,10 @@ class TestTradeRepository {
         ));
         timeToClose.forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
+        );
+        logSeriesStats(
+                timeToClose.values().stream().flatMap(Collection::stream).collect(Collectors.toList()),
+                reportKey.apply("totalTimeToClose")
         );
         computeDoneDeviations().forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("priceDeviationsPct" + (k ? "Sell" : "Buy")))
@@ -221,8 +231,17 @@ class TestTradeRepository {
                 .collect(Collectors.toList());
     }
 
-    private Map<Boolean, List<Long>> computeTimeToClose(List<Closed> closed, long threshold) {
+    private Map<Boolean, List<Long>> computeTimeToClose(List<Opened> open, List<Closed> closed, long threshold) {
         Map<Boolean, List<Long>> timeToClose = new HashMap<>();
+
+        for (Opened val : open) {
+            long dt = currentTimestamp - val.getTimestamp();
+            if (dt < threshold) {
+                continue;
+            }
+
+            timeToClose.computeIfAbsent(isSell(val.getCommand()), id -> new ArrayList<>()).add(dt);
+        }
 
         for (Closed val : closed) {
             long dt = val.getTimestampClose() - val.getTimestampOpen();
@@ -336,15 +355,22 @@ class TestTradeRepository {
     }
 
     private <T extends Number> void logSeriesStats(Collection<T> values, Map<String, Object> target) {
+        if (values.isEmpty()) {
+            return;
+        }
+
         DescriptiveStatistics statistics = new DescriptiveStatistics();
         values.forEach(it -> statistics.addValue(it.doubleValue()));
+        target.put("count", values.size());
         target.put("mean", statistics.getMean());
         target.put("stdev", statistics.getStandardDeviation());
+        target.put("percentile5", statistics.getPercentile(5.0));
         target.put("percentile10", statistics.getPercentile(10.0));
         target.put("percentile25", statistics.getPercentile(25.0));
         target.put("percentile50", statistics.getPercentile(50.0));
         target.put("percentile75", statistics.getPercentile(75.0));
         target.put("percentile90", statistics.getPercentile(90.0));
+        target.put("percentile95", statistics.getPercentile(95.0));
     }
 
     private BigDecimal getCharge(String client) {
@@ -365,6 +391,7 @@ class TestTradeRepository {
         current = time;
         min = time.compareTo(min) < 0 ? time : min;
         max = time.compareTo(max) > 0 ? time : max;
+        currentTimestamp = book.getMeta().getTimestamp();
     }
 
     @Data
