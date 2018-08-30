@@ -172,11 +172,11 @@ class TestTradeRepository {
             logSeriesStats(v, reportKey.apply("whenClosingBest" + (k ? "Sell" : "Buy") + "Amount"))
         ));
         timeToClose.forEach((k, v) ->
-                logSeriesStats(v, reportKey.apply("timeToClose" + (k ? "Sell" : "Buy")))
+                logSeriesStats(v, reportKey.apply("timeToCloseWthreshold" + (k ? "Sell" : "Buy")))
         );
         logSeriesStats(
                 timeToClose.values().stream().flatMap(Collection::stream).collect(Collectors.toList()),
-                reportKey.apply("totalTimeToClose")
+                reportKey.apply("totalTimeToCloseWthreshold")
         );
         computeDoneDeviations().forEach((k, v) ->
                 logSeriesStats(v, reportKey.apply("priceDeviationsPct" + (k ? "Sell" : "Buy")))
