@@ -1,0 +1,1 @@
+ALTER TABLE client_config ADD COLUMN fee_mode VARCHAR(16) DEFAULT 'FEE_AFTER';
