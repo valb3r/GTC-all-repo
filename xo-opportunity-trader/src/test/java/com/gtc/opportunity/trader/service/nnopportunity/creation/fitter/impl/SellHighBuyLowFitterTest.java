@@ -18,34 +18,66 @@ class SellHighBuyLowFitterTest extends FitterBase {
     private SellHighBuyLowFitter fitter;
 
     @Test
-    void afterNoGain() {
+    void afterNoGainLoss() {
         OrderBook book = OrderBook.builder().bestBuy(1.0).build();
+
+        FeeFitted fitted = fitter.after(book, binance);
+
+        assertThat(fitted.getBuyPrice()).isEqualByComparingTo("0.999");
+        assertThat(fitted.getSellPrice()).isEqualByComparingTo("1");
+        assertThat(fitted.getBuyAmount()).isEqualByComparingTo("1");
+        assertThat(fitted.getSellAmount()).isEqualByComparingTo("1");
+        assertThat(fitted.getAmount()).isEqualByComparingTo("1");
+        assertThat(fitted.getProfitFrom()).isEqualByComparingTo("-0.001");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void afterGainLoss() {
+        OrderBook book = OrderBook.builder().bestBuy(1.0).build();
+        nnBinance.setFuturePriceGainPct(BigDecimal.ONE);
 
         FeeFitted fitted = fitter.after(book, binance);
 
         assertThat(fitted.getBuyPrice()).isEqualByComparingTo("0.9891089");
         assertThat(fitted.getSellPrice()).isEqualByComparingTo("1");
-        assertThat(fitted.getBuyAmount()).isEqualByComparingTo("1.01");
+        assertThat(fitted.getBuyAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getSellAmount()).isEqualByComparingTo("1");
-        assertThat(fitted.getAmount()).isEqualByComparingTo("1.005");
-        assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0.00899");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("1.1E-8");
+        assertThat(fitted.getAmount()).isEqualByComparingTo("1");
+        assertThat(fitted.getProfitFrom()).isEqualByComparingTo("-0.001");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.0098911");
     }
 
     @Test
-    void afterGain() {
+    void afterNoGainNoLoss() {
         OrderBook book = OrderBook.builder().bestBuy(1.0).build();
-        nnBinance.setFuturePriceGainPct(new BigDecimal("1"));
+        binance.setMinOrder(BigDecimal.TEN);
+        FeeFitted fitted = fitter.after(book, binance);
+
+        assertThat(fitted.getBuyPrice()).isEqualByComparingTo("0.9970059");
+        assertThat(fitted.getSellPrice()).isEqualByComparingTo("1");
+        assertThat(fitted.getBuyAmount()).isEqualByComparingTo("10.02");
+        assertThat(fitted.getSellAmount()).isEqualByComparingTo("10.00");
+        assertThat(fitted.getAmount()).isEqualByComparingTo("10.01");
+        assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0.00998");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("8.82E-7");
+    }
+
+    @Test
+    void afterGainNoLoss() {
+        OrderBook book = OrderBook.builder().bestBuy(1.0).build();
+        binance.setMinOrder(BigDecimal.TEN);
+        nnBinance.setFuturePriceGainPct(new BigDecimal("0.1"));
 
         FeeFitted fitted = fitter.after(book, binance);
 
-        assertThat(fitted.getBuyPrice()).isEqualByComparingTo("0.9793157");
+        assertThat(fitted.getBuyPrice()).isEqualByComparingTo("0.9960099");
         assertThat(fitted.getSellPrice()).isEqualByComparingTo("1");
-        assertThat(fitted.getBuyAmount()).isEqualByComparingTo("1.01");
-        assertThat(fitted.getSellAmount()).isEqualByComparingTo("1");
-        assertThat(fitted.getAmount()).isEqualByComparingTo("1.005");
-        assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0.00899");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.009891091091091098");
+        assertThat(fitted.getBuyAmount()).isEqualByComparingTo("10.02");
+        assertThat(fitted.getSellAmount()).isEqualByComparingTo("10.00");
+        assertThat(fitted.getAmount()).isEqualByComparingTo("10.01");
+        assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0.00998");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.009980802000");
     }
 
     @Test

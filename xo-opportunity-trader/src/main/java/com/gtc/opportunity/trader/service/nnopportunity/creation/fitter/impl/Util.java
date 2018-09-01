@@ -51,6 +51,12 @@ final class Util {
         return BigDecimal.ONE.subtract(config.getTradeChargeRatePct().movePointLeft(2)).doubleValue();
     }
 
+    boolean canUseNoLoss(ClientConfig config) {
+        return BigDecimal.ONE.movePointLeft(config.getScaleAmount())
+                .divide(config.getMinOrder(), MathContext.DECIMAL128)
+                .scale() >= 2 + config.getTradeChargeRatePct().scale();
+    }
+
     private BigDecimal calculateMinAmountWithNotional(ClientConfig cfg, BigDecimal price) {
         if (null == cfg.getMinOrderInToCurrency()) {
             return cfg.getMinOrder();
