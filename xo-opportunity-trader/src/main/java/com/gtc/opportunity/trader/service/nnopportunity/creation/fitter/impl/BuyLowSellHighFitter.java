@@ -16,12 +16,43 @@ public class BuyLowSellHighFitter implements Fitter {
 
     @Override
     public FeeFitted after(OrderBook book, ClientConfig config) {
+        if (Util.canUseNoLoss(config)) {
+            return afterNoLoss(book, config);
+        }
+
+        return afterLoss(book, config);
+    }
+
+    @Override
+    public FeeFitted before(OrderBook book, ClientConfig config) {
+        BigDecimal priceWeBuy = Util.ceilPrice(config, book.getBestSell());
+        BigDecimal amount = Util.calculateAmount(config, priceWeBuy);
+        double charge = Util.computeCharge(config);
+        BigDecimal priceWeSell = Util.ceilPrice(config,
+                priceWeBuy.doubleValue() / charge / charge * Util.computeGain(config)
+        );
+
+        return new FeeFitted(
+                priceWeBuy,
+                priceWeSell,
+                amount,
+                amount,
+                amount,
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(
+                        amount.doubleValue() * (priceWeSell.doubleValue() * charge - priceWeBuy.doubleValue() / charge)
+                )
+        );
+    }
+
+    private FeeFitted afterNoLoss(OrderBook book, ClientConfig config) {
         BigDecimal priceWeBuy = Util.ceilPrice(config, book.getBestSell());
         BigDecimal buyAmount = Util.calculateAmount(config, priceWeBuy);
         double charge = Util.computeCharge(config);
-        BigDecimal sellAmount = Util.floorAmount(config, buyAmount.doubleValue() / charge);
+        BigDecimal sellAmount = Util.floorAmount(config, buyAmount.doubleValue() * charge);
         BigDecimal priceWeSell = Util.ceilPrice(config,
-                priceWeBuy.doubleValue() * priceWeBuy.doubleValue() / sellAmount.doubleValue() / charge
+                priceWeBuy.doubleValue() * buyAmount.doubleValue() / sellAmount.doubleValue() / charge
+                        * Util.computeGain(config)
         );
 
         return new FeeFitted(
@@ -36,13 +67,12 @@ public class BuyLowSellHighFitter implements Fitter {
         );
     }
 
-    @Override
-    public FeeFitted before(OrderBook book, ClientConfig config) {
+    private FeeFitted afterLoss(OrderBook book, ClientConfig config) {
         BigDecimal priceWeBuy = Util.ceilPrice(config, book.getBestSell());
         BigDecimal amount = Util.calculateAmount(config, priceWeBuy);
         double charge = Util.computeCharge(config);
         BigDecimal priceWeSell = Util.ceilPrice(config,
-                priceWeBuy.doubleValue() / charge / charge / Util.computeGain(config)
+                priceWeBuy.doubleValue() / charge * Util.computeGain(config)
         );
 
         return new FeeFitted(
@@ -51,10 +81,8 @@ public class BuyLowSellHighFitter implements Fitter {
                 amount,
                 amount,
                 amount,
-                BigDecimal.ZERO,
-                BigDecimal.valueOf(
-                        amount.doubleValue() * (priceWeSell.doubleValue() * charge - priceWeBuy.doubleValue() / charge)
-                )
-        );
+                amount.multiply(BigDecimal.valueOf(charge)).subtract(amount),
+                amount.multiply(priceWeSell).multiply(BigDecimal.valueOf(charge))
+                        .subtract(amount.multiply(priceWeBuy)));
     }
 }
