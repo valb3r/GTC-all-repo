@@ -9,10 +9,7 @@ import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.config.CacheConfig;
-import com.gtc.opportunity.trader.domain.Client;
-import com.gtc.opportunity.trader.domain.ClientConfig;
-import com.gtc.opportunity.trader.domain.NnConfig;
-import com.gtc.opportunity.trader.domain.Trade;
+import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.*;
 import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.UuidGenerator;
@@ -207,6 +204,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .build();
         cfg.setEnabled(true);
         cfg.setNnConfig(getNnConfig(cfg));
+        cfg.setFeeSystem(env.getFeeSystem());
         return cfg;
     }
 
@@ -303,6 +301,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         private BigDecimal bookTestForOpenPerS = new BigDecimal(get("BOOK_TEST_FOR_OPEN_S", "0.01"));
         private BigDecimal futureGainPct = new BigDecimal(get("FUTURE_GAIN_PCT", "0.2"));
         private BigDecimal noopThreshold = new BigDecimal(get("NOOP_THRESHOLD", "1.002"));
+        private FeeSystem feeSystem = FeeSystem.valueOf(get("FEE_SYSTEM", "FEE_AFTER"));
 
         @SneakyThrows
         private static String getConfig(String resourcePath) {
