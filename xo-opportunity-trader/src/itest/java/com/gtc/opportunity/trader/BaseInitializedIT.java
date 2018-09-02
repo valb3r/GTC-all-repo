@@ -1,10 +1,7 @@
 package com.gtc.opportunity.trader;
 
 import com.gtc.meta.TradingCurrency;
-import com.gtc.opportunity.trader.domain.Client;
-import com.gtc.opportunity.trader.domain.ClientConfig;
-import com.gtc.opportunity.trader.domain.NnConfig;
-import com.gtc.opportunity.trader.domain.Wallet;
+import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.ClientConfigRepository;
 import com.gtc.opportunity.trader.repository.ClientRepository;
 import com.gtc.opportunity.trader.repository.NnConfigRepository;
@@ -65,6 +62,7 @@ public abstract class BaseInitializedIT extends BaseIT {
                 .scalePrice(SCALE_PRICE)
                 .scaleAmount(SCALE_AMOUNT)
                 .build();
+        createdConfig.setFeeSystem(FeeSystem.FEE_AFTER);
 
         createdNnConfig = NnConfig.builder()
                 .clientCfg(createdConfig)

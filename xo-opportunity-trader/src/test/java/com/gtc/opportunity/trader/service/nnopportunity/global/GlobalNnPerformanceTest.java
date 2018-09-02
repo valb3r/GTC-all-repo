@@ -20,6 +20,9 @@ import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
 import com.gtc.opportunity.trader.service.nnopportunity.creation.NnCreateTradesService;
+import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.FeeFitter;
+import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.impl.BuyLowSellHighFitter;
+import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.impl.SellHighBuyLowFitter;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
@@ -175,7 +178,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         initTradeCreationService(name);
 
         return new NnCreateTradesService(commander, tradeCreationService, configs,
-                mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class));
+                mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class),
+                new FeeFitter(new BuyLowSellHighFitter(), new SellHighBuyLowFitter()));
     }
 
     private void initClientConfigCache() {

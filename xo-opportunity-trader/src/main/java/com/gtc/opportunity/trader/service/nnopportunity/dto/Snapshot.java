@@ -1,6 +1,5 @@
 package com.gtc.opportunity.trader.service.nnopportunity.dto;
 
-import com.gtc.opportunity.trader.service.dto.FlatOrderBook;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.Key;
 import lombok.Data;

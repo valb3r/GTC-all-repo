@@ -47,6 +47,9 @@ public class ClientConfig extends ByClientAndCurrency {
     @OneToOne(mappedBy = "clientCfg")
     private NnConfig nnConfig;
 
+    @Enumerated(EnumType.STRING)
+    private FeeSystem feeSystem;
+
     @Builder(toBuilder = true)
     public ClientConfig(int id, Client client, TradingCurrency currency, TradingCurrency currencyTo,
                         BigDecimal minOrder, BigDecimal maxOrder, BigDecimal minOrderInToCurrency,
