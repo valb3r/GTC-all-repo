@@ -22,13 +22,13 @@ import static org.mockito.Mockito.verify;
 /**
  * Created by Valentyn Berezin on 21.08.18.
  */
-public class NnOrderCancellerIT extends BaseNnTradeInitialized {
+public class NnOrderHardCancellerIT extends BaseNnTradeInitialized {
 
     @Autowired
     private CurrentTimestamp dbTime;
 
     @Autowired
-    private NnOrderCanceller canceller;
+    private NnOrderHardCanceller canceller;
 
     @MockBean
     private WsGatewayCommander commander;
@@ -37,7 +37,7 @@ public class NnOrderCancellerIT extends BaseNnTradeInitialized {
     public void testCancelsSlaveKeepsMaster() {
         expireSlave(TradeStatus.OPENED);
 
-        canceller.cancel();
+        canceller.hardCancel();
 
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.UNKNOWN);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
@@ -49,7 +49,7 @@ public class NnOrderCancellerIT extends BaseNnTradeInitialized {
         bindSlaveToOther();
         expireMaster(TradeStatus.OPENED);
 
-        canceller.cancel();
+        canceller.hardCancel();
 
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.DEPENDS_ON);
@@ -62,7 +62,7 @@ public class NnOrderCancellerIT extends BaseNnTradeInitialized {
         expireSlave(TradeStatus.OPENED);
         expireMaster(TradeStatus.OPENED);
 
-        canceller.cancel();
+        canceller.hardCancel();
 
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
@@ -71,7 +71,7 @@ public class NnOrderCancellerIT extends BaseNnTradeInitialized {
 
     @Test
     public void testCancelsNone() {
-        canceller.cancel();
+        canceller.hardCancel();
 
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.UNKNOWN);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.DEPENDS_ON);
@@ -83,7 +83,7 @@ public class NnOrderCancellerIT extends BaseNnTradeInitialized {
         expireSlave(TradeStatus.UNKNOWN);
         expireMaster(TradeStatus.UNKNOWN);
 
-        canceller.cancel();
+        canceller.hardCancel();
 
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.UNKNOWN);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.UNKNOWN);
