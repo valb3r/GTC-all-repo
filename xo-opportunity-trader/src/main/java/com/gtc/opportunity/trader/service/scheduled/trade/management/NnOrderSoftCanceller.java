@@ -2,7 +2,7 @@ package com.gtc.opportunity.trader.service.scheduled.trade.management;
 
 import com.gtc.model.gateway.command.manage.CancelOrderCommand;
 import com.gtc.opportunity.trader.domain.*;
-import com.gtc.opportunity.trader.repository.SoftCancelRepository;
+import com.gtc.opportunity.trader.repository.SoftCancelConfigRepository;
 import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
@@ -34,7 +34,7 @@ public class NnOrderSoftCanceller {
 
     private final WsGatewayCommander commander;
     private final CurrentTimestamp dbTime;
-    private final SoftCancelRepository softCancelConfig;
+    private final SoftCancelConfigRepository softCancelConfig;
     private final StateMachineService<TradeStatus, TradeEvent> tradeMachines;
     private final OldOrderFinder finder;
     private final TradeCreationService tradesService;
@@ -46,7 +46,7 @@ public class NnOrderSoftCanceller {
     @Scheduled(fixedDelayString = "#{${app.schedule.order.cancellerS} * 1000}")
     public void softCancel() {
         LocalDateTime now = dbTime.dbNow();
-        Map<OldOrderFinder.Key, SoftCancel> byClient = getActiveConfigs();
+        Map<OldOrderFinder.Key, SoftCancelConfig> byClient = getActiveConfigs();
 
         finder.expiredSlave(
                 now,
@@ -56,10 +56,10 @@ public class NnOrderSoftCanceller {
         ).forEach(it -> cancelAndReplaceOrderIfPossible(byClient, it));
     }
 
-    private void cancelAndReplaceOrderIfPossible(Map<OldOrderFinder.Key, SoftCancel> cancels, Trade trade) {
+    private void cancelAndReplaceOrderIfPossible(Map<OldOrderFinder.Key, SoftCancelConfig> cancels, Trade trade) {
         Optional<ClientConfig> config = cache.getClientCfg(
                 trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
-        SoftCancel cancelCfg = cancels.get(
+        SoftCancelConfig cancelCfg = cancels.get(
                 new OldOrderFinder.Key(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo())
         );
 
@@ -68,7 +68,7 @@ public class NnOrderSoftCanceller {
         }
 
         log.info("Attempting to soft-cancel order {}", trade.getId());
-        BigDecimal lossPrice = cancelPriceFinder.findLossPrice(config.get(), cancelCfg, trade);
+        BigDecimal lossPrice = cancelPriceFinder.findSuitableLossPrice(cancelCfg, trade);
         if (null == lossPrice) {
             return;
         }
@@ -112,7 +112,7 @@ public class NnOrderSoftCanceller {
         }
     }
 
-    private Map<OldOrderFinder.Key, SoftCancel> getActiveConfigs() {
+    private Map<OldOrderFinder.Key, SoftCancelConfig> getActiveConfigs() {
         return softCancelConfig.findAllActive().stream()
                 .collect(Collectors.toMap(
                         it -> new OldOrderFinder.Key(

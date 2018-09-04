@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TradeMachine {
 
+    private final SoftCancelHandler softCancelHandler;
     private final BalanceReleaser releaser;
     private final TradeMessageProcessor processor;
     private final AcceptInteractor acceptInteractor;
@@ -45,21 +46,21 @@ public class TradeMachine {
 
     @Transactional
     public void done(StateContext<TradeStatus, TradeEvent> state) {
-        processor.acceptAndGet(state, (trade, value) -> {});
+        processor.acceptAndGet(state, (trade, value) -> {}).ifPresent(trade -> updateSoftCancelIfNeeded(trade, state));
         acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.TRADE_DONE);
         releaser.release(id(state));
     }
 
     @Transactional
     public void cancel(StateContext<TradeStatus, TradeEvent> state) {
-        processor.acceptAndGet(state, (trade, value) -> {});
+        processor.acceptAndGet(state, (trade, value) -> {}).ifPresent(trade -> updateSoftCancelIfNeeded(trade, state));
         acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.CANCEL);
         releaser.release(id(state), true);
     }
 
     @Transactional
     public void softCancel(StateContext<TradeStatus, TradeEvent> state) {
-        processor.acceptAndGet(state, (trade, value) -> {});
+        processor.acceptAndGet(state, (trade, value) -> {}).ifPresent(trade -> updateSoftCancelIfNeeded(trade, state));
         // Not sending to super here, because we should be able to rollback safely
         releaser.release(id(state), true);
     }
@@ -85,9 +86,13 @@ public class TradeMachine {
     }
 
     private void error(StateContext<TradeStatus, TradeEvent> state) {
-        processor.acceptAndGet(state, Trade::setLastError);
+        processor.acceptAndGet(state, Trade::setLastError).ifPresent(trade -> updateSoftCancelIfNeeded(trade, state));
         acceptInteractor.sendToSuperIfExists(id(state), state, AcceptEvent.ISSUE);
         releaser.release(id(state), true);
+    }
+
+    private void updateSoftCancelIfNeeded(Trade trade, StateContext<TradeStatus, TradeEvent> state) {
+        softCancelHandler.updateSoftCancelIfNeeded(trade, state.getTarget().getId());
     }
 
     private static String id(StateContext<TradeStatus, TradeEvent> state) {

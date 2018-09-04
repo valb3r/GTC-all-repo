@@ -4,12 +4,10 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 /**
- * Created by Valentyn Berezin on 03.09.18.
+ * Created by Valentyn Berezin on 04.09.18.
  */
-
 @Entity
 @Getter
 @Setter
@@ -28,14 +26,6 @@ public class SoftCancel implements Serializable {
     @JoinColumn(name = "id")
     private ClientConfig clientCfg;
 
-    @Column(name = "wait_m")
-    private int waitM;
-
-    private BigDecimal minPriceLossPct;
-
-    private BigDecimal maxPriceLossPct;
-
-    private BigDecimal lossToProfitRatio;
-
-    private boolean enabled;
+    private int done;
+    private int cancelled;
 }
