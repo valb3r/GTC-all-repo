@@ -1,13 +1,12 @@
-package com.gtc.opportunity.trader.service;
+package com.gtc.opportunity.trader.service.compute;
 
 import com.gtc.opportunity.trader.domain.FeeSystem;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -16,6 +15,10 @@ import java.util.function.Function;
  */
 @Service
 public class TradeBalanceChange {
+
+    public BalanceChange compute(FeeSystem system, BigDecimal feePct, TradeDesc... trades) {
+        return compute(Arrays.asList(trades), system, feePct);
+    }
 
     public BalanceChange compute(List<TradeDesc> trades, FeeSystem system, BigDecimal feePct) {
         BalanceChange result = new BalanceChange();
@@ -64,36 +67,5 @@ public class TradeBalanceChange {
 
     private BigDecimal fee(BigDecimal feePct) {
         return BigDecimal.ONE.subtract(feePct.movePointLeft(2));
-    }
-
-    @Data
-    @AllArgsConstructor
-    public static class BalanceChange {
-
-        private final BigDecimal from;
-        private final BigDecimal to;
-
-        BalanceChange() {
-            from = BigDecimal.ZERO;
-            to = BigDecimal.ZERO;
-        }
-
-        BalanceChange add(BalanceChange other) {
-            return new BalanceChange(from.add(other.from), to.add(other.to));
-        }
-    }
-
-    @Data
-    public static class TradeDesc {
-
-        private final BigDecimal price;
-        private final BigDecimal amount;
-        private final boolean isSell;
-
-        public TradeDesc(BigDecimal price, BigDecimal amount, boolean isSell) {
-            this.price = price;
-            this.amount = amount.abs();
-            this.isSell = isSell;
-        }
     }
 }

@@ -3,6 +3,9 @@ package com.gtc.opportunity.trader.service;
 import com.google.common.collect.ImmutableList;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.domain.FeeSystem;
+import com.gtc.opportunity.trader.service.compute.BalanceChange;
+import com.gtc.opportunity.trader.service.compute.TradeBalanceChange;
+import com.gtc.opportunity.trader.service.compute.TradeDesc;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 
@@ -23,7 +26,7 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
 
     @Test
     void computeBeforeSingleBuy() {
-        TradeBalanceChange.BalanceChange change = tested
+        BalanceChange change = tested
                 .compute(
                         ImmutableList.of(buy("0.000890", AMOUNT_ONE)),
                         FeeSystem.FEE_BEFORE,
@@ -36,7 +39,7 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
 
     @Test
     void computeBeforeSingleSell() {
-        TradeBalanceChange.BalanceChange change = tested
+        BalanceChange change = tested
                 .compute(
                         ImmutableList.of(sell("0.000892", AMOUNT_ONE)),
                         FeeSystem.FEE_BEFORE,
@@ -49,7 +52,7 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
 
     @Test
     void computeBefore() {
-        TradeBalanceChange.BalanceChange change = tested
+        BalanceChange change = tested
                 .compute(
                         ImmutableList.of(buy("0.000890", AMOUNT_ONE), sell("0.000892", AMOUNT_ONE)),
                         FeeSystem.FEE_BEFORE,
@@ -62,7 +65,7 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
 
     @Test
     void computeAfterSingleBuy() {
-        TradeBalanceChange.BalanceChange change = tested
+        BalanceChange change = tested
                 .compute(
                         ImmutableList.of(buy("0.0008787", AMOUNT_TWO)),
                         FeeSystem.FEE_AFTER,
@@ -75,7 +78,7 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
 
     @Test
     void computeAfterSingleSell() {
-        TradeBalanceChange.BalanceChange change = tested
+        BalanceChange change = tested
                 .compute(
                         ImmutableList.of(sell("0.0008781", AMOUNT_TWO)),
                         FeeSystem.FEE_AFTER,
@@ -89,7 +92,7 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
 
     @Test
     void computeAfter() {
-        TradeBalanceChange.BalanceChange change = tested
+        BalanceChange change = tested
                 .compute(
                         ImmutableList.of(buy("0.0008787", AMOUNT_TWO), sell("0.0008781", AMOUNT_TWO)),
                         FeeSystem.FEE_AFTER,
@@ -101,11 +104,11 @@ class TradeBalanceChangeTest extends BaseMockitoTest {
         assertThat(change.getTo()).isEqualByComparingTo("-0.000002957");
     }
 
-    private TradeBalanceChange.TradeDesc sell(String price, String amount) {
-        return new TradeBalanceChange.TradeDesc(new BigDecimal(price), new BigDecimal(amount), true);
+    private TradeDesc sell(String price, String amount) {
+        return new TradeDesc(new BigDecimal(price), new BigDecimal(amount), true);
     }
 
-    private TradeBalanceChange.TradeDesc buy(String price, String amount) {
-        return new TradeBalanceChange.TradeDesc(new BigDecimal(price), new BigDecimal(amount), false);
+    private TradeDesc buy(String price, String amount) {
+        return new TradeDesc(new BigDecimal(price), new BigDecimal(amount), false);
     }
 }

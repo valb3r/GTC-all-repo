@@ -15,6 +15,7 @@ import com.gtc.opportunity.trader.service.LatestPrices;
 import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
+import com.gtc.opportunity.trader.service.compute.TradeBalanceChange;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
 import com.gtc.opportunity.trader.service.nnopportunity.creation.NnCreateTradesService;
@@ -93,6 +94,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private NnAnalyzer nnAnalyzer;
     private NnDispatcher disptacher;
     private LatestPrices latestPrices;
+    private TradeBalanceChange change = new TradeBalanceChange();
 
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
@@ -179,7 +181,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
         return new NnCreateTradesService(commander, tradeCreationService, configs,
                 mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class),
-                new FeeFitter(new BuyLowSellHighFitter(), new SellHighBuyLowFitter()));
+                new FeeFitter(new BuyLowSellHighFitter(change), new SellHighBuyLowFitter(change)));
     }
 
     private void initClientConfigCache() {
