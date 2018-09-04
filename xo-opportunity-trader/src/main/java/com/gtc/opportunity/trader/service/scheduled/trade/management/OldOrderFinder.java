@@ -3,9 +3,7 @@ package com.gtc.opportunity.trader.service.scheduled.trade.management;
 import com.google.common.collect.ImmutableList;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.repository.NnConfigRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
-import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,13 +26,11 @@ import static com.gtc.opportunity.trader.domain.TradeStatus.OPENED;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OldOrderFinder {
+class OldOrderFinder {
 
     private final TradeRepository tradeRepository;
-    private final CurrentTimestamp dbTime;
-    private final NnConfigRepository nnCfg;
 
-    public List<Trade> expiredMaster(LocalDateTime now, Map<Key, Integer> expiryM) {
+    List<Trade> expiredMaster(LocalDateTime now, Map<Key, Integer> expiryM) {
         return listOld(
                 (delayM, trade) -> canCancelMaster(delayM, now, trade),
                 expiryM,
@@ -44,7 +40,7 @@ public class OldOrderFinder {
         );
     }
 
-    public List<Trade> expiredSlave(LocalDateTime now, Map<Key, Integer> expiryM) {
+    List<Trade> expiredSlave(LocalDateTime now, Map<Key, Integer> expiryM) {
         return listOld(
                 (delayM, trade) -> canCancelSlave(delayM, now, trade),
                 expiryM,

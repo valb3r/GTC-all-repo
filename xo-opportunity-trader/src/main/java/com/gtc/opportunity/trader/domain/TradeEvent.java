@@ -12,6 +12,7 @@ public enum TradeEvent {
     TRANSIENT_ERR,
     ERROR,
     CANCELLED,
+    SOFT_CANCELLED,
     DONE;
 
     public static final String DATA = "data";

@@ -31,5 +31,11 @@ public class SoftCancel implements Serializable {
     @Column(name = "wait_m")
     private int waitM;
 
+    private BigDecimal minPriceLossPct;
+
+    private BigDecimal maxPriceLossPct;
+
     private BigDecimal lossToProfitRatio;
+
+    private boolean enabled;
 }

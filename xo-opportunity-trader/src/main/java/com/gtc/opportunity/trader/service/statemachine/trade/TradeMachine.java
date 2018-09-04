@@ -58,6 +58,13 @@ public class TradeMachine {
     }
 
     @Transactional
+    public void softCancel(StateContext<TradeStatus, TradeEvent> state) {
+        processor.acceptAndGet(state, (trade, value) -> {});
+        // Not sending to super here, because we should be able to rollback safely
+        releaser.release(id(state), true);
+    }
+
+    @Transactional
     public void transientError(StateContext<TradeStatus, TradeEvent> state) {
         error(state);
     }
