@@ -90,7 +90,7 @@ public class NnOrderSoftCanceller {
                 trade.getAssignedId()
         ));
 
-        log.info("Pushing soft-cancel order {}", softCancel);
+        log.info("Pushing soft-cancel order {}", softCancel.getCommand());
         commander.createOrder(softCancel.getCommand());
 
         // TODO: acknowledge top-order machine that it is done in soft-cancel mode, consider transaction nesting
@@ -98,7 +98,7 @@ public class NnOrderSoftCanceller {
 
     private TradeDto createSoftCancelTrade(ClientConfig config, BigDecimal price, Trade trade) {
         try {
-            return tradesService.createTradeNoSideValidation(
+            TradeDto cancel = tradesService.createTradeNoSideValidation(
                     trade.getDependsOn(),
                     config,
                     price,
@@ -106,6 +106,13 @@ public class NnOrderSoftCanceller {
                     trade.isSell(),
                     true
             );
+
+            StateMachine<TradeStatus, TradeEvent> machine = tradeMachines
+                    .acquireStateMachine(cancel.getTrade().getId());
+            machine.sendEvent(TradeEvent.DEPENDENCY_DONE);
+            tradeMachines.releaseStateMachine(machine.getId());
+
+            return cancel;
         } catch (RejectionException ex) {
             log.warn("Soft-cancel trade could not be created, aborting", ex);
             return null;
