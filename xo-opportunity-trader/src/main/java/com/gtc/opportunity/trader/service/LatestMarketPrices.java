@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by Valentyn Berezin on 03.09.18.
  */
 @Service
-public class LatestPrices {
+public class LatestMarketPrices {
 
     private final Map<String, BigDecimal> latestBestSell = new ConcurrentHashMap<>();
     private final Map<String, BigDecimal> latestBestBuy = new ConcurrentHashMap<>();

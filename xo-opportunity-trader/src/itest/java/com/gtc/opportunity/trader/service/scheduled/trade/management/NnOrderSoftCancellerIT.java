@@ -6,7 +6,7 @@ import com.gtc.opportunity.trader.BaseNnTradeInitialized;
 import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.SoftCancelConfigRepository;
 import com.gtc.opportunity.trader.repository.SoftCancelRepository;
-import com.gtc.opportunity.trader.service.LatestPrices;
+import com.gtc.opportunity.trader.service.LatestMarketPrices;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,8 +20,11 @@ import org.springframework.test.context.transaction.BeforeTransaction;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,7 +56,7 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
     protected StateMachineService<TradeStatus, TradeEvent> tradeMachines;
 
     @MockBean
-    private LatestPrices prices;
+    private LatestMarketPrices prices;
 
     @MockBean
     private WsGatewayCommander commander;
@@ -111,29 +114,60 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
         verify(commander).cancel(cancelCmd.capture());
         verify(commander).createOrder(createCmd.capture());
         assertThat(cancelCmd.getValue().getOrderId()).isEqualTo(TRADE_TWO);
-        assertThat(createCmd.getValue().getPrice()).isEqualByComparingTo(BEST_SELL);
+        assertThat(createCmd.getValue().getPrice()).isEqualByComparingTo(BEST_BUY);
         assertThat(createCmd.getValue().getAmount()).isEqualByComparingTo(second.getAmount().abs().negate());
         assertThat(tradeRepository.findById(createCmd.getValue().getOrderId())).map(Trade::getStatus)
                 .contains(TradeStatus.UNKNOWN);
+        assertThat(tradeRepository.findByDependsOn(createdMasterTradeSell)).hasSize(2);
     }
 
     @Test
     void usesMinLoss() {
+        when(prices.bestBuy(CLIENT, FROM, TO)).thenReturn(
+                BigDecimal.ONE.subtract(MIN_LOSS_PCT.movePointLeft(2).divide(
+                        new BigDecimal("2"), RoundingMode.HALF_EVEN))
+        );
 
+        canceller.softCancel();
+
+        assertNotCancelled();
     }
 
     @Test
     void usesMaxLoss() {
+        when(prices.bestBuy(CLIENT, FROM, TO)).thenReturn(
+                BigDecimal.ONE.subtract(MAX_LOSS_PCT.movePointLeft(2).multiply(new BigDecimal("2")))
+        );
 
+        canceller.softCancel();
+
+        assertNotCancelled();
     }
 
     @Test
     void usesDoneToCancelRatio() {
+        cancel.setCancelled(2);
+        cancelRepository.save(cancel);
 
+        canceller.softCancel();
+
+        assertNotCancelled();
     }
 
     @Test
     void validatesWalletBalance() {
+        walletFrom.setBalance(BigDecimal.ZERO);
+        walletRepository.save(walletFrom);
 
+        canceller.softCancel();
+
+        assertNotCancelled();
+    }
+
+    private void assertNotCancelled() {
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.OPENED);
+        verify(commander, never()).cancel(any());
+        verify(commander, never()).createOrder(any());
+        assertThat(tradeRepository.findByDependsOn(createdMasterTradeSell)).hasSize(1);
     }
 }

@@ -73,15 +73,14 @@ public class NnOrderSoftCanceller {
             return;
         }
 
-        // releasing balance first, reverting trx if fails
-        StateMachine<TradeStatus, TradeEvent> machine = tradeMachines.acquireStateMachine(trade.getId());
-        machine.sendEvent(TradeEvent.SOFT_CANCELLED);
-        tradeMachines.releaseStateMachine(machine.getId());
-
         TradeDto softCancel = createSoftCancelTrade(config.get(), lossPrice, trade);
         if (null == softCancel) {
             return;
         }
+
+        StateMachine<TradeStatus, TradeEvent> machine = tradeMachines.acquireStateMachine(trade.getId());
+        machine.sendEvent(TradeEvent.SOFT_CANCELLED);
+        tradeMachines.releaseStateMachine(machine.getId());
 
         log.info("Cancelling order {} and replacing it", trade.getId());
         commander.cancel(new CancelOrderCommand(

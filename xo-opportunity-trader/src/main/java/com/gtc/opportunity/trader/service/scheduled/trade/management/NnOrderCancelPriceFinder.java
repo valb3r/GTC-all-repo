@@ -2,7 +2,7 @@ package com.gtc.opportunity.trader.service.scheduled.trade.management;
 
 import com.gtc.opportunity.trader.domain.SoftCancelConfig;
 import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.service.LatestPrices;
+import com.gtc.opportunity.trader.service.LatestMarketPrices;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +17,11 @@ import java.math.MathContext;
 @RequiredArgsConstructor
 class NnOrderCancelPriceFinder {
 
-    private final LatestPrices prices;
+    private final LatestMarketPrices marketPrices;
 
     @Transactional
     public BigDecimal findSuitableLossPrice(SoftCancelConfig cancelCfg, Trade trade) {
-        BigDecimal price = trade.isSell() ? sellPrice(trade) : buyPrice(trade);
+        BigDecimal price = trade.isSell() ? weSellPrice(trade) : weBuyPrice(trade);
         if (!checkPrice(price, cancelCfg, trade)) {
             return null;
         }
@@ -33,12 +33,12 @@ class NnOrderCancelPriceFinder {
         return price;
     }
 
-    private BigDecimal sellPrice(Trade trade) {
-        return prices.bestSell(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
+    private BigDecimal weSellPrice(Trade trade) {
+        return marketPrices.bestBuy(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
     }
 
-    private BigDecimal buyPrice(Trade trade) {
-        return prices.bestBuy(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
+    private BigDecimal weBuyPrice(Trade trade) {
+        return marketPrices.bestSell(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
     }
 
     private boolean checkPrice(BigDecimal proposedPrice, SoftCancelConfig cancel, Trade trade) {
