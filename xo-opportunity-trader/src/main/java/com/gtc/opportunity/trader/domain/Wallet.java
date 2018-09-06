@@ -27,10 +27,6 @@ public class Wallet extends ByClientAndCurrency {
 
     private LocalDateTime statusUpdated;
 
-    private BigDecimal expectedLoss;
-
-    private BigDecimal expectedProfit;
-
     @Version
     private int version;
 

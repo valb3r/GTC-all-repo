@@ -47,6 +47,9 @@ public class ClientConfig extends ByClientAndCurrency {
     @OneToOne(mappedBy = "clientCfg")
     private NnConfig nnConfig;
 
+    @OneToOne(mappedBy = "clientCfg")
+    private SoftCancelConfig softCancelConfig;
+
     @Enumerated(EnumType.STRING)
     private FeeSystem feeSystem;
 
