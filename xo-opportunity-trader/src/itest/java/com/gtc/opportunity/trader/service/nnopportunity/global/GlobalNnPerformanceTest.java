@@ -1,55 +1,43 @@
 package com.gtc.opportunity.trader.service.nnopportunity.global;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.provider.OrderBook;
-import com.gtc.opportunity.trader.BaseMockitoTest;
-import com.gtc.opportunity.trader.config.CacheConfig;
+import com.gtc.opportunity.trader.BaseIT;
 import com.gtc.opportunity.trader.domain.*;
-import com.gtc.opportunity.trader.repository.*;
-import com.gtc.opportunity.trader.service.LatestMarketPrices;
-import com.gtc.opportunity.trader.service.TradeCreationService;
-import com.gtc.opportunity.trader.service.UuidGenerator;
+import com.gtc.opportunity.trader.repository.ClientConfigRepository;
+import com.gtc.opportunity.trader.repository.ClientRepository;
+import com.gtc.opportunity.trader.repository.NnConfigRepository;
+import com.gtc.opportunity.trader.repository.WalletRepository;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
-import com.gtc.opportunity.trader.service.compute.TradeBalanceChange;
-import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
-import com.gtc.opportunity.trader.service.nnopportunity.creation.NnCreateTradesService;
-import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.FeeFitter;
-import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.impl.BuyLowSellHighFitter;
-import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.impl.SellHighBuyLowFitter;
-import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
-import com.gtc.opportunity.trader.service.nnopportunity.solver.NnAnalyzer;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
-import com.gtc.opportunity.trader.service.nnopportunity.solver.model.FeatureMapper;
-import com.gtc.opportunity.trader.service.nnopportunity.solver.model.ModelFactory;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
-import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 /**
@@ -74,7 +62,7 @@ import static org.mockito.Mockito.when;
  * REBUILD_MODEL_EACH_N (10000) - approx 10000/36000 hour
  */
 @Slf4j
-public class GlobalNnPerformanceTest extends BaseMockitoTest {
+public class GlobalNnPerformanceTest extends BaseIT {
 
     private static final int REQUEST_LAG_N = 20; // imitate network delay ~2s given 100ms data
     private static final int SKIP_PTS_COST_PER_S = 10;
@@ -83,41 +71,49 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private EnvContainer env = new EnvContainer();
 
     private AtomicLong lastBookTimestamp = new AtomicLong();
-    private LocalTime localTime;
     private TestTradeRepository testTradeRepository;
-    private ConfigCache configs;
-    private NnDataRepository repository;
-    private FeatureMapper mapper;
-    private ModelFactory modelFactory;
-    private NnSolver solver;
-    private NnCreateTradesService createTradesService;
-    private NnAnalyzer nnAnalyzer;
-    private NnDispatcher disptacher;
-    private LatestMarketPrices latestPrices;
-    private TradeBalanceChange change = new TradeBalanceChange();
 
+    @Autowired
+    private WalletRepository walletRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private ClientConfigRepository configRepository;
+
+    @Autowired
+    private NnConfigRepository nnConfigRepository;
+
+    @MockBean
+    private LocalTime localTime;
+
+    @SpyBean
+    private NnSolver solver;
+
+    @SpyBean
+    private NnDispatcher disptacher;
+
+    @MockBean
     private WsGatewayCommander commander;
-    private TradeCreationService tradeCreationService;
 
     @BeforeEach
-    public void init() {
+    void init() {
         System.setProperty("ND4J_FALLBACK", "true");
         initClientConfigCache();
+        initTradeCreationService();
         initLocalTime();
-        testTradeRepository = new TestTradeRepository(ImmutableMap.of(getClientName(), getConfig()), env);
-        repository = new NnDataRepository(configs);
-        mapper = new FeatureMapper();
-        modelFactory = new ModelFactory(localTime, mapper, configs);
-        solver = new NnSolver(localTime, configs, modelFactory, repository);
-        createTradesService = tradesService();
-        nnAnalyzer = new NnAnalyzer(solver, createTradesService);
-        latestPrices = new LatestMarketPrices();
-        disptacher = new NnDispatcher(latestPrices, repository, nnAnalyzer, configs);
+        testTradeRepository = new TestTradeRepository(
+                StreamSupport.stream(configRepository.findAll().spliterator(), false).collect(
+                        Collectors.toMap(it -> it.getClient().getName(), it -> it)
+                ),
+                env
+        );
     }
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GLOBAL_NN_TEST", matches = "true")
-    public void test() {
+    void test() {
         long pointIndex = 0;
         try (HistoryBookReader reader = reader()) {
             while (true) {
@@ -172,32 +168,20 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         return env.getClientName();
     }
 
-    private NnCreateTradesService tradesService() {
-        commander = mock(WsGatewayCommander.class);
-        tradeCreationService = mock(TradeCreationService.class);
-
-        String name = getClientName();
-        initTradeCreationService(name);
-
-        return new NnCreateTradesService(commander, tradeCreationService, configs,
-                mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class),
-                new FeeFitter(new BuyLowSellHighFitter(change), new SellHighBuyLowFitter(change)));
-    }
-
     private void initClientConfigCache() {
-        ClientConfigRepository cfgRepo = mock(ClientConfigRepository.class);
-        NnConfigRepository nnRepo = mock(NnConfigRepository.class);
-        XoConfigRepository xoRepo = mock(XoConfigRepository.class);
-        configs = new ConfigCache(cfgRepo, nnRepo, xoRepo, new CacheConfig());
-        when(cfgRepo.findActiveByKey(env.getClientName(), env.getFrom(), env.getTo()))
-                .thenReturn(Optional.of(getConfig()));
-        when(nnRepo.findActiveByKey(env.getClientName(), env.getFrom(), env.getTo()))
-                .thenReturn(Optional.of(getConfig().getNnConfig()));
+        ClientConfig cfg = initializeBaseReposAndGetClientCfg();
+        nnConfigRepository.save(cfg.getNnConfig());
+        configRepository.save(cfg);
     }
 
-    private ClientConfig getConfig() {
+    private ClientConfig initializeBaseReposAndGetClientCfg() {
+        Client client = clientRepository.save(
+                new Client(env.getClientName(), true, new ArrayList<>(), new ArrayList<>()));
+        walletRepository
+                .save(Wallet.builder().currency(env.getFrom()).balance(env.getBalFrom()).client(client).build());
+        walletRepository.save(Wallet.builder().currency(env.getTo()).balance(env.getBalTo()).client(client).build());
         ClientConfig cfg = ClientConfig.builder()
-                .client(new Client(env.getClientName(), true, null, null))
+                .client(client)
                 .currency(env.getFrom())
                 .currencyTo(env.getTo())
                 .scaleAmount(env.getScaleAmount())
@@ -233,46 +217,14 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     }
 
     // Here comes great simplification - we create orders immediately
-    private void initTradeCreationService(String name) {
-
-        when(tradeCreationService.createTradeNoSideValidation(nullable(Trade.class),
-                isA(ClientConfig.class), isA(BigDecimal.class), isA(BigDecimal.class), anyBoolean(), anyBoolean())
-        ).thenAnswer(inv -> {
-            log.info("Creating trade at {}", Instant.ofEpochMilli(lastBookTimestamp.get())
-                    .atZone(ZoneId.systemDefault()).toLocalDateTime());
-            Trade depends = inv.getArgument(0);
-            ClientConfig cfg = inv.getArgument(1);
-            BigDecimal price = inv.getArgument(2);
-            BigDecimal amount = inv.getArgument(3);
-            boolean isSell = inv.getArgument(4);
-
-            String id = UuidGenerator.get();
-
-            CreateOrderCommand trade = CreateOrderCommand.builder()
-                    .clientName(name)
-                    .currencyFrom(cfg.getCurrency().getCode())
-                    .currencyTo(cfg.getCurrencyTo().getCode())
-                    .price(price)
-                    .amount(isSell ? amount.abs().negate() : amount.abs())
-                    // id is not unique, actually order is paired via id
-                    .id(null != depends ? depends.getId() : id)
-                    .orderId(id)
-                    .build();
-
-            testTradeRepository.acceptTrade(trade, REQUEST_LAG_N);
-            return new TradeDto(
-                    Trade.builder()
-                            .id(id)
-                            .openingPrice(price)
-                            .openingAmount(amount)
-                            .build(),
-                    trade
-            );
-        });
+    private void initTradeCreationService() {
+        doAnswer(invocation -> {
+            testTradeRepository.acceptTrade(invocation.getArgument(0), REQUEST_LAG_N);
+            return null;
+        }).when(commander).createOrder(any(CreateOrderCommand.class));
     }
 
     private void initLocalTime() {
-        localTime = mock(LocalTime.class);
         when(localTime.timestampMs()).thenAnswer(invocation -> lastBookTimestamp.get());
     }
 
@@ -292,14 +244,16 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 get("END", "2018-07-31T08:00:00"), DateTimeFormatter.ISO_LOCAL_DATE_TIME
         );
 
-        private int scaleAmount = Integer.valueOf(get("SCALE_AMOUNT", "2"));
-        private int scalePrice = Integer.valueOf(get("SCALE_PRICE", "7"));
+        private int scaleAmount = Integer.parseInt(get("SCALE_AMOUNT", "2"));
+        private int scalePrice = Integer.parseInt(get("SCALE_PRICE", "7"));
         private BigDecimal chargeRatePct = new BigDecimal(get("CHARGE_RATE_PCT", "0.1"));
         private BigDecimal minOrder = new BigDecimal(get("MIN_ORDER", "1"));
         private BigDecimal maxOrder = new BigDecimal(get("MAX_ORDER", "10"));
-        private int rebuildModelEachN = Integer.valueOf(get("REBUILD_MODEL_EACH_N", "10000"));
-        private int collectNlabellled = Integer.valueOf(get("COLLECT_N_LABELED", "1000"));
-        private int futureNwindow = Integer.valueOf(get("FUTURE_N_WINDOW", "36000"));
+        private BigDecimal balFrom = new BigDecimal(get("BAL_FROM", "100"));
+        private BigDecimal balTo = new BigDecimal(get("BAL_TO", "1"));
+        private int rebuildModelEachN = Integer.parseInt(get("REBUILD_MODEL_EACH_N", "10000"));
+        private int collectNlabellled = Integer.parseInt(get("COLLECT_N_LABELED", "1000"));
+        private int futureNwindow = Integer.parseInt(get("FUTURE_N_WINDOW", "36000"));
         private String nnConfig = getConfig(get("NN_CONFIG", "nn/default_nn.yaml"));
 
         private BigDecimal truthThreshold = new BigDecimal(get("TRUTH_THRESHOLD", "0.7"));
