@@ -53,6 +53,10 @@ class NnOrderCancelPriceFinder {
     }
 
     private boolean checkDoneToCancel(SoftCancelConfig cancelCfg) {
+        if (null == cancelCfg.getCancel()) {
+            return false;
+        }
+
         int cancel = cancelCfg.getCancel().getCancelled() + 1;
         int done = cancelCfg.getCancel().getDone();
         return ((double) done / cancel) >= cancelCfg.getDoneToCancelRatio().doubleValue();

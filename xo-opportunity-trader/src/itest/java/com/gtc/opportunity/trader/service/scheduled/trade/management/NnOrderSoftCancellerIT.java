@@ -17,6 +17,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.test.context.transaction.BeforeTransaction;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -24,9 +25,7 @@ import java.math.RoundingMode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Valentyn Berezin on 04.09.18.
@@ -41,6 +40,9 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
     private static final BigDecimal BEST_BUY = new BigDecimal("0.95");
 
     @Autowired
+    protected StateMachineService<TradeStatus, TradeEvent> tradeMachines;
+
+    @Autowired
     private NnOrderSoftCanceller canceller;
 
     @Autowired
@@ -51,9 +53,6 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
 
     @Autowired
     private TransactionTemplate template;
-
-    @Autowired
-    protected StateMachineService<TradeStatus, TradeEvent> tradeMachines;
 
     @MockBean
     private LatestMarketPrices prices;
@@ -158,6 +157,28 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
     void validatesWalletBalance() {
         walletFrom.setBalance(BigDecimal.ZERO);
         walletRepository.save(walletFrom);
+
+        canceller.softCancel();
+
+        assertNotCancelled();
+    }
+
+    @Test
+    void requiresConfig() {
+        cancelConfigRepository.delete(cancelConfig);
+
+        canceller.softCancel();
+
+        assertNotCancelled();
+    }
+
+    @Test
+    void requiresCancelEntry() {
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        template.execute(call -> {
+            cancelRepository.delete(cancel);
+            return null;
+        });
 
         canceller.softCancel();
 
