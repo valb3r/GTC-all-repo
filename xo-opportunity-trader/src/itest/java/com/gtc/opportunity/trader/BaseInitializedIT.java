@@ -82,11 +82,9 @@ public abstract class BaseInitializedIT extends BaseIT {
                 .bookTestForOpenPerS(BigDecimal.ONE)
                 .averageDtSBetweenLabels(BigDecimal.ONE)
                 .build();
-
         createdConfig.setNnConfig(createdNnConfig);
-
-        nnConfigRepository.save(createdNnConfig);
-        configRepository.save(createdConfig);
+        createdNnConfig = nnConfigRepository.save(createdNnConfig);
+        createdConfig = configRepository.save(createdConfig);
 
         walletFrom = walletRepository.save(Wallet.builder()
                 .client(createdClient)

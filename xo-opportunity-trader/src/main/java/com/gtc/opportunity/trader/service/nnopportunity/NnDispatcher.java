@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity;
 
 import com.gtc.model.provider.OrderBook;
+import com.gtc.opportunity.trader.service.LatestMarketPrices;
 import com.gtc.opportunity.trader.service.dto.FlatOrderBookWithHistory;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.NnDataRepository;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
@@ -22,6 +23,7 @@ public class NnDispatcher {
     private static final double MAX_VAL = 1e10;
     private static final double EPSILON = 1e-16;
 
+    private final LatestMarketPrices latestPrices;
     private final NnDataRepository repository;
     private final NnAnalyzer analyzer;
     private final ConfigCache cfg;
@@ -32,6 +34,7 @@ public class NnDispatcher {
             return;
         }
 
+        latestPrices.addPrice(book);
         Map<Strategy, FlatOrderBookWithHistory> enhancedBook = repository.addOrderBook(book);
         analyzer.analyzeAndCreateTradesIfNecessary(book, enhancedBook);
     }

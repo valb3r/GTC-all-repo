@@ -1,9 +1,11 @@
 package com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.impl;
 
 import com.gtc.model.provider.OrderBook;
+import com.gtc.opportunity.trader.service.compute.TradeBalanceChange;
 import com.gtc.opportunity.trader.service.nnopportunity.creation.fitter.FeeFitted;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Spy;
 
 import java.math.BigDecimal;
 
@@ -13,6 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Created by Valentyn Berezin on 31.08.18.
  */
 class BuyLowSellHighFitterTest extends FitterBase {
+
+    @Spy
+    private TradeBalanceChange balanceChange;
 
     @InjectMocks
     private BuyLowSellHighFitter fitter;
@@ -29,7 +34,7 @@ class BuyLowSellHighFitterTest extends FitterBase {
         assertThat(fitted.getSellAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getProfitFrom()).isEqualByComparingTo("-0.001");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("9.89E-8");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("9.8E-8");
     }
 
     @Test
@@ -45,7 +50,7 @@ class BuyLowSellHighFitterTest extends FitterBase {
         assertThat(fitted.getSellAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getProfitFrom()).isEqualByComparingTo("-0.001");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.010000088900");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.010000088");
     }
 
     @Test
@@ -60,7 +65,7 @@ class BuyLowSellHighFitterTest extends FitterBase {
         assertThat(fitted.getBuyAmount()).isEqualByComparingTo("10.00");
         assertThat(fitted.getAmount()).isEqualByComparingTo("9.995");
         assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0.0");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("9.58031E-7");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("9.58E-7");
     }
 
     @Test
@@ -77,7 +82,7 @@ class BuyLowSellHighFitterTest extends FitterBase {
         assertThat(fitted.getBuyAmount()).isEqualByComparingTo("10.00");
         assertThat(fitted.getAmount()).isEqualByComparingTo("9.995");
         assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.010000928051");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.010000928");
     }
 
     @Test
@@ -92,7 +97,7 @@ class BuyLowSellHighFitterTest extends FitterBase {
         assertThat(fitted.getBuyAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("9.949989987489971E-7");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("9.95E-7");
     }
 
     @Test
@@ -108,6 +113,6 @@ class BuyLowSellHighFitterTest extends FitterBase {
         assertThat(fitted.getBuyAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getAmount()).isEqualByComparingTo("1");
         assertThat(fitted.getProfitFrom()).isEqualByComparingTo("0");
-        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.010010974998998945");
+        assertThat(fitted.getProfitTo()).isEqualByComparingTo("0.010010975");
     }
 }

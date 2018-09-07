@@ -84,6 +84,8 @@ public class TradeStateMachineConfig extends StateMachineConfigurerAdapter<Trade
                 .and().withExternal()
                 .event(TradeEvent.CANCELLED).source(UNKNOWN).target(CANCELLED).action(machine::cancel)
                 .and().withExternal()
+                .event(TradeEvent.SOFT_CANCELLED).source(OPENED).target(CANCELLED).action(machine::softCancel)
+                .and().withExternal()
                 .event(TradeEvent.TRANSIENT_ERR).source(UNKNOWN).target(NEED_RETRY).action(machine::transientError)
                 .and().withExternal()
                 .event(TradeEvent.TIMEOUT).source(UNKNOWN).target(NEED_RETRY).action(machine::timeout)

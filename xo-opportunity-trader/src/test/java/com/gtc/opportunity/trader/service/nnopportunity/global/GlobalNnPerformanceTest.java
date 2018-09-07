@@ -9,14 +9,13 @@ import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.BaseMockitoTest;
 import com.gtc.opportunity.trader.config.CacheConfig;
-import com.gtc.opportunity.trader.domain.Client;
-import com.gtc.opportunity.trader.domain.ClientConfig;
-import com.gtc.opportunity.trader.domain.NnConfig;
-import com.gtc.opportunity.trader.domain.Trade;
+import com.gtc.opportunity.trader.domain.*;
 import com.gtc.opportunity.trader.repository.*;
+import com.gtc.opportunity.trader.service.LatestMarketPrices;
 import com.gtc.opportunity.trader.service.TradeCreationService;
 import com.gtc.opportunity.trader.service.UuidGenerator;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
+import com.gtc.opportunity.trader.service.compute.TradeBalanceChange;
 import com.gtc.opportunity.trader.service.dto.TradeDto;
 import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
 import com.gtc.opportunity.trader.service.nnopportunity.creation.NnCreateTradesService;
@@ -94,6 +93,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
     private NnCreateTradesService createTradesService;
     private NnAnalyzer nnAnalyzer;
     private NnDispatcher disptacher;
+    private LatestMarketPrices latestPrices;
+    private TradeBalanceChange change = new TradeBalanceChange();
 
     private WsGatewayCommander commander;
     private TradeCreationService tradeCreationService;
@@ -110,7 +111,8 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         solver = new NnSolver(localTime, configs, modelFactory, repository);
         createTradesService = tradesService();
         nnAnalyzer = new NnAnalyzer(solver, createTradesService);
-        disptacher = new NnDispatcher(repository, nnAnalyzer, configs);
+        latestPrices = new LatestMarketPrices();
+        disptacher = new NnDispatcher(latestPrices, repository, nnAnalyzer, configs);
     }
 
     @Test
@@ -179,7 +181,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
 
         return new NnCreateTradesService(commander, tradeCreationService, configs,
                 mock(AcceptedNnTradeRepository.class), mock(TradeRepository.class),
-                new FeeFitter(new BuyLowSellHighFitter(), new SellHighBuyLowFitter()));
+                new FeeFitter(new BuyLowSellHighFitter(change), new SellHighBuyLowFitter(change)));
     }
 
     private void initClientConfigCache() {
@@ -207,6 +209,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
                 .build();
         cfg.setEnabled(true);
         cfg.setNnConfig(getNnConfig(cfg));
+        cfg.setFeeSystem(env.getFeeSystem());
         return cfg;
     }
 
@@ -303,6 +306,7 @@ public class GlobalNnPerformanceTest extends BaseMockitoTest {
         private BigDecimal bookTestForOpenPerS = new BigDecimal(get("BOOK_TEST_FOR_OPEN_S", "0.01"));
         private BigDecimal futureGainPct = new BigDecimal(get("FUTURE_GAIN_PCT", "0.2"));
         private BigDecimal noopThreshold = new BigDecimal(get("NOOP_THRESHOLD", "1.002"));
+        private FeeSystem feeSystem = FeeSystem.valueOf(get("FEE_SYSTEM", "FEE_AFTER"));
 
         @SneakyThrows
         private static String getConfig(String resourcePath) {

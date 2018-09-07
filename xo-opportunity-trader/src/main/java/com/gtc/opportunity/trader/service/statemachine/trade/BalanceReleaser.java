@@ -54,7 +54,7 @@ public class BalanceReleaser {
             return;
         }
 
-        tradeRepository.findByDependsOn(trade).ifPresent(dependnant -> {
+        tradeRepository.findByDependsOn(trade).forEach(dependnant -> {
             stateMachineService.acquireStateMachine(dependnant.getId()).sendEvent(TradeEvent.CANCELLED);
             stateMachineService.releaseStateMachine(dependnant.getId());
         });

@@ -6,6 +6,7 @@ import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.AcceptedNnTradeRepository;
 import com.gtc.opportunity.trader.repository.TradeRepository;
+import com.gtc.opportunity.trader.service.CurrentTimestamp;
 import com.gtc.opportunity.trader.service.nnopportunity.repository.Strategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.BeforeTransaction;
@@ -28,6 +29,9 @@ public abstract class BaseNnTradeInitialized extends BaseInitializedIT {
 
     @Autowired
     protected TradeRepository tradeRepository;
+
+    @Autowired
+    protected CurrentTimestamp dbTime;
 
     protected AcceptedNnTrade createdNnTrade;
     protected Trade createdMasterTradeSell;
@@ -85,5 +89,19 @@ public abstract class BaseNnTradeInitialized extends BaseInitializedIT {
                 .status(TradeStatus.DEPENDS_ON)
                 .wallet(walletTo)
                 .build());
+    }
+
+    protected void expireSlave(TradeStatus status) {
+        createdSlaveTradeBuy = tradeRepository.findById(TRADE_TWO).get();
+        createdSlaveTradeBuy.setStatusUpdated(dbTime.dbNow().minusHours(EXPIRE_OPEN_H + 1L));
+        createdSlaveTradeBuy.setStatus(status);
+        tradeRepository.save(createdSlaveTradeBuy);
+    }
+
+    protected void expireMaster(TradeStatus status) {
+        createdMasterTradeSell = tradeRepository.findById(TRADE_ONE).get();
+        createdMasterTradeSell.setRecordedOn(dbTime.dbNow().minusMinutes(MAX_SLAVE_DELAY_M + 1L));
+        createdMasterTradeSell.setStatus(status);
+        tradeRepository.save(createdMasterTradeSell);
     }
 }
