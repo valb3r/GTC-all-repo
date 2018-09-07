@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class WalletAndOrderUpdater {
+public class WalletUpdater {
 
     private static final String WALLET_UPDATE_MS = "#{${app.schedule.wallet.updateS} * 1000}";
 
