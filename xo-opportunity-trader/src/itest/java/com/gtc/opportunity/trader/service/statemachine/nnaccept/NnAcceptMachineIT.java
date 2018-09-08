@@ -6,6 +6,7 @@ import com.gtc.model.gateway.data.OrderStatus;
 import com.gtc.model.gateway.response.manage.GetOrderResponse;
 import com.gtc.opportunity.trader.BaseNnTradeInitialized;
 import com.gtc.opportunity.trader.domain.*;
+import com.gtc.opportunity.trader.repository.SoftCancelRepository;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListener;
 import com.gtc.opportunity.trader.service.scheduled.trade.management.NnSlaveOrderPusher;
@@ -46,6 +47,9 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
 
     @Autowired
     private NnSlaveOrderPusher pusher;
+
+    @Autowired
+    private SoftCancelRepository cancelRepository;
 
     @MockBean
     private WsGatewayCommander commander;
@@ -156,6 +160,7 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
                 .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.DONE);
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertSoftCancel(1, 0);
     }
 
     @Test
@@ -175,6 +180,13 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
                 .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.ABORTED);
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
+    }
+
+    private void assertSoftCancel(int doneSlaves, int cancelledSlaves) {
+        assertThat(cancelRepository.findForTrade(tradeRepository.findById(TRADE_TWO).get()))
+                .map(SoftCancel::getDone).contains(doneSlaves);
+        assertThat(cancelRepository.findForTrade(tradeRepository.findById(TRADE_TWO).get()))
+                .map(SoftCancel::getCancelled).contains(cancelledSlaves);
     }
 
     private StateMachine<NnAcceptStatus, AcceptEvent> nnStateMachine() {
