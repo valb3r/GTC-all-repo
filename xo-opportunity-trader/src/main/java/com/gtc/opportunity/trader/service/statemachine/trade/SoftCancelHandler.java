@@ -1,14 +1,17 @@
 package com.gtc.opportunity.trader.service.statemachine.trade;
 
 import com.google.common.collect.ImmutableSet;
+import com.gtc.opportunity.trader.domain.ClientConfig;
 import com.gtc.opportunity.trader.domain.SoftCancel;
 import com.gtc.opportunity.trader.domain.Trade;
 import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.SoftCancelRepository;
+import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.Set;
 
 import static com.gtc.opportunity.trader.domain.TradeStatus.*;
@@ -24,6 +27,7 @@ public class SoftCancelHandler {
             ERR_OPEN, NEED_RETRY, GEN_ERR, CANCELLED);
 
     private final SoftCancelRepository softCancelRepository;
+    private final ConfigCache cache;
 
     @Transactional
     public void updateSoftCancelIfNeeded(Trade trade, TradeStatus status) {
@@ -31,11 +35,22 @@ public class SoftCancelHandler {
             return;
         }
 
-        softCancelRepository
-                .findForTrade(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo())
-                .ifPresent(softCancel ->
-                        softCancelRepository.save(updateSoftCancel(softCancel, status))
+        Optional<ClientConfig> config = cache
+                .getClientCfg(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
+        if (!config.isPresent()) {
+            return;
+        }
+
+        SoftCancel cancel = softCancelRepository
+                .findForTrade(trade)
+                .orElseGet(() -> softCancelRepository.save(SoftCancel.builder()
+                        .done(0)
+                        .cancelled(0)
+                        .clientCfg(config.get())
+                        .build())
                 );
+
+        softCancelRepository.save(updateSoftCancel(cancel, status));
     }
 
     private SoftCancel updateSoftCancel(SoftCancel cancel, TradeStatus status) {
