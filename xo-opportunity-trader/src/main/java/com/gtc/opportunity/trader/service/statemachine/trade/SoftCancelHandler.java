@@ -31,7 +31,7 @@ public class SoftCancelHandler {
 
     @Transactional
     public void updateSoftCancelIfNeeded(Trade trade, TradeStatus status) {
-        if (null == trade.getDependsOn()) {
+        if (null == trade.getDependsOn() || TradeStatus.CLOSED != trade.getDependsOn().getStatus()) {
             return;
         }
 

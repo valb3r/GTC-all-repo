@@ -100,6 +100,23 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     }
 
     @Test
+    public void ackCancelled() {
+        doAck(TRADE_ONE, OrderStatus.NEW);
+        doAck(TRADE_ONE, OrderStatus.CANCELED);
+        doAck(TRADE_TWO, OrderStatus.CANCELED);
+
+        StateMachine<NnAcceptStatus, AcceptEvent> machine = nnStateMachine();
+
+        verify(commander, never()).createOrder(any(CreateOrderCommand.class));
+        assertThat(machine.getState().getId()).isEqualTo(NnAcceptStatus.ABORTED);
+        assertThat(acceptedRepository.findById(createdNnTrade.getId()))
+                .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.ABORTED);
+        assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
+        assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
+        assertSoftCancel(0, 0);
+    }
+
+    @Test
     public void ackDoneOne() {
         doAck(TRADE_ONE, OrderStatus.NEW);
         doAck(TRADE_ONE, OrderStatus.FILLED);
@@ -203,6 +220,11 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     }
 
     private void assertSoftCancel(int doneSlaves, int cancelledSlaves) {
+        if (doneSlaves == 0 && cancelledSlaves == 0) {
+            assertThat(cancelRepository.findForTrade(tradeRepository.findById(TRADE_TWO).get())).isNotPresent();
+            return;
+        }
+
         assertThat(cancelRepository.findForTrade(tradeRepository.findById(TRADE_TWO).get()))
                 .map(SoftCancel::getDone).contains(doneSlaves);
         assertThat(cancelRepository.findForTrade(tradeRepository.findById(TRADE_TWO).get()))
