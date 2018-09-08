@@ -1,10 +1,8 @@
 package com.gtc.opportunity.trader.service.statemachine.trade;
 
 import com.google.common.collect.ImmutableSet;
-import com.gtc.opportunity.trader.domain.ClientConfig;
-import com.gtc.opportunity.trader.domain.SoftCancel;
-import com.gtc.opportunity.trader.domain.Trade;
-import com.gtc.opportunity.trader.domain.TradeStatus;
+import com.gtc.opportunity.trader.domain.*;
+import com.gtc.opportunity.trader.repository.SoftCancelConfigRepository;
 import com.gtc.opportunity.trader.repository.SoftCancelRepository;
 import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +24,7 @@ public class SoftCancelHandler {
     private static final Set<TradeStatus> CANCELLATION = ImmutableSet.of(
             ERR_OPEN, NEED_RETRY, GEN_ERR, CANCELLED);
 
+    private final SoftCancelConfigRepository cancelConfigRepository;
     private final SoftCancelRepository softCancelRepository;
     private final ConfigCache cache;
 
@@ -35,9 +34,9 @@ public class SoftCancelHandler {
             return;
         }
 
-        Optional<ClientConfig> config = cache
-                .getClientCfg(trade.getClient().getName(), trade.getCurrencyFrom(), trade.getCurrencyTo());
-        if (!config.isPresent()) {
+        Optional<SoftCancelConfig> config = cancelConfigRepository.findForTrade(trade);
+
+        if(!config.isPresent()) {
             return;
         }
 
@@ -46,7 +45,7 @@ public class SoftCancelHandler {
                 .orElseGet(() -> softCancelRepository.save(SoftCancel.builder()
                         .done(0)
                         .cancelled(0)
-                        .clientCfg(config.get())
+                        .cancelConfig(config.get())
                         .build())
                 );
 

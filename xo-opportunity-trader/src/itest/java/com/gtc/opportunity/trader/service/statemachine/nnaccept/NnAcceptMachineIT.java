@@ -6,6 +6,7 @@ import com.gtc.model.gateway.data.OrderStatus;
 import com.gtc.model.gateway.response.manage.GetOrderResponse;
 import com.gtc.opportunity.trader.BaseNnTradeInitialized;
 import com.gtc.opportunity.trader.domain.*;
+import com.gtc.opportunity.trader.repository.SoftCancelConfigRepository;
 import com.gtc.opportunity.trader.repository.SoftCancelRepository;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayCommander;
 import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListener;
@@ -21,6 +22,7 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 
@@ -49,7 +51,13 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     private NnSlaveOrderPusher pusher;
 
     @Autowired
+    private SoftCancelConfigRepository cancelConfigRepository;
+
+    @Autowired
     private SoftCancelRepository cancelRepository;
+
+    @Autowired
+    private TransactionTemplate template;
 
     @MockBean
     private WsGatewayCommander commander;
@@ -60,6 +68,16 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
     @BeforeEach
     public void initialize() {
         tradeMachineSvc.acquireStateMachine(TRADE_ONE).sendEvent(TradeEvent.DEPENDENCY_DONE);
+        // FIXME: Without this wrapping and finding client entity again we would get detached entity exception;
+        template.execute(status -> {
+            SoftCancelConfig cancelConfig = SoftCancelConfig.builder()
+                    .clientCfg(configRepository.findById(createdConfig.getId()).get())
+                    .waitM(30)
+                    .enabled(true)
+                    .build();
+            cancelConfigRepository.save(cancelConfig);
+            return null;
+        });
     }
 
     @AfterEach
@@ -143,6 +161,7 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
                 .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.DONE);
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
+        assertSoftCancel(1, 0);
     }
 
     @Test
@@ -180,6 +199,7 @@ public class NnAcceptMachineIT extends BaseNnTradeInitialized {
                 .map(AcceptedNnTrade::getStatus).contains(NnAcceptStatus.ABORTED);
         assertThat(tradeRepository.findById(TRADE_ONE)).map(Trade::getStatus).contains(TradeStatus.CLOSED);
         assertThat(tradeRepository.findById(TRADE_TWO)).map(Trade::getStatus).contains(TradeStatus.CANCELLED);
+        assertSoftCancel(0, 1);
     }
 
     private void assertSoftCancel(int doneSlaves, int cancelledSlaves) {

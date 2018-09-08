@@ -12,7 +12,7 @@ CREATE TABLE soft_cancel_config
 
 CREATE TABLE soft_cancel
 (
-  id        INT(11) PRIMARY KEY REFERENCES client_config (id),
+  id        INT(11) PRIMARY KEY REFERENCES soft_cancel_config (id),
   done      INT NOT NULL DEFAULT 0,
   cancelled INT NOT NULL DEFAULT 0
 )

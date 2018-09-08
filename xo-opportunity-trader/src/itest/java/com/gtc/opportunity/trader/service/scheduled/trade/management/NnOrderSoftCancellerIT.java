@@ -72,7 +72,7 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
     @BeforeTransaction
     void initializeDb() {
         // FIXME: Without this wrapping and finding client entity again we would get detached entity exception
-        template.execute(call -> {
+        cancelConfig = template.execute(call -> {
             ClientConfig cfg = configRepository.findById(createdConfig.getId()).get();
             cancelConfig = SoftCancelConfig.builder()
                     .clientCfg(cfg)
@@ -82,14 +82,15 @@ class NnOrderSoftCancellerIT extends BaseNnTradeInitialized {
                     .waitM(30)
                     .enabled(true)
                     .build();
-            cancelConfig = cancelConfigRepository.save(cancelConfig);
-            cancel = cancelRepository.save(SoftCancel.builder()
-                    .clientCfg(cfg)
-                    .done(INITIAL_DONE)
-                    .build());
-            return null;
+            return cancelConfigRepository.save(cancelConfig);
         });
-
+        cancel = template.execute(call ->
+                cancelRepository.save(
+                        SoftCancel.builder()
+                            .cancelConfig(cancelConfigRepository.findById(cancelConfig.getId()).get())
+                            .done(INITIAL_DONE)
+                            .build())
+        );
     }
 
     @BeforeEach

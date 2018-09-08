@@ -28,8 +28,7 @@ public class SoftCancelConfig implements Serializable {
     @JoinColumn(name = "id")
     private ClientConfig clientCfg;
 
-    @OneToOne
-    @JoinColumn(name = "id")
+    @OneToOne(mappedBy = "cancelConfig")
     private SoftCancel cancel;
 
     @Column(name = "wait_m")
