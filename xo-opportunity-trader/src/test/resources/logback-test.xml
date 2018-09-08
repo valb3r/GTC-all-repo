@@ -9,4 +9,5 @@
         <level value="INFO" />
         <appender-ref ref="STDOUT"/>
     </root>
+    <logger name="org.springframework.statemachine" level="WARN"/>
 </configuration>
