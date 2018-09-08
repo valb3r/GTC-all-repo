@@ -17,8 +17,9 @@ import java.util.Optional;
 public interface SoftCancelRepository extends CrudRepository<SoftCancel, Integer> {
 
     @Query("SELECT sc FROM SoftCancel sc " +
-            "WHERE sc.clientCfg.client.name = :name AND sc.clientCfg.currency = :currFrom " +
-            "AND sc.clientCfg.currencyTo = :currTo")
+            "WHERE sc.cancelConfig.clientCfg.client.name = :name " +
+            "AND sc.cancelConfig.clientCfg.currency = :currFrom " +
+            "AND sc.cancelConfig.clientCfg.currencyTo = :currTo")
     Optional<SoftCancel> findForKey(@Param("name") String name,
                                       @Param("currFrom") TradingCurrency currencyFrom,
                                       @Param("currTo") TradingCurrency currencyTo);

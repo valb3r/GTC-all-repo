@@ -24,7 +24,7 @@ public class SoftCancel implements Serializable {
     @MapsId
     @OneToOne
     @JoinColumn(name = "id")
-    private ClientConfig clientCfg;
+    private SoftCancelConfig cancelConfig;
 
     private int done;
     private int cancelled;
