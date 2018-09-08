@@ -1,11 +1,17 @@
 package com.gtc.opportunity.trader.service.nnopportunity.global;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
+import com.gtc.model.gateway.command.manage.CancelOrderCommand;
+import com.gtc.model.gateway.command.manage.GetOrderCommand;
+import com.gtc.model.gateway.command.manage.ListOpenCommand;
+import com.gtc.model.gateway.data.OrderDto;
+import com.gtc.model.gateway.data.OrderStatus;
+import com.gtc.model.gateway.response.manage.GetOrderResponse;
+import com.gtc.model.gateway.response.manage.ListOpenOrdersResponse;
 import com.gtc.model.provider.AggregatedOrder;
 import com.gtc.model.provider.OrderBook;
 import com.gtc.opportunity.trader.domain.ClientConfig;
@@ -23,7 +29,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -40,15 +45,12 @@ class TestTradeRepository {
     private static final long MILLIS_IN_10M = 600000;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final Map<String, Map<CurrencyPair, List<Opened>>> byClientPairOrders =
-            new ConcurrentHashMap<>();
+    private final Map<String, Opened> byIdOrders = new ConcurrentHashMap<>();
 
     private final Map<TradingCurrency, BigDecimal> lockedBalance = new ConcurrentHashMap<>();
     private final Map<Boolean, Map<String, Double>> byIsSellByTradeIdDeviation = new ConcurrentHashMap<>();
-    private final List<Closed> done = new CopyOnWriteArrayList<>();
-
-    private final Map<String, ClientConfig> configs;
-    private final GlobalNnPerformanceTest.EnvContainer envContainer;
+    private final Map<String, Closed> done = new ConcurrentHashMap<>();
+    private final Map<String, Closed> cancelled = new ConcurrentHashMap<>();
 
     private LocalDateTime min = LocalDateTime.MAX;
     private LocalDateTime max = LocalDateTime.MIN;
@@ -56,21 +58,114 @@ class TestTradeRepository {
     private long currentTimestamp = 0;
     private long pointIndex = 0;
 
+    private final ClientConfig config;
+    private final GlobalNnPerformanceTest.EnvContainer envContainer;
+    private final String clientName;
+    private final TradingCurrency from;
+    private final TradingCurrency to;
+
     private static boolean isSell(CreateOrderCommand command) {
         return command.getAmount().compareTo(BigDecimal.ZERO) < 0;
     }
 
     void acceptTrade(CreateOrderCommand command, long networkLagPts) {
-        Map<CurrencyPair, List<Opened>> orders =
-                byClientPairOrders.computeIfAbsent(command.getClientName(), id -> new ConcurrentHashMap<>());
+        if (!command.getClientName().equals(clientName) || !from.getCode().equals(command.getCurrencyFrom())
+                || !to.getCode().equals(command.getCurrencyTo())) {
+            return;
+        }
 
-        orders.computeIfAbsent(obtainPair(command), id -> new CopyOnWriteArrayList<>())
-                .add(new Opened(
-                        command.getId(),
-                        pointIndex + networkLagPts,
-                        current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
-                        command)
-                );
+        byIdOrders.computeIfAbsent(command.getOrderId(), id -> new Opened(
+                command.getId(),
+                pointIndex + networkLagPts,
+                current.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli(),
+                command)
+        );
+    }
+
+    void cancelTrade(CancelOrderCommand cancel) {
+        if (!cancel.getClientName().equals(clientName)) {
+            return;
+        }
+
+        Opened remove = byIdOrders.remove(cancel.getOrderId());
+        if (null != remove) {
+            cancelled.put(
+                    remove.getCommand().getOrderId(),
+                    new Closed(
+                    remove.getPairId(),
+                    remove.getTimestamp(),
+                    cancel.getCreatedTimestamp(),
+                    remove.getCommand(),
+                    null
+            ));
+        }
+    }
+
+    GetOrderResponse getTrade(GetOrderCommand order) {
+        if (!order.getClientName().equals(clientName)) {
+            return null;
+        }
+
+        Opened create = byIdOrders.get(order.getOrderId());
+        if (null != create) {
+            return new GetOrderResponse(
+                    order.getClientName(),
+                    order.getOrderId(),
+                    orderDto(create, OrderStatus.NEW)
+            );
+        }
+
+        Closed closed = done.get(order.getOrderId());
+
+        if (null != closed) {
+            return new GetOrderResponse(
+                    order.getClientName(),
+                    order.getOrderId(),
+                    orderDto(closed, OrderStatus.FILLED)
+            );
+        }
+
+        Closed cancel = cancelled.get(order.getOrderId());
+
+        if (null != cancel) {
+            return new GetOrderResponse(
+                    order.getClientName(),
+                    order.getOrderId(),
+                    orderDto(cancel, OrderStatus.CANCELED)
+            );
+        }
+
+        return null;
+    }
+
+    ListOpenOrdersResponse listOpen(ListOpenCommand list) {
+        if (!list.getClientName().equals(clientName)) {
+            return null;
+        }
+
+        return new ListOpenOrdersResponse(
+                clientName,
+                list.getId(),
+                byIdOrders.values().stream().map(it -> orderDto(it, OrderStatus.NEW)).collect(Collectors.toList())
+        );
+    }
+
+    private OrderDto orderDto(Opened opened, OrderStatus status) {
+        return OrderDto.builder()
+                .status(status)
+                .orderId(opened.getCommand().getOrderId())
+                .price(opened.getCommand().getPrice())
+                .size(opened.getCommand().getAmount())
+                .build();
+    }
+
+    private OrderDto orderDto(Closed closed, OrderStatus status) {
+        return OrderDto.builder()
+                .status(status)
+                .orderId(closed.getCommand().getOrderId())
+                .price(closed.getCommand().getPrice())
+                .size(closed.getCommand().getAmount())
+                .build();
     }
 
     void acceptOrderBook(OrderBook book) {
@@ -85,15 +180,13 @@ class TestTradeRepository {
 
         pointIndex++;
         computeMinMaxDate(book);
-        List<Opened> open = byClientPairOrders
-                .getOrDefault(book.getMeta().getClient(), ImmutableMap.of())
-                .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
+        Collection<Opened> open = byIdOrders.values();
         List<Opened> closed = open.stream()
                 .filter(it -> it.getMinimalIndexThatCanClose() <= pointIndex)
                 .filter(it -> canCompleteCommand(it.getCommand(), book))
                 .collect(Collectors.toList());
 
-        computeLockedBalance(book.getMeta().getClient());
+        computeLockedBalance();
         computeTradeDeviations(book);
 
         if (closed.isEmpty()) {
@@ -102,64 +195,48 @@ class TestTradeRepository {
 
         closed.forEach(opn -> log.info("Satisfy(close) {} with {}", opn, book));
         open.removeAll(closed);
-        done.addAll(
-                closed.stream().map(it -> new Closed(
-                        it.getPairId(),
-                        it.getTimestamp(),
-                        book.getMeta().getTimestamp(),
-                        it.getCommand(),
-                        book)
-                ).collect(Collectors.toList())
+        closed.forEach(it ->
+                done.put(
+                        it.getCommand().getOrderId(),
+                        new Closed(
+                                it.getPairId(),
+                                it.getTimestamp(),
+                                book.getMeta().getTimestamp(),
+                                it.getCommand(),
+                                book)
+                )
         );
     }
 
     void logStats() {
-        long active = byClientPairOrders.entrySet().stream()
-                .flatMap(it -> it.getValue().values().stream())
-                .mapToLong(Collection::size)
-                .sum();
+        long active = byIdOrders.size();
 
         log.info("In period {} to {} we have active {} / completed {} orders", min, max, active, done.size());
 
-        configs.keySet().forEach(this::computeStatsForClient);
+        reportJsonStats();
     }
 
-    private void computeStatsForClient(String client) {
-
-        Map<TradingCurrency, BigDecimal> doneBalance = computeOrderBalance(client, done);
-        Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeOrderBalance(client, computePaired(done));
-        Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts =
-                computeClosingAmountsAtBest(computePaired(done));
-        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(opened(client), done, MILLIS_IN_10M);
-
-        log.info("--------------------------- Statistics for {} ------------------------", client);
-        reportJsonStats(client, doneBalance, pairwiseDoneBalance, pairwiseBestAmounts, timeToClose);
-    }
-
-    private List<Opened> opened(String client) {
-        return byClientPairOrders.getOrDefault(client, Collections.emptyMap()).values().stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-    }
     @SneakyThrows
     @SuppressWarnings("unchecked")
-    private void reportJsonStats(
-            String client,
-            Map<TradingCurrency, BigDecimal> doneBalance,
-            Map<TradingCurrency, BigDecimal> pairwiseDoneBalance,
-            Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts,
-            Map<Boolean, List<Long>> timeToClose) {
+    private void reportJsonStats() {
+
+        Map<TradingCurrency, BigDecimal> doneBalance = computeOrderBalance(done.values());
+        Map<TradingCurrency, BigDecimal> cancelBalance = computeOrderBalance(cancelled.values());
+        Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeOrderBalance(computePaired(done.values()));
+        Map<CurrencyPair, Map<Boolean, List<Double>>> pairwiseBestAmounts =
+                computeClosingAmountsAtBest(computePaired(done.values()));
+        Map<Boolean, List<Long>> timeToClose = computeTimeToClose(byIdOrders.values(), done.values(), MILLIS_IN_10M);
+
+        log.info("--------------------------- Statistics for {} ------------------------", clientName);
 
         Supplier<Map<String, Object>> newMap = LinkedHashMap::new;
         Map<String, Object> report = newMap.get();
         Function<String, Map<String, Object>> reportKey = root ->
                 (Map<String, Object>) report.computeIfAbsent(root, id -> new LinkedHashMap<String, Object>());
 
-        report.put("active",
-                byClientPairOrders.getOrDefault(client, Collections.emptyMap()).entrySet().stream()
-                        .mapToInt(it -> it.getValue().size()).sum());
+        report.put("active", byIdOrders.size());
         report.put("done", done.size());
-        report.put("client", client);
+        report.put("client", clientName);
         report.put("gain", envContainer.getFutureGainPct());
         report.put("threshold", envContainer.getNoopThreshold());
         report.put("chargeRatePct", envContainer.getChargeRatePct());
@@ -167,6 +244,7 @@ class TestTradeRepository {
         report.put("end", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(max));
         doneBalance.forEach((k, v) -> reportKey.apply("totalDone").put(k.getCode(), v));
         lockedBalance.forEach((k, v) -> reportKey.apply("lockMaxOnStat").put(k.getCode(), v));
+        cancelBalance.forEach((k, v) -> reportKey.apply("cancelBalanceChange").put(k.getCode(), v));
         pairwiseDoneBalance.forEach((k, v) -> reportKey.apply("balanceChangeByDone").put(k.getCode(), v));
         pairwiseBestAmounts.forEach((pair, vals) -> vals.forEach((k, v) ->
             logSeriesStats(v, reportKey.apply("whenClosingBest" + (k ? "Sell" : "Buy") + "Amount"))
@@ -188,7 +266,7 @@ class TestTradeRepository {
 
     private Map<Boolean, List<Double>> computeDoneDeviations() {
         Map<Boolean, List<Double>> doneDeviations = new HashMap<>();
-        for (Closed closed : done) {
+        for (Closed closed : done.values()) {
             Double val = byIsSellByTradeIdDeviation
                     .getOrDefault(isSell(closed.getCommand()), Collections.emptyMap())
                     .get(closed.getPairId());
@@ -202,8 +280,7 @@ class TestTradeRepository {
     }
 
     private void computeTradeDeviations(OrderBook book) {
-        List<Opened> opened = byClientPairOrders.getOrDefault(book.getMeta().getClient(), Collections.emptyMap())
-                .getOrDefault(book.getMeta().getPair(), Collections.emptyList());
+        Collection<Opened> opened = byIdOrders.values();
 
         for (Opened open : opened) {
             boolean isSell = isSell(open.getCommand());
@@ -223,7 +300,7 @@ class TestTradeRepository {
         }
     }
 
-    private List<Closed> computePaired(List<Closed> closed) {
+    private List<Closed> computePaired(Collection<Closed> closed) {
         Map<String, Long> pairOccurency = closed.stream().map(Closed::getPairId)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         return closed.stream()
@@ -231,7 +308,8 @@ class TestTradeRepository {
                 .collect(Collectors.toList());
     }
 
-    private Map<Boolean, List<Long>> computeTimeToClose(List<Opened> open, List<Closed> closed, long threshold) {
+    private Map<Boolean, List<Long>> computeTimeToClose(
+            Collection<Opened> open, Collection<Closed> closed, long threshold) {
         Map<Boolean, List<Long>> timeToClose = new HashMap<>();
 
         for (Opened val : open) {
@@ -284,7 +362,7 @@ class TestTradeRepository {
         );
     }
 
-    private Map<TradingCurrency, BigDecimal> computeOrderBalance(String client, List<Closed> closed) {
+    private Map<TradingCurrency, BigDecimal> computeOrderBalance(Collection<Closed> closed) {
         Map<TradingCurrency, BigDecimal> doneBalance = new EnumMap<>(TradingCurrency.class);
         for (Closed val : closed) {
             BigDecimal from;
@@ -293,9 +371,9 @@ class TestTradeRepository {
             if (isSell(val.getCommand())) {
                 from = val.getCommand().getAmount();
                 to = val.getCommand().getAmount().abs().multiply(val.getCommand().getPrice())
-                        .multiply(getCharge(client));
+                        .multiply(getCharge());
             } else {
-                from = val.getCommand().getAmount().multiply(getCharge(client));
+                from = val.getCommand().getAmount().multiply(getCharge());
                 to = val.getCommand().getAmount().multiply(val.getCommand().getPrice()).negate();
             }
 
@@ -312,11 +390,9 @@ class TestTradeRepository {
         return doneBalance;
     }
 
-    private void computeLockedBalance(String client) {
+    private void computeLockedBalance() {
         Map<TradingCurrency, BigDecimal> currentLocked = new EnumMap<>(TradingCurrency.class);
-        List<Opened> open = byClientPairOrders.getOrDefault(client, ImmutableMap.of()).values().stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+        Collection<Opened> open = byIdOrders.values();
 
         for (Opened val : open) {
             OrderBalance balance = computeWalletLock(val.getCommand());
@@ -373,8 +449,8 @@ class TestTradeRepository {
         target.put("percentile95", statistics.getPercentile(95.0));
     }
 
-    private BigDecimal getCharge(String client) {
-        return configs.get(client).getTradeChargeRatePct().movePointLeft(2).negate().add(BigDecimal.ONE);
+    private BigDecimal getCharge() {
+        return config.getTradeChargeRatePct().movePointLeft(2).negate().add(BigDecimal.ONE);
     }
 
     private boolean canCompleteCommand(CreateOrderCommand command, OrderBook book) {
