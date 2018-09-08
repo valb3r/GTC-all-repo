@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Entity
 @Getter
 @Setter
-@ToString
+@ToString(exclude = "cancelConfig")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

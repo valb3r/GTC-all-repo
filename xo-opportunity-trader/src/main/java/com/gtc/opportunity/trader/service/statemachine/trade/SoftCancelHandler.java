@@ -1,10 +1,12 @@
 package com.gtc.opportunity.trader.service.statemachine.trade;
 
 import com.google.common.collect.ImmutableSet;
-import com.gtc.opportunity.trader.domain.*;
+import com.gtc.opportunity.trader.domain.SoftCancel;
+import com.gtc.opportunity.trader.domain.SoftCancelConfig;
+import com.gtc.opportunity.trader.domain.Trade;
+import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.SoftCancelConfigRepository;
 import com.gtc.opportunity.trader.repository.SoftCancelRepository;
-import com.gtc.opportunity.trader.service.xoopportunity.creation.ConfigCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +28,10 @@ public class SoftCancelHandler {
 
     private final SoftCancelConfigRepository cancelConfigRepository;
     private final SoftCancelRepository softCancelRepository;
-    private final ConfigCache cache;
 
     @Transactional
     public void updateSoftCancelIfNeeded(Trade trade, TradeStatus status) {
-        if (null == trade.getDependsOn()) {
+        if (null == trade.getDependsOn() || TradeStatus.CLOSED != trade.getDependsOn().getStatus()) {
             return;
         }
 
