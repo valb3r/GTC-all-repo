@@ -4,10 +4,12 @@ import com.google.common.base.Joiner;
 import com.google.common.io.Resources;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
+import com.gtc.model.gateway.command.account.GetAllBalancesCommand;
 import com.gtc.model.gateway.command.create.CreateOrderCommand;
 import com.gtc.model.gateway.command.manage.CancelOrderCommand;
 import com.gtc.model.gateway.command.manage.GetOrderCommand;
 import com.gtc.model.gateway.command.manage.ListOpenCommand;
+import com.gtc.model.gateway.response.account.GetAllBalancesResponse;
 import com.gtc.model.gateway.response.manage.GetOrderResponse;
 import com.gtc.model.gateway.response.manage.ListOpenOrdersResponse;
 import com.gtc.model.provider.OrderBook;
@@ -20,6 +22,7 @@ import com.gtc.opportunity.trader.service.command.gateway.WsGatewayResponseListe
 import com.gtc.opportunity.trader.service.nnopportunity.NnDispatcher;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.NnSolver;
 import com.gtc.opportunity.trader.service.nnopportunity.solver.time.LocalTime;
+import com.gtc.opportunity.trader.service.scheduled.WalletUpdater;
 import com.gtc.opportunity.trader.service.scheduled.trade.management.NnOrderHardCanceller;
 import com.gtc.opportunity.trader.service.scheduled.trade.management.NnOrderSoftCanceller;
 import com.gtc.opportunity.trader.service.scheduled.trade.management.NnSlaveOrderPusher;
@@ -48,6 +51,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -89,6 +93,9 @@ public class GlobalNnPerformanceTest extends BaseIT {
     private EnvContainer env = new EnvContainer();
     private TestTradeRepository testTradeRepository;
 
+    private long time = System.currentTimeMillis();
+    private Long bookStart = null;
+
     @Autowired
     private WalletRepository walletRepository;
 
@@ -122,6 +129,9 @@ public class GlobalNnPerformanceTest extends BaseIT {
     @Autowired
     private TransactionTemplate template;
 
+    @Autowired
+    private WalletUpdater walletUpdater;
+
     @MockBean
     private LocalTime localTime;
 
@@ -144,22 +154,17 @@ public class GlobalNnPerformanceTest extends BaseIT {
         ClientConfig cfg = initClientConfigCache();
         initTradeCreationService();
         initLocalTime();
-        testTradeRepository = new TestTradeRepository(cfg, env, env.getClientName(), env.getFrom(), env.getTo());
+        testTradeRepository = new TestTradeRepository(cfg, env, env.getClientName(), env.getFrom(), env.getTo(),
+                env.getBalFrom(), env.getBalTo());
     }
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GLOBAL_NN_TEST", matches = "true")
     void test() {
-        long time = System.currentTimeMillis();
-        Long bookStart = null;
         AtomicLong pointIndex = new AtomicLong();
         try (HistoryBookReader reader = reader()) {
             while (true) {
-                OrderBook book = reader.read();
-                if (null == bookStart) {
-                    bookStart = book.getMeta().getTimestamp();
-                }
-                book.getMeta().setTimestamp(book.getMeta().getTimestamp() + time - bookStart);
+                OrderBook book = fixTimestamp(reader.read());
                 lastBookTimestamp.set(book.getMeta().getTimestamp());
                 testTradeRepository.acceptOrderBook(book);
                 pointIndex.getAndIncrement();
@@ -200,9 +205,17 @@ public class GlobalNnPerformanceTest extends BaseIT {
         // it is not what happens in reality, since old model will accept point while new is absent
         long skip = (en - st) / 1000L * SKIP_PTS_COST_PER_S;
         for (long i = 0; i < skip; ++i) {
-            OrderBook book = toSkipOn.read();
+            OrderBook book = fixTimestamp(toSkipOn.read());
             testTradeRepository.acceptOrderBook(book);
         }
+    }
+
+    private OrderBook fixTimestamp(OrderBook book) {
+        if (null == bookStart) {
+            bookStart = book.getMeta().getTimestamp();
+        }
+        book.getMeta().setTimestamp(book.getMeta().getTimestamp() + time - bookStart);
+        return book;
     }
 
     private void generalSchedule(long pointIndex) {
@@ -210,10 +223,11 @@ public class GlobalNnPerformanceTest extends BaseIT {
             return;
         }
 
+        walletUpdater.requestUpdate();
         updater.bulkUpdateOrderStatus();
-        updater.orderTimeouter();
         updater.stuckUpdateOrderStatus();
         pusher.pushOrders();
+        updater.orderTimeouter();
     }
 
     private void cancelOrdersIfNeeded(long pointIndex) {
@@ -327,6 +341,15 @@ public class GlobalNnPerformanceTest extends BaseIT {
             }
             return null;
         }).when(commander).listOpenOrders(any(ListOpenCommand.class));
+
+        doAnswer(invocation -> {
+            Map<String, BigDecimal> balances = testTradeRepository.balances();
+            GetAllBalancesResponse response = new GetAllBalancesResponse();
+            response.setClientName(env.getClientName());
+            response.setBalances(balances);
+            responseListener.walletUpdate(response);
+            return null;
+        }).when(commander).getBalances(any(GetAllBalancesCommand.class));
     }
 
     private void initLocalTime() {

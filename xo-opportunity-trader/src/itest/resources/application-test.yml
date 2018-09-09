@@ -1,6 +1,4 @@
 spring:
-    main:
-      web-application-type: none
     application:
         name: gtc-opportunity-trader
     jackson:
@@ -22,6 +20,8 @@ spring:
             test-on-connect: true
             validation-query: SELECT 1
             validation-query-timeout: 5
+        username: za
+        password: za
     jpa:
         show-sql: false
         hibernate:

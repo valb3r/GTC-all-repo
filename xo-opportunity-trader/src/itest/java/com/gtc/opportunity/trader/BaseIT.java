@@ -2,8 +2,10 @@ package com.gtc.opportunity.trader;
 
 import com.gtc.opportunity.trader.app.AppInitializer;
 import com.gtc.opportunity.trader.config.Const;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.h2.tools.Server;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -38,6 +40,12 @@ public abstract class BaseIT extends BaseMockitoIT {
         @Override
         public int getOrder() {
             return ORDER;
+        }
+
+        @Override
+        @SneakyThrows
+        public void beforeTestExecution(TestContext testContext) {
+            Server.createWebServer("-webPort", "18082").start();
         }
 
         @Override

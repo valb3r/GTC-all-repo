@@ -108,3 +108,7 @@ test {
     println "" + Boolean.valueOf("$System.env.SHOW_STREAMS")
     testLogging.showStandardStreams = Boolean.valueOf("$System.env.SHOW_STREAMS")
 }
+
+integrationTest {
+    maxHeapSize = "4096m"
+}

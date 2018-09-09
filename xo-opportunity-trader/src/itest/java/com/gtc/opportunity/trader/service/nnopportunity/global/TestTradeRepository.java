@@ -1,6 +1,7 @@
 package com.gtc.opportunity.trader.service.nnopportunity.global;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.gtc.meta.CurrencyPair;
 import com.gtc.meta.TradingCurrency;
@@ -63,6 +64,8 @@ class TestTradeRepository {
     private final String clientName;
     private final TradingCurrency from;
     private final TradingCurrency to;
+    private final BigDecimal fromBal;
+    private final BigDecimal toBal;
 
     private static boolean isSell(CreateOrderCommand command) {
         return command.getAmount().compareTo(BigDecimal.ZERO) < 0;
@@ -72,6 +75,21 @@ class TestTradeRepository {
         if (!command.getClientName().equals(clientName) || !from.getCode().equals(command.getCurrencyFrom())
                 || !to.getCode().equals(command.getCurrencyTo())) {
             return;
+        }
+
+        Map<String, BigDecimal> balance = balances();
+
+        if (command.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+            if (balance.get(from.getCode()).add(command.getAmount()).compareTo(BigDecimal.ZERO) < 0) {
+                log.warn("Aborted (from) due to low balance {}", command);
+                return;
+            }
+        } else {
+            if (balance.get(to.getCode()).subtract(command.getAmount().multiply(command.getPrice()))
+                    .compareTo(BigDecimal.ZERO) < 0) {
+                log.warn("Aborted (to) due to low balance {}", command);
+                return;
+            }
         }
 
         byIdOrders.computeIfAbsent(command.getOrderId(), id -> new Opened(
@@ -216,10 +234,35 @@ class TestTradeRepository {
         reportJsonStats();
     }
 
+    Map<String, BigDecimal> balances() {
+        List<Opened> fromOrders = byIdOrders.values().stream()
+                .filter(it -> it.getCommand().getAmount().compareTo(BigDecimal.ZERO) < 0)
+                .collect(Collectors.toList());
+        List<Opened> toOrders = byIdOrders.values().stream()
+                .filter(it -> it.getCommand().getAmount().compareTo(BigDecimal.ZERO) > 0)
+                .collect(Collectors.toList());
+        BigDecimal valueFrom = fromBal;
+
+        for (Opened opened : fromOrders) {
+            valueFrom = valueFrom.add(opened.getCommand().getAmount());
+        }
+
+        BigDecimal valueTo = toBal;
+        for (Opened opened : toOrders) {
+            valueTo = valueTo.subtract(opened.getCommand().getAmount().multiply(opened.getCommand().getPrice()));
+        }
+
+        return ImmutableMap.of(
+                from.getCode(), valueFrom,
+                to.getCode(), valueTo
+        );
+    }
+
     @SneakyThrows
     @SuppressWarnings("unchecked")
     private void reportJsonStats() {
 
+        Map<TradingCurrency, BigDecimal> activeBalance = computeOrderBalance(asClosed(byIdOrders.values()));
         Map<TradingCurrency, BigDecimal> doneBalance = computeOrderBalance(done.values());
         Map<TradingCurrency, BigDecimal> cancelBalance = computeOrderBalance(cancelled.values());
         Map<TradingCurrency, BigDecimal> pairwiseDoneBalance = computeOrderBalance(computePaired(done.values()));
@@ -242,6 +285,7 @@ class TestTradeRepository {
         report.put("chargeRatePct", envContainer.getChargeRatePct());
         report.put("start", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(min));
         report.put("end", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(max));
+        activeBalance.forEach((k, v) -> reportKey.apply("activeBalance").put(k.getCode(), v));
         doneBalance.forEach((k, v) -> reportKey.apply("totalDone").put(k.getCode(), v));
         lockedBalance.forEach((k, v) -> reportKey.apply("lockMaxOnStat").put(k.getCode(), v));
         cancelBalance.forEach((k, v) -> reportKey.apply("cancelBalanceChange").put(k.getCode(), v));
@@ -262,6 +306,17 @@ class TestTradeRepository {
 
         log.info("Porcelain `{}`", MAPPER.writer().writeValueAsString(report));
         log.info("{}", MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(report));
+    }
+
+    private List<Closed> asClosed(Collection<Opened> openeds) {
+        return openeds.stream().map(it ->
+                new Closed(
+                        it.getPairId(),
+                        it.getTimestamp(),
+                        it.getCommand().getCreatedTimestamp(),
+                        it.getCommand(),
+                        null
+                )).collect(Collectors.toList());
     }
 
     private Map<Boolean, List<Double>> computeDoneDeviations() {

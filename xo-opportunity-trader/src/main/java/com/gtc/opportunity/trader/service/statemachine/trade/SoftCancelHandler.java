@@ -8,6 +8,7 @@ import com.gtc.opportunity.trader.domain.TradeStatus;
 import com.gtc.opportunity.trader.repository.SoftCancelConfigRepository;
 import com.gtc.opportunity.trader.repository.SoftCancelRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import static com.gtc.opportunity.trader.domain.TradeStatus.*;
 /**
  * Created by Valentyn Berezin on 04.09.18.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SoftCancelHandler {

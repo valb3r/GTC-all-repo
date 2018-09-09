@@ -27,7 +27,7 @@ public class WalletUpdater {
     @Trace(dispatcher = true)
     @Scheduled(initialDelayString = WALLET_UPDATE_MS, fixedRateString = WALLET_UPDATE_MS)
     @Transactional(readOnly = true)
-    public void walletUpdater() {
+    public void requestUpdate() {
         clientRepository.findByEnabledTrue().stream()
                 .map(it -> GetAllBalancesCommand.builder()
                         .id(UuidGenerator.get())
