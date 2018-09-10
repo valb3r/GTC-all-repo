@@ -30,7 +30,7 @@ public class FeeFitter {
         if (config.getFeeSystem() == FeeSystem.FEE_AFTER) {
             return fitter.after(book, config);
         } else if (config.getFeeSystem() == FeeSystem.FEE_BEFORE) {
-            fitter.before(book, config);
+            return fitter.before(book, config);
         }
 
         throw new IllegalStateException("No fitter");
