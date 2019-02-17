@@ -1,1 +1,1 @@
-This is GTC db-model speculator project. Please push all migrations necessary here.
+# Cryptocurrency exchange common module for code sharing

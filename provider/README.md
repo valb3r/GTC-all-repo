@@ -1,6 +1,20 @@
-# gtc
+# Cryptocurrency exchange data ingestion module
 
-GCE deployment:
+This module ingests and transforms websocket-order book data into common order book format for following exchanges:
+- Binance
+- Bitfinex
+- Bitstamp
+- Exx
+- Gdax
+- HitBtc
+- Huobi
+- Okex
+- Poloniex
+- TheRockTrading
+- Wex
+- Zb 
+
+**GCE deployment:**
 
 1. ./gradlew clean build
 2. docker build . -t gcr.io/bidcache/bidcache:$VERSION$
