@@ -2,7 +2,7 @@ This file describes order creation sequence (module-view)
 
 @startuml
 Exchange -> provider : websocket order book update
-provider -> xo-opportunity-trader : book list
-xo-opportunity-trader -> gateway : create order
+provider -> "xo-opportunity-trader" : book list
+"xo-opportunity-trader" -> gateway : create order
 gateway -> Exchange : call exchange to create order
 @enduml
