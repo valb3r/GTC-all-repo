@@ -24,6 +24,9 @@ It that has following strategies:
 - Gateway (outbound adapter). Submits orders and provides common order management interface.
 - Persistor. Stupid-simple component that allows to persist historical order book data.
 
+**Order creation sequence diagram (module level)**
+![Order creation diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/valb3r/GTC-all-repo/master/flow-sequence.puml&fmt=png&vvv=1)
+
 **Extra dependencies**
 You need MySQL instance for Xo-Opportunity-Trader to work - it persists opened/closed orders, statistics and audit there, 
 all other modules do not have extra dependencies.
